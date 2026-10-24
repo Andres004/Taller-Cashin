@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Solo para el tema XML de la ventana. En Compose se usan los colores de ui/theme/Color.kt -->
+    <color name="crema">#FFFCF7EA</color>
+</resources>

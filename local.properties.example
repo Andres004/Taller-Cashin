@@ -1,0 +1,11 @@
+# Copia este archivo como "local.properties" (misma carpeta) y completa los valores.
+# local.properties NO se sube a GitHub. Dabner comparte los valores por mensaje privado.
+# Android Studio agrega sdk.dir solo; no lo borres.
+
+# Supabase → Project Settings → API (o "Connect"):
+SUPABASE_URL=https://TU-PROYECTO.supabase.co
+# Clave pública: "anon" o "publishable". NUNCA la "service_role" / "secret".
+SUPABASE_KEY=tu-clave-publica
+
+# Google Cloud → Credenciales → ID de cliente OAuth de tipo "Web" (se usa en el Sprint 2, HU-02)
+GOOGLE_WEB_CLIENT_ID=

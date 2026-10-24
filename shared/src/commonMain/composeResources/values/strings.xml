@@ -1,7 +1,0 @@
-<resources>
-    <string name="login_back">Volver</string>
-    <string name="login_logo_description">Logo de Cashin</string>
-    <string name="login_email_label">Correo Electronico</string>
-    <string name="login_password_label">Contraseña</string>
-    <string name="login_button">Iniciar Sesion</string>
-</resources>
