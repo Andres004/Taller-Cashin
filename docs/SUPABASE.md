@@ -1,4 +1,4 @@
-# Configurar Supabase (una sola vez, lo hace Dabner)
+  # Configurar Supabase (una sola vez, lo hace Dabner)
 
 Tiempo estimado: 15 minutos. Al terminar, la app permite crear cuenta, ingresar, recuperar la contraseña y cerrar sesión.
 
