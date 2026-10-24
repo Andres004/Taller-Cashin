@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema de la ventana (antes de que cargue Compose). El tema real está en ui/theme/Theme.kt -->
+    <style name="Theme.Cashin" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/crema</item>
+        <item name="android:statusBarColor">@color/crema</item>
+        <item name="android:navigationBarColor">@color/crema</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

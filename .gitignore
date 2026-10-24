@@ -17,3 +17,10 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# Cashin
+local.properties
+*.keystore
+*.jks
+supabase/.temp/
+supabase/.branches/

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- REGLA: todo texto visible va aquí (español). Prefijo = pantalla o módulo. -->
+    <string name="app_name">Cashin</string>
+
+    <!-- Generales -->
+    <string name="accion_atras">Volver</string>
+    <string name="accion_aceptar">Aceptar</string>
+    <string name="accion_cancelar">Cancelar</string>
+    <string name="avatar_descripcion">Salchi, el perrito de Cashin</string>
+    <string name="logo_descripcion">Logo de Cashin</string>
+    <string name="campo_mostrar_contrasena">Mostrar contraseña</string>
+    <string name="campo_ocultar_contrasena">Ocultar contraseña</string>
+    <string name="separador_o">o</string>
+
+    <!-- Estados de pantalla -->
+    <string name="estado_error_titulo">¡Ups! Algo no salió bien</string>
+    <string name="estado_reintentar">Reintentar</string>
+    <string name="en_construccion_titulo">%1$s llega pronto</string>
+    <string name="en_construccion_mensaje">%1$s\n\nSe construye en el %2$s (%3$s).</string>
+
+    <!-- Configuración faltante -->
+    <string name="config_falta_titulo">Falta configurar Supabase</string>
+    <string name="config_falta_mensaje">Crea el archivo local.properties en la raíz del proyecto con SUPABASE_URL y SUPABASE_KEY (ver README) y vuelve a compilar la app.</string>
+
+    <!-- Campos de cuenta -->
+    <string name="campo_nombre">¿Cómo te llamas?</string>
+    <string name="campo_correo">Correo electrónico</string>
+    <string name="campo_contrasena">Contraseña</string>
+    <string name="campo_confirmar_contrasena">Repite la contraseña</string>
+    <string name="campo_codigo">Código de 6 dígitos</string>
+    <string name="campo_nueva_contrasena">Nueva contraseña</string>
+
+    <!-- Validaciones -->
+    <string name="validacion_nombre">Escribe tu nombre</string>
+    <string name="validacion_correo">Escribe un correo válido</string>
+    <string name="validacion_contrasena">Mínimo 8 caracteres</string>
+    <string name="validacion_contrasena_vacia">Escribe tu contraseña</string>
+    <string name="validacion_no_coinciden">Las contraseñas no coinciden</string>
+    <string name="validacion_codigo">El código tiene 6 dígitos</string>
+
+    <!-- Errores (ErrorApp) -->
+    <string name="error_sin_conexion">Sin conexión. Revisa tu internet e inténtalo de nuevo.</string>
+    <string name="error_credenciales">Correo o contraseña incorrectos.</string>
+    <string name="error_correo_registrado">Ya existe una cuenta con ese correo. Inicia sesión.</string>
+    <string name="error_correo_no_confirmado">Confirma tu correo antes de ingresar (revisa tu bandeja de entrada).</string>
+    <string name="error_contrasena_debil">Esa contraseña es muy débil. Prueba con una más larga.</string>
+    <string name="error_codigo_invalido">El código no es válido o ya venció. Pide uno nuevo.</string>
+    <string name="error_demasiados_intentos">Demasiados intentos. Espera un minuto y vuelve a probar.</string>
+    <string name="error_sin_permiso">No tienes permiso para ver o cambiar ese dato.</string>
+    <string name="error_dato_invalido">Revisa los datos: algo no cumple las reglas.</string>
+    <string name="error_desconocido">Algo salió mal. Inténtalo de nuevo.</string>
+
+    <!-- Login (HU-01) -->
+    <string name="login_titulo">¡Hola de nuevo!</string>
+    <string name="login_subtitulo">Anota tus gastos en segundos.</string>
+    <string name="login_boton">Iniciar sesión</string>
+    <string name="login_olvide">¿Olvidaste tu contraseña?</string>
+    <string name="login_sin_cuenta">¿No tienes cuenta?</string>
+    <string name="login_crear_cuenta">Crear cuenta</string>
+    <string name="login_google">Continuar con Google</string>
+    <string name="login_google_pronto">El ingreso con Google llega en el Sprint 2 (HU-02).</string>
+
+    <!-- Crear cuenta (HU-01) -->
+    <string name="registro_titulo">Crea tu cuenta</string>
+    <string name="registro_subtitulo">Tu libreta de gastos, ingresos y metas.</string>
+    <string name="registro_boton">Crear cuenta</string>
+    <string name="registro_ya_tengo">¿Ya tienes cuenta? Inicia sesión</string>
+    <string name="registro_revisa_correo">¡Listo! Te enviamos un correo a %1$s. Confírmalo y luego inicia sesión.</string>
+    <string name="registro_ir_login">Ir a iniciar sesión</string>
+
+    <!-- Recuperar contraseña (HU-03) -->
+    <string name="recuperar_titulo">Recupera tu contraseña</string>
+    <string name="recuperar_paso1">Escribe tu correo y te enviaremos un código de 6 dígitos.</string>
+    <string name="recuperar_enviar">Enviar código</string>
+    <string name="recuperar_paso2">Revisa tu correo %1$s y escribe el código junto con tu nueva contraseña.</string>
+    <string name="recuperar_cambiar">Cambiar contraseña</string>
+    <string name="recuperar_reenviar">No me llegó: reenviar código</string>
+    <string name="recuperar_codigo_enviado">Código enviado. Revisa también la carpeta de spam.</string>
+
+    <!-- Navegación inferior -->
+    <string name="nav_inicio">Inicio</string>
+    <string name="nav_historial">Historial</string>
+    <string name="nav_anotar">Anotar</string>
+    <string name="nav_metas">Metas</string>
+    <string name="nav_perfil">Perfil</string>
+
+    <!-- Inicio (placeholder Sprint 1) -->
+    <string name="inicio_saludo">¡Hola! 👋</string>
+    <string name="inicio_avatar_bienvenida">¡Bienvenido a Cashin! Pronto podrás anotar tus gastos y ganar XP por cada uno.</string>
+    <string name="inicio_construccion">Aquí verás los gastos e ingresos del mes, tu racha y tus últimas anotaciones.</string>
+
+    <!-- Placeholders del resto de pestañas -->
+    <string name="historial_construccion">Aquí verás todas tus anotaciones agrupadas por día, con filtros.</string>
+    <string name="anotar_construccion">Aquí anotarás un gasto o ingreso en menos de 10 segundos.</string>
+    <string name="metas_construccion">Aquí crearás metas de ahorro y verás cuánto te falta.</string>
+
+    <!-- Perfil (Sprint 1: solo cerrar sesión, HU-04) -->
+    <string name="perfil_sesion_iniciada">Sesión iniciada como</string>
+    <string name="perfil_construccion">Tu nivel, XP, racha y categorías llegan en el Sprint 2 (HU-05).</string>
+    <string name="perfil_cerrar_sesion">Cerrar sesión</string>
+    <string name="perfil_cerrar_titulo">¿Cerrar sesión?</string>
+    <string name="perfil_cerrar_mensaje">Tus anotaciones quedan guardadas. Podrás volver a entrar con tu correo.</string>
+</resources>
