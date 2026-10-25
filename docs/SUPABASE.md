@@ -1,4 +1,6 @@
-  # Configurar Supabase (una sola vez, lo hace Dabner)
+# Configurar Supabase
+
+> ✅ **Ya está hecho** (Andy, 24/10/2026). Esta guía queda como referencia por si hay que volver a crear el proyecto.
 
 Tiempo estimado: 15 minutos. Al terminar, la app permite crear cuenta, ingresar, recuperar la contraseña y cerrar sesión.
 
@@ -31,9 +33,15 @@ Tiempo estimado: 15 minutos. Al terminar, la app permite crear cuenta, ingresar,
 
 ## 4. Plantilla del correo de recuperación (HU-03)
 
-La app recupera la contraseña con un **código de 6 dígitos** (sin enlaces), así no hace falta configurar deep links.
+La app recupera la contraseña con un **código numérico** (sin enlaces), así no hace falta configurar deep links. La app acepta códigos de 6 a 10 dígitos; el largo se define en **Authentication → Sign In / Providers → Email → Email OTP Length** (proyectos nuevos: 8).
 
-**Authentication → Emails → Templates → Reset Password**: reemplazar el cuerpo por:
+**Primero, SMTP propio:** Supabase exige un servidor de correo propio para editar plantillas.
+1. En la cuenta de Gmail del proyecto: activar la **verificación en 2 pasos** y crear una **contraseña de aplicación** en https://myaccount.google.com/apppasswords.
+2. **Authentication → Emails → SMTP Settings → Enable custom SMTP**:
+   Sender email y Username = el Gmail · Sender name = `Cashin` · Host `smtp.gmail.com` · Port `465` · Password = la contraseña de aplicación (16 letras, sin espacios).
+3. **Authentication → Rate Limits**: subir el límite de correos a `30` por hora.
+
+**Después, Authentication → Emails → Templates → Reset Password**: reemplazar el cuerpo por:
 
 ```html
 <h2>Recupera tu contraseña de Cashin</h2>
@@ -45,7 +53,6 @@ La app recupera la contraseña con un **código de 6 dígitos** (sin enlaces), a
 
 Opcional (si se activa *Confirm email*): en **Confirm signup** dejar el enlace `{{ .ConfirmationURL }}`; al tocarlo la cuenta queda confirmada y el usuario vuelve a la app a iniciar sesión.
 
-> El servidor de correo gratuito de Supabase envía pocos correos por hora. Si se agota en pruebas, esperar o configurar un SMTP propio en **Authentication → Emails → SMTP Settings**.
 
 ## 5. Copiar las claves a la app
 
@@ -53,7 +60,7 @@ Opcional (si se activa *Confirm email*): en **Confirm signup** dejar el enlace `
 - `Project URL` → `SUPABASE_URL`
 - clave **anon / publishable** → `SUPABASE_KEY`
 
-Pegarlas en `local.properties` (ver `local.properties.example`) y compartirlas con Andy y Carlos **por mensaje privado**.
+Pegarlas en `local.properties` (ver `local.properties.example`) y compartirlas con el equipo **por mensaje privado**.
 
 ⚠️ Nunca usar ni compartir la clave `service_role` / `secret`: salta la seguridad RLS.
 
@@ -62,7 +69,7 @@ Pegarlas en `local.properties` (ver `local.properties.example`) y compartirlas c
 1. Correr la app → **Crear cuenta** con un correo real.
 2. En Supabase → **Table Editor → perfil** debe aparecer una fila con el nombre escrito.
 3. Cerrar sesión desde **Perfil** e ingresar de nuevo.
-4. Probar **¿Olvidaste tu contraseña?** → llega el código → cambiar contraseña → la app entra sola.
+4. Probar **¿Olvidaste tu contraseña?** → llega el código (6 a 10 dígitos) → cambiar contraseña → la app entra sola.
 
 ## 7. Probar el SQL en una PC (opcional)
 
