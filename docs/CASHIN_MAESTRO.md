@@ -9,11 +9,13 @@
 | Proyecto | Cashin — libreta digital de finanzas personales con asistente de IA |
 | Materia | Taller de Sistemas de Información |
 | Equipo | Dabner · Andy · Carlos |
-| Duración | 5 sprints de 1 semana (26/10/2026 → 29/11/2026) |
+| Duración | 5 sprints de 1 semana; cada uno se entrega **el martes a las 17:30** (S2: 27/10 → S5: 17/11/2026) |
 | Repositorio | https://github.com/Andres004/Taller-Cashin |
 | Diseño | Figma "Cashin-Mobile" (fuente visual de todas las pantallas) |
+| Tablero | Trello: [Cashin · Taller de Sistemas de Información](https://trello.com/b/8wOuJi2k/cashin-taller-de-sistemas-de-informaci%C3%B3n) |
+| Backend | Proyecto Supabase `cashin` (São Paulo) — ✅ configurado |
 | Paquete Android | `org.ucb.cashin` (módulo `app`) |
-| Versión del documento | 1.1 — base del Sprint 1 implementada |
+| Versión del documento | 1.2 — Sprint 1 cerrado, Sprint 2 en curso (24/10/2026) |
 
 ---
 
@@ -68,7 +70,7 @@ Formato de ID: `HU-XX`. Cada HU es una tarjeta en Trello y una rama en GitHub.
 |---|---|---|---|
 | HU-01 | M1 | Como usuario quiero registrarme con correo y contraseña | Correo válido, contraseña ≥ 8 caracteres, se crea mi perfil automáticamente |
 | HU-02 | M1 | Quiero ingresar con mi cuenta de Google | Un toque abre el selector de cuentas; al volver estoy dentro |
-| HU-03 | M1 | Quiero recuperar mi contraseña | Recibo un código de 6 dígitos por correo y con él pongo una nueva contraseña dentro de la app |
+| HU-03 | M1 | Quiero recuperar mi contraseña | Recibo un código numérico por correo y con él pongo una nueva contraseña dentro de la app |
 | HU-04 | M1 | Quiero cerrar sesión | Vuelvo a la pantalla de ingreso y no puedo ver datos |
 | HU-05 | M1 | Quiero ver y editar mi perfil | Puedo cambiar nombre y moneda; veo XP, nivel y racha |
 | HU-06 | M2 | Quiero anotar un gasto rápido | Monto > 0, categoría obligatoria, medio de pago opcional (por defecto Efectivo), fecha por defecto ahora |
@@ -107,7 +109,7 @@ Formato de ID: `HU-XX`. Cada HU es una tarjeta en Trello y una rama en GitHub.
 | Cliente Supabase | **supabase-kt** (`auth-kt`, `postgrest-kt`, `functions-kt`) + motor Ktor OkHttp | Hablar con Supabase |
 | Serialización | **kotlinx.serialization** | Objetos Kotlin ⇄ JSON |
 | Base de datos | **PostgreSQL** (de Supabase) con **RLS** | Datos y privacidad |
-| Login con Google (Sprint 2) | **Credential Manager** vía `compose-auth` (repositorio `supabase-kt-plugins`) | Ingreso con Google nativo |
+| Login con Google (Sprint 3) | **Credential Manager** vía `compose-auth` (repositorio `supabase-kt-plugins`) | Ingreso con Google nativo |
 | IA | **Supabase Edge Function** (TypeScript) + **API de Gemini** | Desafíos, consejos, estimación |
 | Avatar | **Lottie Compose** (animaciones) o PNG | Avatar animado |
 | Gráficos | Compose puro (Canvas) o **Vico** | Gasto por categoría |
@@ -325,7 +327,7 @@ La sesión se guarda sola en el celular (supabase-kt) y se renueva automáticame
 | `GOOGLE_WEB_CLIENT_ID` | `local.properties` → `BuildConfig` | No |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | Secretos de Supabase (`supabase secrets set`) | **Nunca** |
 
-Plantilla: `local.properties.example`. Dabner comparte los valores por mensaje privado. La clave pública puede ir en la app porque **RLS** protege los datos; la `service_role` nunca se usa en la app.
+Plantilla: `local.properties.example`. Andy comparte los valores por mensaje privado. La clave pública puede ir en la app porque **RLS** protege los datos; la `service_role` nunca se usa en la app.
 
 ---
 
@@ -388,7 +390,7 @@ Cómo ejecutarlos y probarlos: `docs/SUPABASE.md`.
 
 ### 7.2 Funciones SQL de gamificación (Sprint 4) — `003_gamificacion.sql`
 
-Contratos que implementa **Dabner**; la app los llama con `supabase.postgrest.rpc(...)`:
+Contratos a implementar en el Sprint 4 (responsable por definir); la app los llama con `supabase.postgrest.rpc(...)`:
 
 | Función | Qué hace |
 |---|---|
@@ -524,28 +526,42 @@ Se usa el modo de respuesta JSON de Gemini (`responseMimeType: "application/json
 
 ### 10.1 Sprints
 
-| Sprint | Fechas | Objetivo |
-|---|---|---|
-| S1 | ✅ adelantado | Fundaciones: repo, Supabase, esquema, login, tema y navegación (ver §14) |
-| S2 | 02/11 – 08/11 | Registros, historial, categorías, perfil, inicio con totales |
-| S3 | 09/11 – 15/11 | Metas, planificados, gasto por categoría, base de la IA y estimación |
-| S4 | 16/11 – 22/11 | Desafíos, XP, consejos del avatar, deudas |
-| S5 | 23/11 – 29/11 | Avatar animado, pulido, pruebas, APK final y presentación |
+Cada sprint dura una semana y se **entrega el martes a las 17:30** (hora Bolivia).
+
+| Sprint | Entrega | Responsable | Objetivo | Estado |
+|---|---|---|---|---|
+| S1 | sáb 24/10 | Andy | Base: repo, Supabase, esquema + RLS, login, tema, componentes, navegación | ✅ Hecho |
+| S2 | **mar 27/10 · 17:30** | **Carlos** (revisa Andy) | Anotar (HU-06/07), historial (HU-09), editar/eliminar (HU-08), Inicio con totales (HU-13), perfil (HU-05) | 🔨 En curso |
+| S3 | mar 03/11 · 17:30 | por definir | Google (HU-02), filtros (HU-10), categorías (HU-11/12), planificados (HU-15/16), metas (HU-17–19), Edge Function base (T-11) | Backlog |
+| S4 | mar 10/11 · 17:30 | por definir | IA: estimación (HU-20) y consejos (HU-21); desafíos (HU-22/23); XP y racha (HU-24); `003_gamificacion.sql` | Backlog |
+| S5 | mar 17/11 · 17:30 | por definir | Deudas (HU-25/26), gasto por categoría (HU-14), avatar animado, pruebas, APK y presentación | Backlog |
+
+El responsable de cada sprint se decide en su planificación. Las fechas de S3 a S5 son tentativas.
 
 **Ritmo de cada semana:**
-- **Lunes:** planificación (20 min, llamada o presencial). Se mueven las tarjetas del sprint a "Por hacer".
-- **Lunes a sábado:** daily por el grupo de WhatsApp **antes de las 22:00**, 3 líneas: *ayer hice / hoy haré / me bloquea*.
-- **Viernes 23:59:** fecha límite de PRs del sprint.
-- **Sábado:** revisión de PRs pendientes, unión a `main` y demo interna (cada uno muestra lo suyo en la app).
-- **Domingo:** retrospectiva de 10 minutos (qué salió bien / qué mejorar) y descanso.
+- **Miércoles:** planificación (20 min). Se eligen las tarjetas del backlog, se asigna responsable y se pasan a la lista del sprint.
+- **Todos los días:** daily por el grupo de WhatsApp **antes de las 22:00**, 3 líneas: *ayer hice / hoy haré / me bloquea*.
+- **Martes 15:30:** pull request del sprint abierto.
+- **Martes 17:00:** revisión y aprobación del PR por otro integrante.
+- **Martes 17:30:** entrega (todo unido a `main`) y retro de 10 minutos.
+
+Cada sprint tiene su prompt de trabajo en `docs/sprints/` (por ejemplo `PROMPT_SPRINT2_CARLOS.md`), que se pega en el asistente de IA para hacer las tareas en orden sin romper la base.
 
 ### 10.2 Trello
 
-Listas: `Backlog` → `Por hacer (sprint actual)` → `En curso` → `En revisión (PR abierto)` → `Hecho` → `Bloqueado`.
+Tablero: [Cashin · Taller de Sistemas de Información](https://trello.com/b/8wOuJi2k/cashin-taller-de-sistemas-de-informaci%C3%B3n).
 
-Cada tarjeta lleva: **título con ID** (`HU-06 Anotar gasto rápido` o `T-03 Tema desde Figma`), **responsable**, **fecha límite**, **etiqueta de sprint** (S1…S5), **checklist** con los criterios de aceptación y el **enlace al PR**.
+| Lista | Para qué |
+|---|---|
+| 📌 Cómo trabajamos | Maestro, calendario, flujo de trabajo y Definición de "Hecho" |
+| 📋 Historias de usuario (backlog) | Historias y tareas de los próximos sprints, marcadas `[S3]`, `[S4]`, `[S5]` |
+| 🏃 Sprint N · Por hacer | Tarjetas del sprint actual con responsable y fecha límite |
+| 🔨 En curso | Máximo **2 por persona** |
+| 👀 En revisión (PR abierto) | Con el enlace del PR |
+| ✅ Hecho | PR aprobado y unido a `main` |
+| 🚧 Bloqueado | Con un comentario de qué falta |
 
-Regla: **máximo 2 tarjetas "En curso" por persona.**
+**Formato de tarjeta:** `[Responsable] HU-XX · título` (o `[S3] HU-XX · título` si aún no tiene responsable). Cada tarjeta lleva criterios de aceptación, archivos a tocar, cómo probarla y **fecha límite**. Colores: naranja = Carlos, azul = Andy, verde = meta del sprint.
 
 ### 10.3 Git y GitHub
 
@@ -605,7 +621,7 @@ Toda salida de la IA **se revisa y se entiende** antes de subirla. En la defensa
 
 | Riesgo | Plan |
 |---|---|
-| Login con Google no funciona a tiempo (SHA-1, client ID) | El correo y la contraseña son el camino principal; Google se termina en S2 si se atrasa |
+| Login con Google no funciona a tiempo (SHA-1, client ID) | El correo y la contraseña son el camino principal; Google se terminó de mover al S3 para no frenar el S2 |
 | La IA responde mal o se cae | Mensajes de respaldo fijos + validación de JSON; los números nunca dependen de la IA |
 | Se agota el nivel gratuito de Gemini | Límite de 10 llamadas por usuario por día; cachear consejo diario |
 | El proyecto gratuito de Supabase se pausa por inactividad | Entrar al panel al menos una vez por semana; antes de la presentación, abrir la app el día anterior |
@@ -626,18 +642,30 @@ Toda salida de la IA **se revisa y se entiende** antes de subirla. En la defensa
 
 ---
 
-## 14. Estado de la base (Sprint 1)
+## 14. Estado actual (24/10/2026)
 
-**Hecho en el código:**
-- Proyecto Android de un solo módulo (`app`), sin KMP ni iOS. Las pantallas del prototipo anterior (inicio, consejo, desafíos, gastos) siguen en las ramas `andres` y `gabriel` del repositorio viejo (`dahbner/cashin_mobile`) como referencia visual.
-- `supabase/migrations/001_esquema.sql` y `002_rls.sql`, probados en PostgreSQL con 2 usuarios (RLS, FK de tipo, retiros, abonos, XP y racha).
-- Login, crear cuenta (con o sin confirmación de correo), recuperar contraseña con código de 6 dígitos y cerrar sesión con confirmación.
-- `CashinRaiz`: splash mientras se lee la sesión, luego login o app según corresponda.
-- Barra inferior con 5 pestañas; Historial, Anotar y Metas son marcadores.
-- Tema, componentes, avatar (4 poses), modelos de todas las tablas y vistas, `Formato`, `Validaciones`.
-- 12 pruebas unitarias de formatos, validaciones, serialización de montos y traducción de errores.
+### Sprint 1 — ✅ cerrado (Andy)
+- Repositorio `Andres004/Taller-Cashin`: proyecto Android de un solo módulo (`app`), sin KMP ni iOS.
+- Supabase configurado: `001_esquema.sql` y `002_rls.sql` ejecutados, SMTP propio (Gmail con contraseña de aplicación) y plantilla **Reset Password** con `{{ .Token }}`. *Confirm email* desactivado durante el desarrollo.
+- Login, crear cuenta, recuperar contraseña con código (la app acepta 6 a 10 dígitos; Supabase envía 8 por defecto) y cerrar sesión.
+- `CashinRaiz`: splash → login o app según la sesión. Barra inferior con 5 pestañas.
+- Tema, componentes, avatar (4 poses), modelos de todas las tablas y vistas, `Formato`, `Validaciones`, pruebas unitarias.
+- Trello creado con backlog completo y el Sprint 2 planificado.
 
-**Pendiente manual (Dabner):** crear el proyecto Supabase, ejecutar las migraciones, configurar la plantilla del correo y repartir `local.properties` (`docs/SUPABASE.md`). Proteger `main` en GitHub.
+### Sprint 2 — 🔨 en curso (Carlos, entrega mar 27/10 · 17:30)
+Guía paso a paso: `docs/sprints/PROMPT_SPRINT2_CARLOS.md`. Rama: `feature/sprint-2-registros`.
 
-**Pendiente para el Sprint 2:** ingreso con Google (HU-02), perfil completo (HU-05), registros, historial, categorías e Inicio con totales.
+| Paso | Historia | Límite |
+|---|---|---|
+| 1 | Repositorios (`Categoria`, `Registro`, `Perfil`, `Resumen`) | dom 25 · 18:00 |
+| 2 | HU-06/07 Anotar gasto o ingreso | dom 25 · 22:00 |
+| 3 | HU-09 Historial agrupado por día | lun 26 · 13:00 |
+| 4 | HU-08 Editar o eliminar | lun 26 · 20:00 |
+| 5 | HU-13 Inicio con totales del mes | mar 27 · 11:00 |
+| 6 | HU-05 Perfil con nivel, XP y racha | mar 27 · 14:00 |
+| 7 | Prueba final y PR · revisión de Andy 17:00 | mar 27 · 15:30 |
 
+### Pendientes generales
+- Proteger `main` en GitHub (exigir PR y 1 aprobación) e invitar a Carlos y Dabner al repo y al tablero.
+- Asignar responsables de los sprints 3 a 5 en sus planificaciones.
+- iOS queda fuera de alcance; se evaluará al final solo si sobra tiempo y hay una Mac disponible.

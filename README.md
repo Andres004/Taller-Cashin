@@ -1,4 +1,4 @@
-# Cashin 🐶💸
+# Cashin
 
 Libreta digital de finanzas personales para Android: anotas gastos, ingresos, pagos esperados, metas de ahorro y deudas, y **Salchi**, el avatar, te acompaña con consejos y desafíos al estilo Duolingo.
 
@@ -6,7 +6,7 @@ Libreta digital de finanzas personales para Android: anotas gastos, ingresos, pa
 
 Proyecto del Taller de Sistemas de Información · Equipo: Dabner · Andy · Carlos.
 
-📘 **Antes de programar, lee [`docs/CASHIN_MAESTRO.md`](docs/CASHIN_MAESTRO.md)** (stack, arquitectura, reglas y base de datos).
+ **Antes de programar, lee [`docs/CASHIN_MAESTRO.md`](docs/CASHIN_MAESTRO.md)** (stack, arquitectura, reglas y base de datos).
 
 ---
 
@@ -23,7 +23,7 @@ Proyecto del Taller de Sistemas de Información · Equipo: Dabner · Andy · Car
 
 - **Android Studio** reciente (con soporte para AGP 9.1) y **JDK 17 o 21** (el que trae Android Studio sirve).
 - Un emulador o celular con **Android 8.0 (API 26)** o superior.
-- Las claves de Supabase (te las pasa Dabner).
+- Las claves de Supabase (te las pasa Andy).
 
 ## Primeros pasos
 
@@ -39,7 +39,9 @@ cp local.properties.example local.properties   # en Windows: copy local.properti
 
 Si falta `local.properties`, la app abre igual y muestra en pantalla qué configurar.
 
-> ¿Primera vez configurando Supabase? Sigue [`docs/SUPABASE.md`](docs/SUPABASE.md).
+> Supabase ya está configurado; la guía de referencia es [`docs/SUPABASE.md`](docs/SUPABASE.md).
+>
+> Tablero del equipo: [Trello](https://trello.com/b/8wOuJi2k/cashin-taller-de-sistemas-de-informaci%C3%B3n) · Guía del sprint actual: [`docs/sprints/`](docs/sprints/).
 
 ### Comandos útiles
 
@@ -79,7 +81,7 @@ docs/              CASHIN_MAESTRO.md · SUPABASE.md
 - ✅ Crear cuenta, iniciar sesión, recuperar contraseña con código y cerrar sesión.
 - ✅ Tema de Cashin, componentes reutilizables, avatar en 4 poses y barra inferior con 5 pestañas.
 - ✅ Modelos de todas las tablas, formato de montos `Bs 1.250,50` y manejo de errores en español.
-- ⏳ Ingreso con Google → Sprint 2 (HU-02). El botón ya está en el login.
+- ⏳ Ingreso con Google → Sprint 3 (HU-02). El botón ya está en el login.
 
 ## Cómo trabajamos
 
