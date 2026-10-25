@@ -5,7 +5,9 @@ object Validaciones {
 
     const val MIN_CONTRASENA = 8
     const val MAX_NOMBRE = 80
-    const val LARGO_CODIGO = 6
+
+    const val MIN_CODIGO = 6
+    const val MAX_CODIGO = 10
 
     private val regexCorreo = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
 
@@ -15,6 +17,8 @@ object Validaciones {
 
     fun nombreValido(nombre: String): Boolean = nombre.trim().length in 1..MAX_NOMBRE
 
-    fun codigoValido(codigo: String): Boolean =
-        codigo.trim().length == LARGO_CODIGO && codigo.trim().all { it.isDigit() }
+    fun codigoValido(codigo: String): Boolean {
+        val limpio = codigo.trim()
+        return limpio.length in MIN_CODIGO..MAX_CODIGO && limpio.all { it.isDigit() }
+    }
 }
