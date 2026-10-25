@@ -43,7 +43,7 @@ class RecuperarViewModel(private val auth: AuthRepository) : ViewModel() {
     val uiState: StateFlow<RecuperarUiState> = _uiState.asStateFlow()
 
     fun onCorreoCambio(v: String) = _uiState.update { it.copy(correo = v, errorCorreo = null, error = null) }
-    fun onCodigoCambio(v: String) = _uiState.update { it.copy(codigo = v.filter(Char::isDigit).take(Validaciones.LARGO_CODIGO), errorCodigo = null, error = null) }
+    fun onCodigoCambio(v: String) = _uiState.update { it.copy(codigo = v.filter(Char::isDigit).take(Validaciones.MAX_CODIGO), errorCodigo = null, error = null) }
     fun onNuevaCambio(v: String) = _uiState.update { it.copy(nueva = v, errorNueva = null, error = null) }
     fun onConfirmarCambio(v: String) = _uiState.update { it.copy(confirmar = v, errorConfirmar = null, error = null) }
     fun mensajeMostrado() = _uiState.update { it.copy(mensaje = null) }
