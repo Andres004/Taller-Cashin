@@ -107,11 +107,15 @@
     <string name="anotar_guardar">Guardar</string>
     <string name="anotar_guardado">¡Anotado!</string>
     <string name="anotar_guardado_xp">¡Anotado! +10 XP</string>
-    <string name="anotar_sin_categorias_titulo">No hay categorías</string>
     <string name="anotar_sin_categorias_mensaje">No encontramos categorías para este tipo. Inténtalo de nuevo más tarde.</string>
 
+    <!-- Historial (HU-09) -->
+    <string name="historial_vacio_titulo">Aún no anotaste nada</string>
+    <string name="historial_vacio_mensaje">Toca + para anotar tu primer gasto o ingreso.</string>
+    <string name="historial_sin_categoria">Sin categoría</string>
+    <string name="historial_hora_nota">%1$s · %2$s</string>
+
     <!-- Placeholders del resto de pestañas -->
-    <string name="historial_construccion">Aquí verás todas tus anotaciones agrupadas por día, con filtros.</string>
     <string name="metas_construccion">Aquí crearás metas de ahorro y verás cuánto te falta.</string>
 
     <!-- Perfil (Sprint 1: solo cerrar sesión, HU-04) -->
