@@ -16,9 +16,13 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -30,6 +34,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
 import org.ucb.cashin.R
 import org.ucb.cashin.ui.inicio.InicioScreen
 import org.ucb.cashin.ui.metas.MetasScreen
@@ -62,8 +67,24 @@ fun PrincipalNavHost() {
     val entrada by nav.currentBackStackEntryAsState()
     val destino = entrada?.destination
 
+    // Mensajes cortos que siguen visibles aunque se cambie de pestaña (ej.: "¡Anotado! +10 XP").
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val textoAnotado = stringResource(R.string.anotar_guardado)
+    val textoAnotadoXp = stringResource(R.string.anotar_guardado_xp)
+
+    /** Cambia de pestaña recordando dónde se quedó cada una. */
+    fun irAPestana(ruta: Any) {
+        nav.navigate(ruta) {
+            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
                 Pestana.entries.forEach { pestana ->
@@ -71,13 +92,7 @@ fun PrincipalNavHost() {
                     val esAnotar = pestana == Pestana.ANOTAR
                     NavigationBarItem(
                         selected = seleccionada,
-                        onClick = {
-                            nav.navigate(pestana.ruta) {
-                                popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
+                        onClick = { irAPestana(pestana.ruta) },
                         icon = {
                             Icon(
                                 imageVector = pestana.icono,
@@ -106,7 +121,14 @@ fun PrincipalNavHost() {
         ) {
             composable<Rutas.Inicio> { InicioScreen() }
             composable<Rutas.Historial> { HistorialScreen() }
-            composable<Rutas.Anotar> { AnotarScreen() }
+            composable<Rutas.Anotar> {
+                AnotarScreen(
+                    onGuardado = { ganoXp ->
+                        irAPestana(Rutas.Inicio)
+                        scope.launch { snackbar.showSnackbar(if (ganoXp) textoAnotadoXp else textoAnotado) }
+                    },
+                )
+            }
             composable<Rutas.Metas> { MetasScreen() }
             composable<Rutas.Perfil> { PerfilScreen() }
         }

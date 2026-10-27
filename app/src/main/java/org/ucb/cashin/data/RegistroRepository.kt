@@ -5,6 +5,8 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Order
 import org.ucb.cashin.model.NuevoRegistro
 import org.ucb.cashin.model.Registro
+import org.ucb.cashin.util.Formato
+import org.ucb.cashin.util.ZONA_BOLIVIA
 
 /**
  * Guarda, lee, edita y borra los gastos e ingresos del usuario.
@@ -35,6 +37,17 @@ class RegistroRepository(private val supabase: SupabaseClient) {
     }
 
     /**
+     * Cuántas anotaciones se crearon hoy (hora de Bolivia).
+     * Sirve para saber si la última todavía ganó XP: solo las 5 primeras del día suman.
+     */
+    suspend fun contarCreadosHoy(): Result<Int> = llamada {
+        val inicioDeHoy = Formato.hoy().atStartOfDay(ZONA_BOLIVIA).toInstant()
+        supabase.from("registro").select {
+            filter { gte("creado_en", inicioDeHoy.toString()) }
+        }.decodeList<Registro>().size
+    }
+
+    /**
      * Guarda los cambios de una anotación.
      * Hay que mantener su fecha original para no moverla a "ahora".
      */
@@ -50,6 +63,5 @@ class RegistroRepository(private val supabase: SupabaseClient) {
         supabase.from("registro").delete {
             filter { eq("id", id) }
         }
-        Unit
     }
 }
