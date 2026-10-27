@@ -89,6 +89,11 @@ fun PrincipalNavHost() {
         }
     }
 
+    /** Abre una anotación para editarla o eliminarla. */
+    fun abrirRegistro(registroId: String) {
+        nav.navigate(Rutas.EditarRegistro(registroId))
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
@@ -126,11 +131,16 @@ fun PrincipalNavHost() {
             startDestination = Rutas.Inicio,
             modifier = Modifier.padding(padding),
         ) {
-            composable<Rutas.Inicio> { InicioScreen() }
+            composable<Rutas.Inicio> {
+                InicioScreen(
+                    onVerTodo = { irAPestana(Rutas.Historial) },
+                    onRegistroClick = { registroId -> abrirRegistro(registroId) },
+                )
+            }
 
             composable<Rutas.Historial> {
                 HistorialScreen(
-                    onRegistroClick = { registroId -> nav.navigate(Rutas.EditarRegistro(registroId)) },
+                    onRegistroClick = { registroId -> abrirRegistro(registroId) },
                 )
             }
 

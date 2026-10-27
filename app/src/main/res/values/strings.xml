@@ -87,10 +87,26 @@
     <string name="nav_metas">Metas</string>
     <string name="nav_perfil">Perfil</string>
 
-    <!-- Inicio (placeholder Sprint 1) -->
-    <string name="inicio_saludo">¡Hola! 👋</string>
-    <string name="inicio_avatar_bienvenida">¡Bienvenido a Cashin! Pronto podrás anotar tus gastos y ganar XP por cada uno.</string>
-    <string name="inicio_construccion">Aquí verás los gastos e ingresos del mes, tu racha y tus últimas anotaciones.</string>
+    <!-- Inicio (HU-13) -->
+    <string name="inicio_saludo">¡Hola, %1$s!</string>
+    <string name="inicio_avatar_sin_registro_hoy">¡Anota tu primer gasto del día!</string>
+    <plurals name="inicio_avatar_racha">
+        <item quantity="one">¡Bien! Llevas %1$d día seguido</item>
+        <item quantity="other">¡Bien! Llevas %1$d días seguidos</item>
+    </plurals>
+    <string name="inicio_diferencia">Diferencia del mes</string>
+    <string name="inicio_gastos">Gastos</string>
+    <string name="inicio_ingresos">Ingresos</string>
+    <string name="inicio_racha">Racha 🔥</string>
+    <plurals name="inicio_dias_seguidos">
+        <item quantity="one">día seguido</item>
+        <item quantity="other">días seguidos</item>
+    </plurals>
+    <string name="inicio_nivel">Nivel %1$d</string>
+    <string name="inicio_xp">%1$d XP</string>
+    <string name="inicio_ultimas">Últimas anotaciones</string>
+    <string name="inicio_ver_todo">Ver todo</string>
+    <string name="inicio_sin_anotaciones">Todavía no tienes anotaciones. Toca + para empezar.</string>
 
     <!-- Anotar (HU-06, HU-07) y editar (HU-08) -->
     <string name="anotar_tipo_gasto">Gasto</string>
