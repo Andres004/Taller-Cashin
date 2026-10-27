@@ -92,7 +92,7 @@
     <string name="inicio_avatar_bienvenida">¡Bienvenido a Cashin! Pronto podrás anotar tus gastos y ganar XP por cada uno.</string>
     <string name="inicio_construccion">Aquí verás los gastos e ingresos del mes, tu racha y tus últimas anotaciones.</string>
 
-    <!-- Anotar (HU-06, HU-07) -->
+    <!-- Anotar (HU-06, HU-07) y editar (HU-08) -->
     <string name="anotar_tipo_gasto">Gasto</string>
     <string name="anotar_tipo_ingreso">Ingreso</string>
     <string name="anotar_categoria">Categoría</string>
@@ -108,6 +108,13 @@
     <string name="anotar_guardado">¡Anotado!</string>
     <string name="anotar_guardado_xp">¡Anotado! +10 XP</string>
     <string name="anotar_sin_categorias_mensaje">No encontramos categorías para este tipo. Inténtalo de nuevo más tarde.</string>
+    <string name="anotar_editar_titulo">Editar anotación</string>
+    <string name="anotar_guardar_cambios">Guardar cambios</string>
+    <string name="anotar_eliminar">Eliminar</string>
+    <string name="anotar_eliminar_titulo">¿Eliminar esta anotación?</string>
+    <string name="anotar_eliminar_mensaje">Se borrará de tu historial y de tus totales. No se puede deshacer.</string>
+    <string name="anotar_cambios_guardados">Cambios guardados</string>
+    <string name="anotar_eliminada">Anotación eliminada</string>
 
     <!-- Historial (HU-09) -->
     <string name="historial_vacio_titulo">Aún no anotaste nada</string>
