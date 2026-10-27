@@ -16,9 +16,13 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -30,6 +34,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import kotlinx.coroutines.launch
 import org.ucb.cashin.R
 import org.ucb.cashin.ui.inicio.InicioScreen
 import org.ucb.cashin.ui.metas.MetasScreen
@@ -62,8 +68,35 @@ fun PrincipalNavHost() {
     val entrada by nav.currentBackStackEntryAsState()
     val destino = entrada?.destination
 
+    // Mensajes cortos que siguen visibles aunque se cambie de pantalla (ej.: "¡Anotado! +10 XP").
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val textoAnotado = stringResource(R.string.anotar_guardado)
+    val textoAnotadoXp = stringResource(R.string.anotar_guardado_xp)
+    val textoCambiosGuardados = stringResource(R.string.anotar_cambios_guardados)
+    val textoEliminada = stringResource(R.string.anotar_eliminada)
+
+    fun mostrarMensaje(texto: String) {
+        scope.launch { snackbar.showSnackbar(texto) }
+    }
+
+    /** Cambia de pestaña recordando dónde se quedó cada una. */
+    fun irAPestana(ruta: Any) {
+        nav.navigate(ruta) {
+            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
+    /** Abre una anotación para editarla o eliminarla. */
+    fun abrirRegistro(registroId: String) {
+        nav.navigate(Rutas.EditarRegistro(registroId))
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
                 Pestana.entries.forEach { pestana ->
@@ -71,13 +104,7 @@ fun PrincipalNavHost() {
                     val esAnotar = pestana == Pestana.ANOTAR
                     NavigationBarItem(
                         selected = seleccionada,
-                        onClick = {
-                            nav.navigate(pestana.ruta) {
-                                popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
+                        onClick = { irAPestana(pestana.ruta) },
                         icon = {
                             Icon(
                                 imageVector = pestana.icono,
@@ -104,9 +131,44 @@ fun PrincipalNavHost() {
             startDestination = Rutas.Inicio,
             modifier = Modifier.padding(padding),
         ) {
-            composable<Rutas.Inicio> { InicioScreen() }
-            composable<Rutas.Historial> { HistorialScreen() }
-            composable<Rutas.Anotar> { AnotarScreen() }
+            composable<Rutas.Inicio> {
+                InicioScreen(
+                    onVerTodo = { irAPestana(Rutas.Historial) },
+                    onRegistroClick = { registroId -> abrirRegistro(registroId) },
+                )
+            }
+
+            composable<Rutas.Historial> {
+                HistorialScreen(
+                    onRegistroClick = { registroId -> abrirRegistro(registroId) },
+                )
+            }
+
+            composable<Rutas.Anotar> {
+                AnotarScreen(
+                    onGuardado = { ganoXp ->
+                        irAPestana(Rutas.Inicio)
+                        mostrarMensaje(if (ganoXp) textoAnotadoXp else textoAnotado)
+                    },
+                )
+            }
+
+            composable<Rutas.EditarRegistro> { entradaActual ->
+                val ruta = entradaActual.toRoute<Rutas.EditarRegistro>()
+                AnotarScreen(
+                    registroId = ruta.registroId,
+                    onGuardado = {
+                        nav.popBackStack()
+                        mostrarMensaje(textoCambiosGuardados)
+                    },
+                    onEliminado = {
+                        nav.popBackStack()
+                        mostrarMensaje(textoEliminada)
+                    },
+                    onAtras = { nav.popBackStack() },
+                )
+            }
+
             composable<Rutas.Metas> { MetasScreen() }
             composable<Rutas.Perfil> { PerfilScreen() }
         }

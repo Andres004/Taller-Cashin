@@ -35,6 +35,19 @@ data class Perfil(
     /** Nivel = xp / 200 + 1 (Maestro §7.3). */
     val nivel: Int get() = xp / XP_POR_NIVEL + 1
 
+    /** Avance hacia el siguiente nivel, de 0 a 1 (para la barra de XP). */
+    val progresoNivel: Float get() = (xp % XP_POR_NIVEL) / XP_POR_NIVEL.toFloat()
+
+    /**
+     * Racha que se muestra en pantalla. La base de datos solo la actualiza al anotar,
+     * así que si la última anotación fue antes de ayer, la racha ya se cortó.
+     */
+    fun rachaVigente(hoy: LocalDate): Int =
+        if (ultimoRegistro == hoy || ultimoRegistro == hoy.minusDays(1)) rachaActual else 0
+
+    /** Si ya anotó algo hoy (si no, la racha está "en riesgo"). */
+    fun anotoHoy(hoy: LocalDate): Boolean = ultimoRegistro == hoy
+
     companion object {
         const val XP_POR_NIVEL = 200
     }

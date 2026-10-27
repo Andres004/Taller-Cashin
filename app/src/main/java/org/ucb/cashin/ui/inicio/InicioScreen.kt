@@ -2,53 +2,285 @@ package org.ucb.cashin.ui.inicio
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import org.ucb.cashin.R
+import org.ucb.cashin.model.Categoria
+import org.ucb.cashin.model.Registro
+import org.ucb.cashin.model.TipoRegistro
 import org.ucb.cashin.ui.components.AvatarBurbuja
+import org.ucb.cashin.ui.components.BarraProgreso
+import org.ucb.cashin.ui.components.CashinBoton
 import org.ucb.cashin.ui.components.CashinTarjeta
 import org.ucb.cashin.ui.components.CashinTopBar
 import org.ucb.cashin.ui.components.Emocion
+import org.ucb.cashin.ui.components.EstadoCargando
+import org.ucb.cashin.ui.components.EstadoError
+import org.ucb.cashin.ui.components.FilaRegistro
+import org.ucb.cashin.ui.components.VarianteBoton
+import org.ucb.cashin.ui.components.mensaje
+import org.ucb.cashin.ui.registros.RegistroConCategoria
+import org.ucb.cashin.ui.theme.CashinColores
 import org.ucb.cashin.ui.theme.CashinTheme
 import org.ucb.cashin.ui.theme.Espacio
+import org.ucb.cashin.util.Formato
+import java.math.BigDecimal
+import java.time.Instant
 
 /**
- * Pantalla de Inicio — versión Sprint 1 (solo bienvenida).
- * Sprint 2 (HU-13): saludo con el nombre del perfil, totales del mes (v_totales_mes),
- * racha, XP y últimas 5 anotaciones. Sprint 4 (HU-21): consejo del día de la IA.
+ * HU-13: Inicio con el saludo, los totales del mes, la racha, el XP y las últimas anotaciones.
  */
 @Composable
-fun InicioScreen() {
+fun InicioScreen(
+    onVerTodo: () -> Unit,
+    onRegistroClick: (registroId: String) -> Unit,
+    viewModel: InicioViewModel = viewModel(factory = InicioViewModel.Factory),
+) {
+    val estado by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Se recarga cada vez que se entra a Inicio (por ejemplo, después de anotar).
+    LaunchedEffect(Unit) { viewModel.cargar() }
+
+    InicioContenido(
+        estado = estado,
+        onReintentar = viewModel::cargar,
+        onVerTodo = onVerTodo,
+        onRegistroClick = onRegistroClick,
+    )
+}
+
+/** Solo dibuja. Muestra la carga, el error con "Reintentar" o el resumen. */
+@Composable
+fun InicioContenido(
+    estado: InicioUiState,
+    onReintentar: () -> Unit,
+    onVerTodo: () -> Unit,
+    onRegistroClick: (registroId: String) -> Unit,
+) {
     Column(modifier = Modifier.fillMaxSize()) {
         CashinTopBar(titulo = stringResource(R.string.nav_inicio))
-        Column(
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = Espacio.pantalla, vertical = Espacio.s),
-            verticalArrangement = Arrangement.spacedBy(Espacio.m),
-        ) {
-            Text(
-                text = stringResource(R.string.inicio_saludo),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground,
+
+        when {
+            estado.cargando -> EstadoCargando()
+
+            estado.error != null -> EstadoError(
+                mensaje = estado.error.mensaje(),
+                onReintentar = onReintentar,
             )
-            AvatarBurbuja(
-                mensaje = stringResource(R.string.inicio_avatar_bienvenida),
-                emocion = Emocion.FELIZ,
-            )
-            CashinTarjeta {
+
+            else -> Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = Espacio.pantalla, vertical = Espacio.s),
+                verticalArrangement = Arrangement.spacedBy(Espacio.m),
+            ) {
                 Text(
-                    text = stringResource(R.string.en_construccion_mensaje, stringResource(R.string.inicio_construccion), "Sprint 2", "HU-13"),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = stringResource(R.string.inicio_saludo, estado.nombre),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+
+                MensajeDelAvatar(racha = estado.racha, anotoHoy = estado.anotoHoy)
+
+                TarjetaDelMes(estado = estado)
+
+                Row(
+                    modifier = Modifier.height(IntrinsicSize.Min),
+                    horizontalArrangement = Arrangement.spacedBy(Espacio.m),
+                ) {
+                    TarjetaRacha(
+                        racha = estado.racha,
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                    )
+                    TarjetaNivel(
+                        nivel = estado.nivel,
+                        xp = estado.xp,
+                        progreso = estado.progresoNivel,
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                    )
+                }
+
+                UltimasAnotaciones(
+                    ultimas = estado.ultimas,
+                    onVerTodo = onVerTodo,
+                    onRegistroClick = onRegistroClick,
+                )
+            }
+        }
+    }
+}
+
+/** Salchi anima a anotar o celebra la racha, según si ya se anotó algo hoy. */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun MensajeDelAvatar(racha: Int, anotoHoy: Boolean) {
+    if (anotoHoy) {
+        AvatarBurbuja(
+            mensaje = pluralStringResource(R.plurals.inicio_avatar_racha, racha, racha),
+            emocion = Emocion.CELEBRANDO,
+        )
+    } else {
+        AvatarBurbuja(
+            mensaje = stringResource(R.string.inicio_avatar_sin_registro_hoy),
+            emocion = Emocion.FELIZ,
+        )
+    }
+}
+
+/** Mes actual: la diferencia en grande y debajo los gastos e ingresos. */
+@Composable
+private fun TarjetaDelMes(estado: InicioUiState) {
+    val colorDiferencia = when {
+        estado.diferencia.signum() < 0 -> CashinColores.gasto
+        estado.diferencia.signum() > 0 -> CashinColores.ingreso
+        else -> MaterialTheme.colorScheme.onBackground
+    }
+
+    CashinTarjeta {
+        Text(
+            text = Formato.mes(Formato.hoy()),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Text(
+            text = stringResource(R.string.inicio_diferencia),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = Espacio.s),
+        )
+        Text(
+            text = Formato.monto(estado.diferencia),
+            style = MaterialTheme.typography.displaySmall,
+            color = colorDiferencia,
+        )
+        Row(modifier = Modifier.fillMaxWidth().padding(top = Espacio.s)) {
+            TotalDelMes(
+                etiqueta = stringResource(R.string.inicio_gastos),
+                monto = estado.totalGastos,
+                color = CashinColores.gasto,
+                modifier = Modifier.weight(1f),
+            )
+            TotalDelMes(
+                etiqueta = stringResource(R.string.inicio_ingresos),
+                monto = estado.totalIngresos,
+                color = CashinColores.ingreso,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun TotalDelMes(etiqueta: String, monto: BigDecimal, color: Color, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(
+            text = etiqueta,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = Formato.monto(monto),
+            style = MaterialTheme.typography.titleMedium,
+            color = color,
+        )
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun TarjetaRacha(racha: Int, modifier: Modifier = Modifier) {
+    CashinTarjeta(modifier = modifier) {
+        Text(
+            text = stringResource(R.string.inicio_racha),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = racha.toString(),
+            style = MaterialTheme.typography.headlineMedium,
+            color = CashinColores.racha,
+        )
+        Text(
+            text = pluralStringResource(R.plurals.inicio_dias_seguidos, racha),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun TarjetaNivel(nivel: Int, xp: Int, progreso: Float, modifier: Modifier = Modifier) {
+    CashinTarjeta(modifier = modifier) {
+        Text(
+            text = stringResource(R.string.inicio_nivel, nivel),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = stringResource(R.string.inicio_xp, xp),
+            style = MaterialTheme.typography.headlineMedium,
+            color = CashinColores.xp,
+        )
+        BarraProgreso(progreso = progreso, modifier = Modifier.padding(top = Espacio.s))
+    }
+}
+
+/** Las últimas 5 anotaciones, con el mismo diseño que el Historial, y el botón "Ver todo". */
+@Composable
+private fun UltimasAnotaciones(
+    ultimas: List<RegistroConCategoria>,
+    onVerTodo: () -> Unit,
+    onRegistroClick: (registroId: String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.inicio_ultimas),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f),
+            )
+            CashinBoton(
+                texto = stringResource(R.string.inicio_ver_todo),
+                onClick = onVerTodo,
+                variante = VarianteBoton.TEXTO,
+            )
+        }
+
+        if (ultimas.isEmpty()) {
+            Text(
+                text = stringResource(R.string.inicio_sin_anotaciones),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            ultimas.forEach { anotacion ->
+                FilaRegistro(
+                    registro = anotacion.registro,
+                    categoria = anotacion.categoria,
+                    onClick = { onRegistroClick(anotacion.registro.id) },
                 )
             }
         }
@@ -57,4 +289,28 @@ fun InicioScreen() {
 
 @Preview(showBackground = true, backgroundColor = 0xFFFCF7EA)
 @Composable
-private fun InicioPreview() = CashinTheme { InicioScreen() }
+private fun InicioPreview() = CashinTheme {
+    val comida = Categoria(id = "c1", nombre = "Alimentación", tipo = TipoRegistro.GASTO, icono = "restaurant", color = "#4CAF50")
+    InicioContenido(
+        estado = InicioUiState(
+            nombre = "Carlos",
+            totalGastos = BigDecimal("50.00"),
+            totalIngresos = BigDecimal("3200.00"),
+            racha = 3,
+            anotoHoy = true,
+            nivel = 2,
+            xp = 230,
+            progresoNivel = 0.15f,
+            ultimas = listOf(
+                RegistroConCategoria(
+                    Registro(id = "1", usuarioId = "u", categoriaId = "c1", tipo = TipoRegistro.GASTO, monto = BigDecimal("20.00"), fechaHora = Instant.now(), nota = "Almuerzo"),
+                    comida,
+                ),
+            ),
+            cargando = false,
+        ),
+        onReintentar = {},
+        onVerTodo = {},
+        onRegistroClick = {},
+    )
+}

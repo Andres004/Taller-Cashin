@@ -38,6 +38,8 @@
     <string name="validacion_contrasena_vacia">Escribe tu contraseña</string>
     <string name="validacion_no_coinciden">Las contraseñas no coinciden</string>
     <string name="validacion_codigo">El código tiene 8 dígitos</string>
+    <string name="validacion_monto">Escribe un monto mayor a 0</string>
+    <string name="validacion_categoria">Elige una categoría</string>
 
     <!-- Errores (ErrorApp) -->
     <string name="error_sin_conexion">Sin conexión. Revisa tu internet e inténtalo de nuevo.</string>
@@ -85,19 +87,72 @@
     <string name="nav_metas">Metas</string>
     <string name="nav_perfil">Perfil</string>
 
-    <!-- Inicio (placeholder Sprint 1) -->
-    <string name="inicio_saludo">¡Hola! 👋</string>
-    <string name="inicio_avatar_bienvenida">¡Bienvenido a Cashin! Pronto podrás anotar tus gastos y ganar XP por cada uno.</string>
-    <string name="inicio_construccion">Aquí verás los gastos e ingresos del mes, tu racha y tus últimas anotaciones.</string>
+    <!-- Inicio (HU-13) -->
+    <string name="inicio_saludo">¡Hola, %1$s!</string>
+    <string name="inicio_avatar_sin_registro_hoy">¡Anota tu primer gasto del día!</string>
+    <plurals name="inicio_avatar_racha">
+        <item quantity="one">¡Bien! Llevas %1$d día seguido</item>
+        <item quantity="other">¡Bien! Llevas %1$d días seguidos</item>
+    </plurals>
+    <string name="inicio_diferencia">Diferencia del mes</string>
+    <string name="inicio_gastos">Gastos</string>
+    <string name="inicio_ingresos">Ingresos</string>
+    <string name="inicio_racha">Racha 🔥</string>
+    <plurals name="inicio_dias_seguidos">
+        <item quantity="one">día seguido</item>
+        <item quantity="other">días seguidos</item>
+    </plurals>
+    <string name="inicio_nivel">Nivel %1$d</string>
+    <string name="inicio_xp">%1$d XP</string>
+    <string name="inicio_ultimas">Últimas anotaciones</string>
+    <string name="inicio_ver_todo">Ver todo</string>
+    <string name="inicio_sin_anotaciones">Todavía no tienes anotaciones. Toca + para empezar.</string>
+
+    <!-- Anotar (HU-06, HU-07) y editar (HU-08) -->
+    <string name="anotar_tipo_gasto">Gasto</string>
+    <string name="anotar_tipo_ingreso">Ingreso</string>
+    <string name="anotar_categoria">Categoría</string>
+    <string name="anotar_medio_pago">Medio de pago</string>
+    <string name="anotar_medio_efectivo">Efectivo</string>
+    <string name="anotar_medio_qr">QR</string>
+    <string name="anotar_medio_tarjeta">Tarjeta</string>
+    <string name="anotar_medio_transferencia">Transferencia</string>
+    <string name="anotar_medio_otro">Otro</string>
+    <string name="anotar_nota">Nota (opcional)</string>
+    <string name="anotar_nota_ejemplo">Ej.: almuerzo con amigos</string>
+    <string name="anotar_guardar">Guardar</string>
+    <string name="anotar_guardado">¡Anotado!</string>
+    <string name="anotar_guardado_xp">¡Anotado! +10 XP</string>
+    <string name="anotar_sin_categorias_mensaje">No encontramos categorías para este tipo. Inténtalo de nuevo más tarde.</string>
+    <string name="anotar_editar_titulo">Editar anotación</string>
+    <string name="anotar_guardar_cambios">Guardar cambios</string>
+    <string name="anotar_eliminar">Eliminar</string>
+    <string name="anotar_eliminar_titulo">¿Eliminar esta anotación?</string>
+    <string name="anotar_eliminar_mensaje">Se borrará de tu historial y de tus totales. No se puede deshacer.</string>
+    <string name="anotar_cambios_guardados">Cambios guardados</string>
+    <string name="anotar_eliminada">Anotación eliminada</string>
+
+    <!-- Historial (HU-09) -->
+    <string name="historial_vacio_titulo">Aún no anotaste nada</string>
+    <string name="historial_vacio_mensaje">Toca + para anotar tu primer gasto o ingreso.</string>
+    <string name="historial_sin_categoria">Sin categoría</string>
+    <string name="historial_hora_nota">%1$s · %2$s</string>
 
     <!-- Placeholders del resto de pestañas -->
-    <string name="historial_construccion">Aquí verás todas tus anotaciones agrupadas por día, con filtros.</string>
-    <string name="anotar_construccion">Aquí anotarás un gasto o ingreso en menos de 10 segundos.</string>
     <string name="metas_construccion">Aquí crearás metas de ahorro y verás cuánto te falta.</string>
 
-    <!-- Perfil (Sprint 1: solo cerrar sesión, HU-04) -->
-    <string name="perfil_sesion_iniciada">Sesión iniciada como</string>
-    <string name="perfil_construccion">Tu nivel, XP, racha y categorías llegan en el Sprint 2 (HU-05).</string>
+    <!-- Perfil (HU-04, HU-05) -->
+    <string name="perfil_editar_nombre">Editar nombre</string>
+    <string name="perfil_guardar">Guardar</string>
+    <string name="perfil_nivel">Nivel %1$d</string>
+    <string name="perfil_xp">%1$d XP</string>
+    <string name="perfil_xp_siguiente">Te faltan %1$d XP para el nivel %2$d</string>
+    <string name="perfil_racha_actual">Racha actual 🔥</string>
+    <string name="perfil_racha_maxima">Racha máxima</string>
+    <plurals name="perfil_dias">
+        <item quantity="one">%1$d día</item>
+        <item quantity="other">%1$d días</item>
+    </plurals>
     <string name="perfil_cerrar_sesion">Cerrar sesión</string>
     <string name="perfil_cerrar_titulo">¿Cerrar sesión?</string>
     <string name="perfil_cerrar_mensaje">Tus anotaciones quedan guardadas. Podrás volver a entrar con tu correo.</string>

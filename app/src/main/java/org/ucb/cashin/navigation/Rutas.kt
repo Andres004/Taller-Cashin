@@ -21,4 +21,8 @@ object Rutas {
     @Serializable data object Anotar
     @Serializable data object Metas
     @Serializable data object Perfil
+
+    // ---- Con sesión: pantallas internas ----
+    /** Formulario de Anotar con una anotación ya cargada para corregirla o borrarla. */
+    @Serializable data class EditarRegistro(val registroId: String)
 }

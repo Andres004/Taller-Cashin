@@ -9,14 +9,14 @@ import io.github.jan.supabase.serializer.KotlinXSerializer
 import kotlinx.serialization.json.Json
 import org.ucb.cashin.BuildConfig
 import org.ucb.cashin.data.AuthRepository
+import org.ucb.cashin.data.CategoriaRepository
+import org.ucb.cashin.data.PerfilRepository
+import org.ucb.cashin.data.RegistroRepository
+import org.ucb.cashin.data.ResumenRepository
 
 /**
- * Inyección de dependencias manual (sin Hilt). Un solo cliente de Supabase para toda la app
- * y un repositorio por módulo. Para agregar un repositorio nuevo:
- *
- *     val registroRepository by lazy { RegistroRepository(supabase) }
- *
- * y en el ViewModel: `(this[APPLICATION_KEY] as CashinApp).container.registroRepository`.
+ * Crea una sola vez la conexión con Supabase y los repositorios que usa toda la app.
+ * Cada repositorio se crea recién cuando alguien lo necesita por primera vez.
  */
 class AppContainer {
 
@@ -26,20 +26,26 @@ class AppContainer {
     ) {
         defaultSerializer = KotlinXSerializer(
             Json {
-                ignoreUnknownKeys = true   // columnas nuevas en la BD no rompen la app
-                encodeDefaults = true      // los Nuevo* envían todos sus campos
+                ignoreUnknownKeys = true   // si la BD agrega columnas, la app no se rompe
+                encodeDefaults = true      // al guardar, se envían todos los campos
             },
         )
         install(Auth)
         install(Postgrest)
         install(Functions)
-        // Sprint 2 (HU-02): install(ComposeAuth) { googleNativeLogin(serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID) }
+        // Sprint 3 (HU-02): install(ComposeAuth) { googleNativeLogin(serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID) }
     }
 
     val authRepository: AuthRepository by lazy { AuthRepository(supabase) }
 
+    // Sprint 2
+    val categoriaRepository: CategoriaRepository by lazy { CategoriaRepository(supabase) }
+    val registroRepository: RegistroRepository by lazy { RegistroRepository(supabase) }
+    val perfilRepository: PerfilRepository by lazy { PerfilRepository(supabase) }
+    val resumenRepository: ResumenRepository by lazy { ResumenRepository(supabase) }
+
     companion object {
-        /** false si falta local.properties: la app muestra instrucciones en vez de fallar. */
+        /** Indica si las claves de Supabase están configuradas en local.properties. */
         val estaConfigurado: Boolean
             get() = BuildConfig.SUPABASE_URL.startsWith("https://") && BuildConfig.SUPABASE_KEY.isNotBlank()
     }
