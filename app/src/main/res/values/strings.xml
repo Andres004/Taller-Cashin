@@ -141,9 +141,18 @@
     <!-- Placeholders del resto de pestañas -->
     <string name="metas_construccion">Aquí crearás metas de ahorro y verás cuánto te falta.</string>
 
-    <!-- Perfil (Sprint 1: solo cerrar sesión, HU-04) -->
-    <string name="perfil_sesion_iniciada">Sesión iniciada como</string>
-    <string name="perfil_construccion">Tu nivel, XP, racha y categorías llegan en el Sprint 2 (HU-05).</string>
+    <!-- Perfil (HU-04, HU-05) -->
+    <string name="perfil_editar_nombre">Editar nombre</string>
+    <string name="perfil_guardar">Guardar</string>
+    <string name="perfil_nivel">Nivel %1$d</string>
+    <string name="perfil_xp">%1$d XP</string>
+    <string name="perfil_xp_siguiente">Te faltan %1$d XP para el nivel %2$d</string>
+    <string name="perfil_racha_actual">Racha actual 🔥</string>
+    <string name="perfil_racha_maxima">Racha máxima</string>
+    <plurals name="perfil_dias">
+        <item quantity="one">%1$d día</item>
+        <item quantity="other">%1$d días</item>
+    </plurals>
     <string name="perfil_cerrar_sesion">Cerrar sesión</string>
     <string name="perfil_cerrar_titulo">¿Cerrar sesión?</string>
     <string name="perfil_cerrar_mensaje">Tus anotaciones quedan guardadas. Podrás volver a entrar con tu correo.</string>
