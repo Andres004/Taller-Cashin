@@ -10,7 +10,9 @@ import kotlinx.serialization.json.Json
 import org.ucb.cashin.BuildConfig
 import org.ucb.cashin.data.AuthRepository
 import org.ucb.cashin.data.CategoriaRepository
+import org.ucb.cashin.data.PerfilRepository
 import org.ucb.cashin.data.RegistroRepository
+import org.ucb.cashin.data.ResumenRepository
 
 /**
  * Crea una sola vez la conexión con Supabase y los repositorios que usa toda la app.
@@ -39,6 +41,8 @@ class AppContainer {
     // Sprint 2
     val categoriaRepository: CategoriaRepository by lazy { CategoriaRepository(supabase) }
     val registroRepository: RegistroRepository by lazy { RegistroRepository(supabase) }
+    val perfilRepository: PerfilRepository by lazy { PerfilRepository(supabase) }
+    val resumenRepository: ResumenRepository by lazy { ResumenRepository(supabase) }
 
     companion object {
         /** Indica si las claves de Supabase están configuradas en local.properties. */
