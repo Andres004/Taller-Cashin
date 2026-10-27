@@ -37,15 +37,23 @@ import java.time.LocalDate
 
 /**
  * HU-09: historial de anotaciones agrupado por día.
+ * HU-08: al tocar una anotación se abre para editarla o eliminarla.
  */
 @Composable
-fun HistorialScreen(viewModel: HistorialViewModel = viewModel(factory = HistorialViewModel.Factory)) {
+fun HistorialScreen(
+    onRegistroClick: (registroId: String) -> Unit,
+    viewModel: HistorialViewModel = viewModel(factory = HistorialViewModel.Factory),
+) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Se recarga cada vez que se entra a la pestaña (por ejemplo, después de anotar).
+    // Se recarga cada vez que se entra a la pantalla (después de anotar, editar o eliminar).
     LaunchedEffect(Unit) { viewModel.cargar() }
 
-    HistorialContenido(estado = estado, onReintentar = viewModel::cargar)
+    HistorialContenido(
+        estado = estado,
+        onReintentar = viewModel::cargar,
+        onRegistroClick = onRegistroClick,
+    )
 }
 
 /** Solo dibuja. Muestra uno de los 4 estados: cargando, error, vacío o la lista. */
@@ -53,6 +61,7 @@ fun HistorialScreen(viewModel: HistorialViewModel = viewModel(factory = Historia
 fun HistorialContenido(
     estado: HistorialUiState,
     onReintentar: () -> Unit,
+    onRegistroClick: (registroId: String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         CashinTopBar(titulo = stringResource(R.string.nav_historial))
@@ -71,14 +80,17 @@ fun HistorialContenido(
                 emocion = Emocion.FELIZ,
             )
 
-            else -> ListaPorDia(dias = estado.dias)
+            else -> ListaPorDia(dias = estado.dias, onRegistroClick = onRegistroClick)
         }
     }
 }
 
 /** Un encabezado por día ("Hoy", "Ayer", "Sábado 24 de octubre") y debajo sus anotaciones. */
 @Composable
-private fun ListaPorDia(dias: List<DiaHistorial>) {
+private fun ListaPorDia(
+    dias: List<DiaHistorial>,
+    onRegistroClick: (registroId: String) -> Unit,
+) {
     LazyColumn(
         contentPadding = PaddingValues(horizontal = Espacio.pantalla, vertical = Espacio.s),
         verticalArrangement = Arrangement.spacedBy(Espacio.s),
@@ -88,7 +100,11 @@ private fun ListaPorDia(dias: List<DiaHistorial>) {
                 EncabezadoDia(fecha = dia.fecha)
             }
             items(items = dia.registros, key = { it.registro.id }) { anotacion ->
-                FilaRegistro(registro = anotacion.registro, categoria = anotacion.categoria)
+                FilaRegistro(
+                    registro = anotacion.registro,
+                    categoria = anotacion.categoria,
+                    onClick = { onRegistroClick(anotacion.registro.id) },
+                )
             }
         }
     }
@@ -130,5 +146,6 @@ private fun HistorialPreview() = CashinTheme {
             cargando = false,
         ),
         onReintentar = {},
+        onRegistroClick = {},
     )
 }

@@ -34,6 +34,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import kotlinx.coroutines.launch
 import org.ucb.cashin.R
 import org.ucb.cashin.ui.inicio.InicioScreen
@@ -67,11 +68,17 @@ fun PrincipalNavHost() {
     val entrada by nav.currentBackStackEntryAsState()
     val destino = entrada?.destination
 
-    // Mensajes cortos que siguen visibles aunque se cambie de pestaña (ej.: "¡Anotado! +10 XP").
+    // Mensajes cortos que siguen visibles aunque se cambie de pantalla (ej.: "¡Anotado! +10 XP").
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val textoAnotado = stringResource(R.string.anotar_guardado)
     val textoAnotadoXp = stringResource(R.string.anotar_guardado_xp)
+    val textoCambiosGuardados = stringResource(R.string.anotar_cambios_guardados)
+    val textoEliminada = stringResource(R.string.anotar_eliminada)
+
+    fun mostrarMensaje(texto: String) {
+        scope.launch { snackbar.showSnackbar(texto) }
+    }
 
     /** Cambia de pestaña recordando dónde se quedó cada una. */
     fun irAPestana(ruta: Any) {
@@ -120,15 +127,38 @@ fun PrincipalNavHost() {
             modifier = Modifier.padding(padding),
         ) {
             composable<Rutas.Inicio> { InicioScreen() }
-            composable<Rutas.Historial> { HistorialScreen() }
+
+            composable<Rutas.Historial> {
+                HistorialScreen(
+                    onRegistroClick = { registroId -> nav.navigate(Rutas.EditarRegistro(registroId)) },
+                )
+            }
+
             composable<Rutas.Anotar> {
                 AnotarScreen(
                     onGuardado = { ganoXp ->
                         irAPestana(Rutas.Inicio)
-                        scope.launch { snackbar.showSnackbar(if (ganoXp) textoAnotadoXp else textoAnotado) }
+                        mostrarMensaje(if (ganoXp) textoAnotadoXp else textoAnotado)
                     },
                 )
             }
+
+            composable<Rutas.EditarRegistro> { entradaActual ->
+                val ruta = entradaActual.toRoute<Rutas.EditarRegistro>()
+                AnotarScreen(
+                    registroId = ruta.registroId,
+                    onGuardado = {
+                        nav.popBackStack()
+                        mostrarMensaje(textoCambiosGuardados)
+                    },
+                    onEliminado = {
+                        nav.popBackStack()
+                        mostrarMensaje(textoEliminada)
+                    },
+                    onAtras = { nav.popBackStack() },
+                )
+            }
+
             composable<Rutas.Metas> { MetasScreen() }
             composable<Rutas.Perfil> { PerfilScreen() }
         }
