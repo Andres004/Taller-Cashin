@@ -1,6 +1,7 @@
 package org.ucb.cashin.ui.planificados
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,8 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableChipColors
+import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -50,7 +53,6 @@ import org.ucb.cashin.model.TipoRegistro
 import org.ucb.cashin.ui.components.CashinBoton
 import org.ucb.cashin.ui.components.CashinCampoMonto
 import org.ucb.cashin.ui.components.CashinCampoTexto
-import org.ucb.cashin.ui.components.CashinTarjeta
 import org.ucb.cashin.ui.components.CashinTopBar
 import org.ucb.cashin.ui.components.SelectorCategoria
 import org.ucb.cashin.ui.components.VarianteBoton
@@ -91,7 +93,10 @@ fun NuevoPlanificadoScreen(
     )
 }
 
-/** Solo dibuja el formulario. */
+/**
+ * Solo dibuja el formulario. Cada sección marca su error debajo y,
+ * en las de chips, los bordes se pintan de rojo hasta que se elija una opción.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NuevoPlanificadoContenido(
@@ -108,7 +113,12 @@ fun NuevoPlanificadoContenido(
     onGuardar: () -> Unit,
 ) {
     var mostrarCalendario by remember { mutableStateOf(false) }
-    val esGasto = estado.tipo == TipoRegistro.GASTO
+    val habilitado = !estado.guardando
+    val colorMonto = when (estado.tipo) {
+        TipoRegistro.GASTO -> CashinColores.gasto
+        TipoRegistro.INGRESO -> CashinColores.ingreso
+        null -> MaterialTheme.colorScheme.onBackground
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         CashinTopBar(titulo = stringResource(R.string.planificados_nuevo), onAtras = onAtras)
@@ -121,41 +131,49 @@ fun NuevoPlanificadoContenido(
                 .padding(horizontal = Espacio.pantalla, vertical = Espacio.s),
             verticalArrangement = Arrangement.spacedBy(Espacio.l),
         ) {
-            // Gasto | Ingreso
-            Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                TipoRegistro.entries.forEach { opcion ->
-                    FilterChip(
-                        selected = opcion == estado.tipo,
-                        onClick = { onTipoCambio(opcion) },
-                        enabled = !estado.guardando,
-                        label = { Text(stringResource(opcion.etiqueta())) },
-                        colors = coloresDeChip(),
-                    )
+            // 1. Gasto | Ingreso
+            Column {
+                EtiquetaSeccion(stringResource(R.string.planificados_tipo))
+                Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                    TipoRegistro.entries.forEach { opcion ->
+                        ChipOpcion(
+                            texto = stringResource(opcion.etiqueta()),
+                            elegido = opcion == estado.tipo,
+                            conError = estado.errorTipo != null,
+                            habilitado = habilitado,
+                            onClick = { onTipoCambio(opcion) },
+                        )
+                    }
                 }
+                estado.errorTipo?.let { MensajeError(stringResource(it)) }
             }
 
+            // 2. Nombre
             CashinCampoTexto(
                 etiqueta = stringResource(R.string.planificados_nombre),
                 valor = estado.nombre,
                 onValorCambio = onNombreCambio,
                 placeholder = stringResource(
-                    if (esGasto) R.string.planificados_nombre_ejemplo_gasto else R.string.planificados_nombre_ejemplo_ingreso,
+                    if (estado.tipo == TipoRegistro.INGRESO) R.string.planificados_nombre_ejemplo_ingreso
+                    else R.string.planificados_nombre_ejemplo_gasto,
                 ),
                 error = estado.errorNombre?.let { stringResource(it) },
                 accionIme = ImeAction.Next,
-                habilitado = !estado.guardando,
+                habilitado = habilitado,
                 capitalizar = true,
             )
 
+            // 3. Monto
             CashinCampoMonto(
                 valor = estado.monto,
                 onValorCambio = onMontoCambio,
                 etiqueta = stringResource(R.string.anotar_monto),
                 error = estado.errorMonto?.let { stringResource(it) },
-                colorMonto = if (esGasto) CashinColores.gasto else CashinColores.ingreso,
-                habilitado = !estado.guardando,
+                colorMonto = colorMonto,
+                habilitado = habilitado,
             )
 
+            // 4. Categoría (depende del tipo)
             Column {
                 EtiquetaSeccion(stringResource(R.string.anotar_categoria))
                 SeccionCategorias(
@@ -166,6 +184,7 @@ fun NuevoPlanificadoContenido(
                 estado.errorCategoria?.let { MensajeError(stringResource(it)) }
             }
 
+            // 5. Medio de pago
             Column {
                 EtiquetaSeccion(stringResource(R.string.anotar_medio_pago))
                 FlowRow(
@@ -173,17 +192,19 @@ fun NuevoPlanificadoContenido(
                     verticalArrangement = Arrangement.spacedBy(Espacio.xs),
                 ) {
                     MedioPago.entries.forEach { opcion ->
-                        FilterChip(
-                            selected = opcion == estado.medioPago,
+                        ChipOpcion(
+                            texto = stringResource(opcion.etiqueta()),
+                            elegido = opcion == estado.medioPago,
+                            conError = estado.errorMedioPago != null,
+                            habilitado = habilitado,
                             onClick = { onMedioPagoCambio(opcion) },
-                            enabled = !estado.guardando,
-                            label = { Text(stringResource(opcion.etiqueta())) },
-                            colors = coloresDeChip(),
                         )
                     }
                 }
+                estado.errorMedioPago?.let { MensajeError(stringResource(it)) }
             }
 
+            // 6. Frecuencia
             Column {
                 EtiquetaSeccion(stringResource(R.string.planificados_frecuencia))
                 FlowRow(
@@ -191,38 +212,33 @@ fun NuevoPlanificadoContenido(
                     verticalArrangement = Arrangement.spacedBy(Espacio.xs),
                 ) {
                     Frecuencia.entries.forEach { opcion ->
-                        FilterChip(
-                            selected = opcion == estado.frecuencia,
+                        ChipOpcion(
+                            texto = stringResource(opcion.etiqueta()),
+                            elegido = opcion == estado.frecuencia,
+                            conError = estado.errorFrecuencia != null,
+                            habilitado = habilitado,
                             onClick = { onFrecuenciaCambio(opcion) },
-                            enabled = !estado.guardando,
-                            label = { Text(stringResource(opcion.etiqueta())) },
-                            colors = coloresDeChip(),
                         )
                     }
                 }
+                estado.errorFrecuencia?.let { MensajeError(stringResource(it)) }
             }
 
+            // 7. Próxima fecha
             Column {
                 EtiquetaSeccion(
-                    stringResource(if (esGasto) R.string.planificados_fecha_pago else R.string.planificados_fecha_cobro),
+                    stringResource(
+                        if (estado.tipo == TipoRegistro.INGRESO) R.string.planificados_fecha_cobro
+                        else R.string.planificados_fecha_pago,
+                    ),
                 )
-                CashinTarjeta(onClick = { if (!estado.guardando) mostrarCalendario = true }) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Espacio.m),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.CalendarMonth,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
-                        )
-                        Text(
-                            text = Formato.encabezadoDia(estado.proximaFecha),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                        )
-                    }
-                }
+                CampoFecha(
+                    fecha = estado.proximaFecha,
+                    conError = estado.errorFecha != null,
+                    habilitado = habilitado,
+                    onClick = { mostrarCalendario = true },
+                )
+                estado.errorFecha?.let { MensajeError(stringResource(it)) }
             }
 
             estado.error?.let { MensajeError(it.mensaje()) }
@@ -247,7 +263,69 @@ fun NuevoPlanificadoContenido(
     }
 }
 
-/** Grilla de categorías, o lo que corresponda mientras carga, si falla o si no hay ninguna. */
+/** Chip de una opción. Con [conError] el borde se pinta de rojo, igual que en Anotar. */
+@Composable
+private fun ChipOpcion(
+    texto: String,
+    elegido: Boolean,
+    conError: Boolean,
+    habilitado: Boolean,
+    onClick: () -> Unit,
+) {
+    FilterChip(
+        selected = elegido,
+        onClick = onClick,
+        enabled = habilitado,
+        label = { Text(texto) },
+        colors = coloresDeChip(),
+        border = FilterChipDefaults.filterChipBorder(
+            enabled = habilitado,
+            selected = elegido,
+            borderColor = if (conError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
+            selectedBorderColor = MaterialTheme.colorScheme.primary,
+        ),
+    )
+}
+
+/** "Elige una fecha" o "Hoy" / "Ayer" / "jueves 5 de noviembre". Al tocarlo abre el calendario. */
+@Composable
+private fun CampoFecha(
+    fecha: LocalDate?,
+    conError: Boolean,
+    habilitado: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        enabled = habilitado,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(
+            1.dp,
+            if (conError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
+        ),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Espacio.m),
+            modifier = Modifier.padding(horizontal = Espacio.m, vertical = 14.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.CalendarMonth,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.secondary,
+            )
+            Text(
+                text = fecha?.let { Formato.encabezadoDia(it) } ?: stringResource(R.string.planificados_elegir_fecha),
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (fecha == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onBackground,
+            )
+        }
+    }
+}
+
+/** Grilla de categorías, o lo que corresponda: sin tipo, cargando, error o vacía. */
 @Composable
 private fun SeccionCategorias(
     estado: NuevoPlanificadoUiState,
@@ -255,6 +333,13 @@ private fun SeccionCategorias(
     onReintentar: () -> Unit,
 ) {
     when {
+        estado.tipo == null -> Text(
+            text = stringResource(R.string.planificados_elige_tipo_primero),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 12.dp),
+        )
+
         estado.cargandoCategorias -> Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -291,18 +376,23 @@ private fun SeccionCategorias(
 }
 
 /**
- * Calendario de un solo día. Trabaja con milisegundos en UTC a la medianoche,
- * por eso se convierte con ZoneOffset.UTC (con la hora de Bolivia se correría un día).
+ * Calendario de un solo día que solo deja elegir desde hoy en adelante.
+ * Trabaja con milisegundos en UTC a la medianoche, por eso se convierte
+ * con ZoneOffset.UTC (con la hora de Bolivia se correría un día).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CalendarioFecha(
-    fecha: LocalDate,
+    fecha: LocalDate?,
     onConfirmar: (LocalDate) -> Unit,
     onCancelar: () -> Unit,
 ) {
+    val hoyMilis = Formato.hoy().aMilisUtc()
     val calendario = rememberDatePickerState(
-        initialSelectedDateMillis = fecha.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+        initialSelectedDateMillis = (fecha ?: Formato.hoy()).aMilisUtc(),
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis >= hoyMilis
+        },
     )
     val elegida = calendario.selectedDateMillis
     val colores = DatePickerDefaults.colors(
@@ -337,6 +427,8 @@ private fun CalendarioFecha(
         DatePicker(state = calendario, showModeToggle = false, colors = colores)
     }
 }
+
+private fun LocalDate.aMilisUtc(): Long = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 
 @Composable
 private fun coloresDeChip(): SelectableChipColors = FilterChipDefaults.filterChipColors(
@@ -380,19 +472,17 @@ private fun MedioPago.etiqueta(): Int = when (this) {
     MedioPago.OTRO -> R.string.anotar_medio_otro
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFCF7EA, heightDp = 1000)
+@Preview(showBackground = true, backgroundColor = 0xFFFCF7EA, heightDp = 1100)
 @Composable
-private fun NuevoPlanificadoPreview() = CashinTheme {
+private fun NuevoPlanificadoConErroresPreview() = CashinTheme {
     NuevoPlanificadoContenido(
         estado = NuevoPlanificadoUiState(
-            nombre = "Alquiler",
-            monto = "1500",
-            cargandoCategorias = false,
-            categorias = listOf(
-                Categoria(id = "1", nombre = "Vivienda", tipo = TipoRegistro.GASTO, icono = "home", color = "#81C784"),
-                Categoria(id = "2", nombre = "Transporte", tipo = TipoRegistro.GASTO, icono = "bus", color = "#2E7D32"),
-            ),
-            categoriaId = "1",
+            errorTipo = R.string.validacion_tipo,
+            errorNombre = R.string.planificados_error_nombre,
+            errorMonto = R.string.validacion_monto,
+            errorMedioPago = R.string.validacion_medio_pago,
+            errorFrecuencia = R.string.validacion_frecuencia,
+            errorFecha = R.string.validacion_fecha,
         ),
         onAtras = {},
         onTipoCambio = {},

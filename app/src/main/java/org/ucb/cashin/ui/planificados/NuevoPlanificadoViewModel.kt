@@ -23,22 +23,29 @@ import org.ucb.cashin.model.comoErrorApp
 import org.ucb.cashin.util.Formato
 import java.time.LocalDate
 
-/** Todo lo que el formulario de un pago o ingreso esperado necesita para dibujarse. */
+/**
+ * Todo lo que el formulario de un pago o ingreso esperado necesita para dibujarse.
+ * Tipo, medio de pago, frecuencia y fecha empiezan vacíos a propósito:
+ * el usuario tiene que elegir cada uno (nada se guarda "por defecto" sin que lo vea).
+ */
 data class NuevoPlanificadoUiState(
-    val tipo: TipoRegistro = TipoRegistro.GASTO,
+    val tipo: TipoRegistro? = null,
     val nombre: String = "",
     val monto: String = "",
     val categorias: List<Categoria> = emptyList(),
     val categoriaId: String? = null,
-    /** Por defecto Efectivo, como dice la base de datos. */
-    val medioPago: MedioPago = MedioPago.EFECTIVO,
-    val frecuencia: Frecuencia = Frecuencia.MENSUAL,
-    val proximaFecha: LocalDate = Formato.hoy(),
-    val cargandoCategorias: Boolean = true,
+    val medioPago: MedioPago? = null,
+    val frecuencia: Frecuencia? = null,
+    val proximaFecha: LocalDate? = null,
+    val cargandoCategorias: Boolean = false,
     val errorCategorias: ErrorApp? = null,
+    @StringRes val errorTipo: Int? = null,
     @StringRes val errorNombre: Int? = null,
     @StringRes val errorMonto: Int? = null,
     @StringRes val errorCategoria: Int? = null,
+    @StringRes val errorMedioPago: Int? = null,
+    @StringRes val errorFrecuencia: Int? = null,
+    @StringRes val errorFecha: Int? = null,
     val error: ErrorApp? = null,
     val guardando: Boolean = false,
     val guardado: Boolean = false,
@@ -55,13 +62,9 @@ class NuevoPlanificadoViewModel(
 
     private var cargaDeCategorias: Job? = null
 
-    init {
-        cargarCategorias()
-    }
-
-    /** Categorías activas del tipo elegido (las archivadas no se ofrecen). */
+    /** Categorías activas del tipo elegido (las archivadas no se ofrecen). Sin tipo no hay nada que cargar. */
     fun cargarCategorias() {
-        val tipo = _uiState.value.tipo
+        val tipo = _uiState.value.tipo ?: return
         cargaDeCategorias?.cancel()
         cargaDeCategorias = viewModelScope.launch {
             _uiState.update { it.copy(cargandoCategorias = true, errorCategorias = null) }
@@ -71,10 +74,19 @@ class NuevoPlanificadoViewModel(
         }
     }
 
-    /** Al cambiar de tipo, la categoría elegida ya no sirve. */
+    /** Al cambiar de tipo, la categoría elegida ya no sirve y se cargan las del nuevo tipo. */
     fun onTipoCambio(tipo: TipoRegistro) {
         if (tipo == _uiState.value.tipo) return
-        _uiState.update { it.copy(tipo = tipo, categorias = emptyList(), categoriaId = null, errorCategoria = null) }
+        _uiState.update {
+            it.copy(
+                tipo = tipo,
+                errorTipo = null,
+                categorias = emptyList(),
+                categoriaId = null,
+                errorCategoria = null,
+                error = null,
+            )
+        }
         cargarCategorias()
     }
 
@@ -87,26 +99,49 @@ class NuevoPlanificadoViewModel(
     fun onCategoriaElegida(categoria: Categoria) =
         _uiState.update { it.copy(categoriaId = categoria.id, errorCategoria = null, error = null) }
 
-    fun onMedioPagoCambio(medioPago: MedioPago) = _uiState.update { it.copy(medioPago = medioPago) }
+    fun onMedioPagoCambio(medioPago: MedioPago) =
+        _uiState.update { it.copy(medioPago = medioPago, errorMedioPago = null, error = null) }
 
-    fun onFrecuenciaCambio(frecuencia: Frecuencia) = _uiState.update { it.copy(frecuencia = frecuencia) }
+    fun onFrecuenciaCambio(frecuencia: Frecuencia) =
+        _uiState.update { it.copy(frecuencia = frecuencia, errorFrecuencia = null, error = null) }
 
-    fun onFechaCambio(fecha: LocalDate) = _uiState.update { it.copy(proximaFecha = fecha) }
+    fun onFechaCambio(fecha: LocalDate) =
+        _uiState.update { it.copy(proximaFecha = fecha, errorFecha = null, error = null) }
 
-    /** Nombre, monto mayor a 0 y categoría son obligatorios. Si falta algo, se marca todo a la vez. */
+    /**
+     * Todo es obligatorio: tipo, nombre, monto mayor a 0, categoría, medio de pago,
+     * frecuencia y una fecha desde hoy en adelante. Si falta algo, se marca todo a la vez.
+     */
     fun guardar() {
         val estado = _uiState.value
         if (estado.guardando) return
 
+        val tipo = estado.tipo
         val nombre = estado.nombre.trim()
         val monto = Formato.parsearMonto(estado.monto)?.takeIf { it.signum() > 0 }
         val categoriaId = estado.categoriaId
-        if (nombre.isEmpty() || monto == null || categoriaId == null) {
+        val medioPago = estado.medioPago
+        val frecuencia = estado.frecuencia
+        val fecha = estado.proximaFecha
+        val fechaPasada = fecha != null && fecha.isBefore(Formato.hoy())
+
+        if (tipo == null || nombre.isEmpty() || monto == null || categoriaId == null ||
+            medioPago == null || frecuencia == null || fecha == null || fechaPasada
+        ) {
             _uiState.update {
                 it.copy(
+                    errorTipo = if (tipo == null) R.string.validacion_tipo else null,
                     errorNombre = if (nombre.isEmpty()) R.string.planificados_error_nombre else null,
                     errorMonto = if (monto == null) R.string.validacion_monto else null,
-                    errorCategoria = if (categoriaId == null) R.string.validacion_categoria else null,
+                    // Sin tipo no se muestran categorías: basta con el error del tipo.
+                    errorCategoria = if (tipo != null && categoriaId == null) R.string.validacion_categoria else null,
+                    errorMedioPago = if (medioPago == null) R.string.validacion_medio_pago else null,
+                    errorFrecuencia = if (frecuencia == null) R.string.validacion_frecuencia else null,
+                    errorFecha = when {
+                        fecha == null -> R.string.validacion_fecha
+                        fechaPasada -> R.string.planificados_error_fecha_pasada
+                        else -> null
+                    },
                 )
             }
             return
@@ -117,12 +152,12 @@ class NuevoPlanificadoViewModel(
             planificadoRepository.crear(
                 NuevoPlanificado(
                     categoriaId = categoriaId,
-                    tipo = estado.tipo,
+                    tipo = tipo,
                     nombre = nombre,
                     monto = monto,
-                    medioPago = estado.medioPago,
-                    frecuencia = estado.frecuencia,
-                    proximaFecha = estado.proximaFecha,
+                    medioPago = medioPago,
+                    frecuencia = frecuencia,
+                    proximaFecha = fecha,
                 ),
             )
                 .onSuccess { _uiState.update { it.copy(guardando = false, guardado = true) } }

@@ -42,6 +42,9 @@
     <string name="validacion_monto">Escribe un monto mayor a 0</string>
     <string name="validacion_categoria">Elige una categoría</string>
     <string name="validacion_medio_pago">Elige un medio de pago</string>
+    <string name="validacion_tipo">Elige si es un gasto o un ingreso</string>
+    <string name="validacion_frecuencia">Elige cada cuánto se repite</string>
+    <string name="validacion_fecha">Elige la fecha</string>
 
     <!-- Errores (ErrorApp) -->
     <string name="error_sin_conexion">Sin conexión. Revisa tu internet e inténtalo de nuevo.</string>
@@ -189,6 +192,10 @@
     <string name="planificados_vacio_titulo">Nada esperado por ahora</string>
     <string name="planificados_vacio_mensaje">Anota lo que pagas o cobras seguido, como el alquiler o el sueldo, y márcalo con un toque cuando pase.</string>
     <string name="planificados_nuevo">Nuevo pago o ingreso esperado</string>
+    <string name="planificados_tipo">¿Es un gasto o un ingreso?</string>
+    <string name="planificados_elige_tipo_primero">Elige primero si es un gasto o un ingreso.</string>
+    <string name="planificados_elegir_fecha">Elige una fecha</string>
+    <string name="planificados_error_fecha_pasada">La fecha no puede ser anterior a hoy</string>
     <string name="planificados_nombre">Nombre</string>
     <string name="planificados_nombre_ejemplo_gasto">Ej.: alquiler, internet, pensión</string>
     <string name="planificados_nombre_ejemplo_ingreso">Ej.: sueldo, mesada, clases</string>
