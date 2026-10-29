@@ -158,6 +158,10 @@
 
     <!-- Placeholders del resto de pestañas -->
     <string name="metas_construccion">Aquí crearás metas de ahorro y verás cuánto te falta.</string>
+    <string name="categorias_construccion">Aquí crearás tus propias categorías y archivarás las que ya no uses.</string>
+    <string name="planificados_construccion">Aquí anotarás los pagos e ingresos que se repiten, como el alquiler o el sueldo.</string>
+    <string name="deudas_construccion">Aquí anotarás lo que debes y lo que te deben, y los abonos de cada deuda.</string>
+    <string name="desafios_construccion">Aquí elegirás desafíos semanales y mensuales para ganar XP.</string>
 
     <!-- Perfil (HU-04, HU-05) -->
     <string name="perfil_editar_nombre">Editar nombre</string>
@@ -172,6 +176,10 @@
         <item quantity="other">%1$d días</item>
     </plurals>
     <string name="perfil_moneda">Moneda</string>
+    <string name="perfil_mis_categorias">Mis categorías</string>
+    <string name="perfil_planificados">Pagos e ingresos esperados</string>
+    <string name="perfil_deudas">Deudas</string>
+    <string name="perfil_desafios">Desafíos</string>
     <string name="perfil_cerrar_sesion">Cerrar sesión</string>
     <string name="perfil_cerrar_titulo">¿Cerrar sesión?</string>
     <string name="perfil_cerrar_mensaje">Tus anotaciones quedan guardadas. Podrás volver a entrar con tu correo.</string>
