@@ -30,7 +30,8 @@ data class AnotarUiState(
     val monto: String = "",
     val categorias: List<Categoria> = emptyList(),
     val categoriaId: String? = null,
-    val medioPago: MedioPago = MedioPago.EFECTIVO,
+    /** Empieza vacío a propósito: el usuario tiene que elegir el medio de pago. */
+    val medioPago: MedioPago? = null,
     val nota: String = "",
     val cargandoRegistro: Boolean = false,
     val errorRegistro: ErrorApp? = null,
@@ -38,6 +39,7 @@ data class AnotarUiState(
     val errorCategorias: ErrorApp? = null,
     @StringRes val errorMonto: Int? = null,
     @StringRes val errorCategoria: Int? = null,
+    @StringRes val errorMedioPago: Int? = null,
     val error: ErrorApp? = null,
     val cargando: Boolean = false,
     val eliminando: Boolean = false,
@@ -106,11 +108,25 @@ class AnotarViewModel(
         }
     }
 
-    /** Al pasar de Gasto a Ingreso (o al revés) cambian las categorías disponibles. */
+    /**
+     * Al pasar de Gasto a Ingreso (o al revés) el formulario vuelve a quedar vacío:
+     * lo que se escribió para un gasto no tiene por qué servir para un ingreso.
+     */
     fun onTipoCambio(tipo: TipoRegistro) {
         if (tipo == _uiState.value.tipo) return
         _uiState.update {
-            it.copy(tipo = tipo, categorias = emptyList(), categoriaId = null, errorCategoria = null, error = null)
+            it.copy(
+                tipo = tipo,
+                monto = "",
+                categorias = emptyList(),
+                categoriaId = null,
+                medioPago = null,
+                nota = "",
+                errorMonto = null,
+                errorCategoria = null,
+                errorMedioPago = null,
+                error = null,
+            )
         }
         cargarCategorias()
     }
@@ -122,24 +138,30 @@ class AnotarViewModel(
         _uiState.update { it.copy(categoriaId = categoria.id, errorCategoria = null, error = null) }
 
     fun onMedioPagoCambio(medioPago: MedioPago) =
-        _uiState.update { it.copy(medioPago = medioPago) }
+        _uiState.update { it.copy(medioPago = medioPago, errorMedioPago = null, error = null) }
 
     /** La nota no puede pasar de 200 caracteres, igual que en la base de datos. */
     fun onNotaCambio(valor: String) =
         _uiState.update { it.copy(nota = valor.take(MAX_NOTA)) }
 
-    /** Revisa el formulario y, si está bien, guarda la anotación nueva o los cambios. */
+    /**
+     * Revisa el formulario y, si está bien, guarda la anotación nueva o los cambios.
+     * Son obligatorios: monto mayor a 0, categoría y medio de pago. Si falta algo,
+     * se marcan todos los campos que faltan a la vez (no uno por uno).
+     */
     fun guardar() {
         val estado = _uiState.value
         if (estado.cargando || estado.eliminando) return
 
         val monto = Formato.parsearMonto(estado.monto)?.takeIf { it.signum() > 0 }
         val categoriaId = estado.categoriaId
-        if (monto == null || categoriaId == null) {
+        val medioPago = estado.medioPago
+        if (monto == null || categoriaId == null || medioPago == null) {
             _uiState.update {
                 it.copy(
                     errorMonto = if (monto == null) R.string.validacion_monto else null,
                     errorCategoria = if (categoriaId == null) R.string.validacion_categoria else null,
+                    errorMedioPago = if (medioPago == null) R.string.validacion_medio_pago else null,
                 )
             }
             return
@@ -152,7 +174,7 @@ class AnotarViewModel(
             categoriaId = categoriaId,
             tipo = estado.tipo,
             monto = monto,
-            medioPago = estado.medioPago,
+            medioPago = medioPago,
             nota = estado.nota.trim().ifBlank { null },
         )
 
@@ -188,7 +210,10 @@ class AnotarViewModel(
         }
     }
 
-    /** Deja el formulario vacío para la siguiente anotación, manteniendo el tipo y sus categorías. */
+    /**
+     * Deja el formulario vacío para la siguiente anotación, manteniendo el tipo y sus categorías.
+     * El medio de pago también vuelve a vacío: en cada anotación se elige de nuevo.
+     */
     fun limpiarFormulario() =
         _uiState.update {
             AnotarUiState(

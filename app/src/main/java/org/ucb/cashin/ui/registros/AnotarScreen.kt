@@ -174,8 +174,10 @@ fun AnotarContenido(
                     SelectorMedioPago(
                         medioPago = estado.medioPago,
                         onMedioPagoCambio = onMedioPagoCambio,
+                        conError = estado.errorMedioPago != null,
                         habilitado = !ocupado,
                     )
+                    estado.errorMedioPago?.let { MensajeError(texto = stringResource(it)) }
                 }
 
                 CashinCampoTexto(
@@ -325,14 +327,15 @@ private fun SeccionCategorias(
 }
 
 /**
- * Efectivo, QR, Tarjeta, Transferencia u Otro (HU-06). Siempre hay uno marcado:
- * empieza en Efectivo y al tocar otro se cambia, nunca queda vacío.
+ * Efectivo, QR, Tarjeta, Transferencia u Otro. Ninguno viene marcado: el usuario
+ * tiene que tocar uno. Con [conError] = true los bordes se pintan de rojo.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SelectorMedioPago(
-    medioPago: MedioPago,
+    medioPago: MedioPago?,
     onMedioPagoCambio: (MedioPago) -> Unit,
+    conError: Boolean,
     habilitado: Boolean,
 ) {
     FlowRow(
@@ -355,7 +358,7 @@ private fun SelectorMedioPago(
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = habilitado,
                     selected = elegido,
-                    borderColor = MaterialTheme.colorScheme.outline,
+                    borderColor = if (conError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
                     selectedBorderColor = MaterialTheme.colorScheme.primary,
                 ),
             )
@@ -416,6 +419,7 @@ private fun AnotarConErroresPreview() = CashinTheme {
             cargandoCategorias = false,
             errorMonto = R.string.validacion_monto,
             errorCategoria = R.string.validacion_categoria,
+            errorMedioPago = R.string.validacion_medio_pago,
         ),
         onTipoCambio = {}, onMontoCambio = {}, onCategoriaElegida = {}, onMedioPagoCambio = {},
         onNotaCambio = {}, onGuardar = {}, onEliminar = {}, onReintentarCategorias = {},
