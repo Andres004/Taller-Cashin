@@ -16,6 +16,7 @@
     <!-- Estados de pantalla -->
     <string name="estado_error_titulo">¡Ups! Algo no salió bien</string>
     <string name="estado_reintentar">Reintentar</string>
+    <string name="indicador_pasos_descripcion">Paso %1$d de %2$d: %3$s</string>
     <string name="en_construccion_titulo">%1$s llega pronto</string>
     <string name="en_construccion_mensaje">%1$s\n\nSe construye en el %2$s (%3$s).</string>
 
@@ -40,6 +41,7 @@
     <string name="validacion_codigo">El código tiene 8 dígitos</string>
     <string name="validacion_monto">Escribe un monto mayor a 0</string>
     <string name="validacion_categoria">Elige una categoría</string>
+    <string name="validacion_medio_pago">Elige un medio de pago</string>
 
     <!-- Errores (ErrorApp) -->
     <string name="error_sin_conexion">Sin conexión. Revisa tu internet e inténtalo de nuevo.</string>
@@ -52,6 +54,12 @@
     <string name="error_sin_permiso">No tienes permiso para ver o cambiar ese dato.</string>
     <string name="error_dato_invalido">Revisa los datos: algo no cumple las reglas.</string>
     <string name="error_desconocido">Algo salió mal. Inténtalo de nuevo.</string>
+
+    <!-- Bienvenida -->
+    <string name="bienvenida_titulo">Tu libreta de gastos, ingresos y metas</string>
+    <string name="bienvenida_subtitulo">Anota en segundos. Cashi te acompaña.</string>
+    <string name="bienvenida_crear_cuenta">Crear cuenta</string>
+    <string name="bienvenida_iniciar_sesion">Iniciar sesión</string>
 
     <!-- Login (HU-01) -->
     <string name="login_titulo">¡Hola de nuevo!</string>
@@ -73,7 +81,9 @@
 
     <!-- Recuperar contraseña (HU-03) -->
     <string name="recuperar_titulo">Recupera tu contraseña</string>
-    <string name="recuperar_paso1">Escribe tu correo y te enviaremos un código de 6 dígitos.</string>
+    <string name="recuperar_paso_correo">Correo</string>
+    <string name="recuperar_paso_codigo">Código</string>
+    <string name="recuperar_paso1">Escribe tu correo y te enviaremos un código de 8 dígitos.</string>
     <string name="recuperar_enviar">Enviar código</string>
     <string name="recuperar_paso2">Revisa tu correo %1$s y escribe el código junto con tu nueva contraseña.</string>
     <string name="recuperar_cambiar">Cambiar contraseña</string>
@@ -111,6 +121,7 @@
     <!-- Anotar (HU-06, HU-07) y editar (HU-08) -->
     <string name="anotar_tipo_gasto">Gasto</string>
     <string name="anotar_tipo_ingreso">Ingreso</string>
+    <string name="anotar_monto">Monto</string>
     <string name="anotar_categoria">Categoría</string>
     <string name="anotar_medio_pago">Medio de pago</string>
     <string name="anotar_medio_efectivo">Efectivo</string>
@@ -132,14 +143,25 @@
     <string name="anotar_cambios_guardados">Cambios guardados</string>
     <string name="anotar_eliminada">Anotación eliminada</string>
 
-    <!-- Historial (HU-09) -->
+    <!-- Historial (HU-09, HU-10) -->
     <string name="historial_vacio_titulo">Aún no anotaste nada</string>
-    <string name="historial_vacio_mensaje">Toca + para anotar tu primer gasto o ingreso.</string>
+    <string name="historial_vacio_mensaje">Toca + para anotar tu primer gasto o ingreso. ¡Cada anotación suma 10 XP!</string>
+    <string name="historial_vacio_accion">Anotar ahora</string>
     <string name="historial_sin_categoria">Sin categoría</string>
     <string name="historial_hora_nota">%1$s · %2$s</string>
+    <string name="historial_filtro_todo">Todo</string>
+    <string name="historial_filtro_gastos">Gastos</string>
+    <string name="historial_filtro_ingresos">Ingresos</string>
+    <string name="historial_elegir_mes">Elegir mes</string>
+    <string name="historial_sin_resultados_titulo">Nada por aquí</string>
+    <string name="historial_sin_resultados_mensaje">No hay anotaciones con este filtro. Prueba con otro mes o tipo.</string>
 
     <!-- Placeholders del resto de pestañas -->
     <string name="metas_construccion">Aquí crearás metas de ahorro y verás cuánto te falta.</string>
+    <string name="categorias_construccion">Aquí crearás tus propias categorías y archivarás las que ya no uses.</string>
+    <string name="planificados_construccion">Aquí anotarás los pagos e ingresos que se repiten, como el alquiler o el sueldo.</string>
+    <string name="deudas_construccion">Aquí anotarás lo que debes y lo que te deben, y los abonos de cada deuda.</string>
+    <string name="desafios_construccion">Aquí elegirás desafíos semanales y mensuales para ganar XP.</string>
 
     <!-- Perfil (HU-04, HU-05) -->
     <string name="perfil_editar_nombre">Editar nombre</string>
@@ -153,6 +175,11 @@
         <item quantity="one">%1$d día</item>
         <item quantity="other">%1$d días</item>
     </plurals>
+    <string name="perfil_moneda">Moneda</string>
+    <string name="perfil_mis_categorias">Mis categorías</string>
+    <string name="perfil_planificados">Pagos e ingresos esperados</string>
+    <string name="perfil_deudas">Deudas</string>
+    <string name="perfil_desafios">Desafíos</string>
     <string name="perfil_cerrar_sesion">Cerrar sesión</string>
     <string name="perfil_cerrar_titulo">¿Cerrar sesión?</string>
     <string name="perfil_cerrar_mensaje">Tus anotaciones quedan guardadas. Podrás volver a entrar con tu correo.</string>

@@ -6,12 +6,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,6 +35,7 @@ fun EstadoCargando(modifier: Modifier = Modifier) {
     }
 }
 
+/** Pantalla sin datos: Cashi, un título, un mensaje y, si se pasa, un botón para empezar. */
 @Composable
 fun EstadoVacio(
     titulo: String,
@@ -41,9 +45,19 @@ fun EstadoVacio(
     textoAccion: String? = null,
     onAccion: (() -> Unit)? = null,
 ) {
-    EstadoBase(modifier, emocion, titulo, mensaje, textoAccion, onAccion)
+    EstadoBase(
+        modifier = modifier,
+        emocion = emocion,
+        titulo = titulo,
+        mensaje = mensaje,
+        textoAccion = textoAccion,
+        onAccion = onAccion,
+        varianteAccion = VarianteBoton.PRINCIPAL,
+        iconoAccion = null,
+    )
 }
 
+/** Algo falló: Cashi preocupado, el mensaje del error y "Reintentar" con el ícono de recargar. */
 @Composable
 fun EstadoError(
     mensaje: String,
@@ -57,6 +71,8 @@ fun EstadoError(
         mensaje = mensaje,
         textoAccion = stringResource(R.string.estado_reintentar),
         onAccion = onReintentar,
+        varianteAccion = VarianteBoton.SECUNDARIO,
+        iconoAccion = Icons.Outlined.Refresh,
     )
 }
 
@@ -68,6 +84,8 @@ private fun EstadoBase(
     mensaje: String,
     textoAccion: String?,
     onAccion: (() -> Unit)?,
+    varianteAccion: VarianteBoton,
+    iconoAccion: ImageVector?,
 ) {
     Box(modifier = modifier.fillMaxSize().padding(Espacio.pantalla), contentAlignment = Alignment.Center) {
         Column(
@@ -75,7 +93,7 @@ private fun EstadoBase(
             verticalArrangement = Arrangement.spacedBy(Espacio.s),
             modifier = Modifier.widthIn(max = 360.dp),
         ) {
-            AvatarImagen(emocion = emocion, tamano = 140.dp)
+            AvatarImagen(emocion = emocion, tamano = 160.dp)
             Text(
                 text = titulo,
                 style = MaterialTheme.typography.titleLarge,
@@ -89,7 +107,16 @@ private fun EstadoBase(
                 textAlign = TextAlign.Center,
             )
             if (textoAccion != null && onAccion != null) {
-                CashinBoton(texto = textoAccion, onClick = onAccion, modifier = Modifier.padding(top = Espacio.s))
+                // Botón angosto y centrado, como en el Figma (no de borde a borde).
+                CashinBoton(
+                    texto = textoAccion,
+                    onClick = onAccion,
+                    variante = varianteAccion,
+                    icono = iconoAccion,
+                    modifier = Modifier
+                        .padding(top = Espacio.s)
+                        .widthIn(max = 220.dp),
+                )
             }
         }
     }
@@ -98,5 +125,17 @@ private fun EstadoBase(
 @Preview(showBackground = true, backgroundColor = 0xFFFCF7EA)
 @Composable
 private fun EstadoVacioPreview() = CashinTheme {
-    EstadoVacio(titulo = "Aún no hay anotaciones", mensaje = "Toca + para anotar tu primer gasto.")
+    EstadoVacio(
+        titulo = "Aún no anotaste nada",
+        mensaje = "Toca + para anotar tu primer gasto o ingreso. ¡Cada anotación suma 10 XP!",
+        emocion = Emocion.FELIZ,
+        textoAccion = "Anotar ahora",
+        onAccion = {},
+    )
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFCF7EA)
+@Composable
+private fun EstadoErrorPreview() = CashinTheme {
+    EstadoError(mensaje = "Sin conexión. Revisa tu internet e inténtalo de nuevo.", onReintentar = {})
 }

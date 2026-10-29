@@ -1,6 +1,8 @@
 package org.ucb.cashin.ui.inicio
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -9,9 +11,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.NorthEast
+import androidx.compose.material.icons.filled.SouthWest
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,10 +29,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.ucb.cashin.R
@@ -33,7 +45,6 @@ import org.ucb.cashin.ui.components.AvatarBurbuja
 import org.ucb.cashin.ui.components.BarraProgreso
 import org.ucb.cashin.ui.components.CashinBoton
 import org.ucb.cashin.ui.components.CashinTarjeta
-import org.ucb.cashin.ui.components.CashinTopBar
 import org.ucb.cashin.ui.components.Emocion
 import org.ucb.cashin.ui.components.EstadoCargando
 import org.ucb.cashin.ui.components.EstadoError
@@ -79,8 +90,6 @@ fun InicioContenido(
     onRegistroClick: (registroId: String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        CashinTopBar(titulo = stringResource(R.string.nav_inicio))
-
         when {
             estado.cargando -> EstadoCargando()
 
@@ -93,14 +102,10 @@ fun InicioContenido(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = Espacio.pantalla, vertical = Espacio.s),
+                    .padding(start = Espacio.pantalla, end = Espacio.pantalla, top = Espacio.l, bottom = Espacio.m),
                 verticalArrangement = Arrangement.spacedBy(Espacio.m),
             ) {
-                Text(
-                    text = stringResource(R.string.inicio_saludo, estado.nombre),
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
+                Encabezado(nombre = estado.nombre)
 
                 MensajeDelAvatar(racha = estado.racha, anotoHoy = estado.anotoHoy)
 
@@ -132,6 +137,23 @@ fun InicioContenido(
     }
 }
 
+/** El mes actual en pequeño ("Octubre 2026") y debajo el saludo en grande. */
+@Composable
+private fun Encabezado(nombre: String) {
+    Column {
+        Text(
+            text = Formato.mes(Formato.hoy()),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = stringResource(R.string.inicio_saludo, nombre),
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+    }
+}
+
 /** Salchi anima a anotar o celebra la racha, según si ya se anotó algo hoy. */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -149,62 +171,80 @@ private fun MensajeDelAvatar(racha: Int, anotoHoy: Boolean) {
     }
 }
 
-/** Mes actual: la diferencia en grande y debajo los gastos e ingresos. */
+/**
+ * Tarjeta verde oscuro del mes: la diferencia en grande y debajo los gastos e ingresos.
+ * Es solo una diferencia entre lo anotado, no un saldo (Cashin no maneja dinero).
+ */
 @Composable
 private fun TarjetaDelMes(estado: InicioUiState) {
-    val colorDiferencia = when {
-        estado.diferencia.signum() < 0 -> CashinColores.gasto
-        estado.diferencia.signum() > 0 -> CashinColores.ingreso
-        else -> MaterialTheme.colorScheme.onBackground
-    }
+    val textoSuave = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.8f)
 
-    CashinTarjeta {
-        Text(
-            text = Formato.mes(Formato.hoy()),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        Text(
-            text = stringResource(R.string.inicio_diferencia),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = Espacio.s),
-        )
-        Text(
-            text = Formato.monto(estado.diferencia),
-            style = MaterialTheme.typography.displaySmall,
-            color = colorDiferencia,
-        )
-        Row(modifier = Modifier.fillMaxWidth().padding(top = Espacio.s)) {
-            TotalDelMes(
-                etiqueta = stringResource(R.string.inicio_gastos),
-                monto = estado.totalGastos,
-                color = CashinColores.gasto,
-                modifier = Modifier.weight(1f),
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.secondary,
+        contentColor = MaterialTheme.colorScheme.onSecondary,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(Espacio.m)) {
+            Text(
+                text = stringResource(R.string.inicio_diferencia),
+                style = MaterialTheme.typography.labelMedium,
+                color = textoSuave,
             )
-            TotalDelMes(
-                etiqueta = stringResource(R.string.inicio_ingresos),
-                monto = estado.totalIngresos,
-                color = CashinColores.ingreso,
-                modifier = Modifier.weight(1f),
+            Text(
+                text = Formato.monto(estado.diferencia),
+                style = MaterialTheme.typography.displaySmall,
             )
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = Espacio.s),
+                color = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.2f),
+            )
+            Row(modifier = Modifier.fillMaxWidth()) {
+                TotalDelMes(
+                    etiqueta = stringResource(R.string.inicio_gastos),
+                    monto = estado.totalGastos,
+                    icono = Icons.Filled.NorthEast,
+                    modifier = Modifier.weight(1f),
+                )
+                TotalDelMes(
+                    etiqueta = stringResource(R.string.inicio_ingresos),
+                    monto = estado.totalIngresos,
+                    icono = Icons.Filled.SouthWest,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }
 
+/** Ícono en un círculo claro y, al lado, la etiqueta y el monto. Va dentro de la tarjeta verde. */
 @Composable
-private fun TotalDelMes(etiqueta: String, monto: BigDecimal, color: Color, modifier: Modifier = Modifier) {
-    Column(modifier = modifier) {
-        Text(
-            text = etiqueta,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = Formato.monto(monto),
-            style = MaterialTheme.typography.titleMedium,
-            color = color,
-        )
+private fun TotalDelMes(etiqueta: String, monto: BigDecimal, icono: ImageVector, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Espacio.s),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.14f)),
+        ) {
+            Icon(imageVector = icono, contentDescription = null, modifier = Modifier.size(16.dp))
+        }
+        Column {
+            Text(
+                text = etiqueta,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.8f),
+            )
+            Text(
+                text = Formato.monto(monto),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
     }
 }
 
@@ -287,16 +327,16 @@ private fun UltimasAnotaciones(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFCF7EA)
+@Preview(showBackground = true, backgroundColor = 0xFFFCF7EA, heightDp = 900)
 @Composable
 private fun InicioPreview() = CashinTheme {
     val comida = Categoria(id = "c1", nombre = "Alimentación", tipo = TipoRegistro.GASTO, icono = "restaurant", color = "#4CAF50")
     InicioContenido(
         estado = InicioUiState(
             nombre = "Carlos",
-            totalGastos = BigDecimal("50.00"),
+            totalGastos = BigDecimal("2050.00"),
             totalIngresos = BigDecimal("3200.00"),
-            racha = 3,
+            racha = 4,
             anotoHoy = true,
             nivel = 2,
             xp = 230,

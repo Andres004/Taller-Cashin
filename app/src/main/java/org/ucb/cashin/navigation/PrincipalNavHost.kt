@@ -1,16 +1,19 @@
 package org.ucb.cashin.navigation
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
-import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -18,14 +21,20 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -37,9 +46,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import kotlinx.coroutines.launch
 import org.ucb.cashin.R
+import org.ucb.cashin.ui.categorias.CategoriasScreen
+import org.ucb.cashin.ui.desafios.DesafiosScreen
+import org.ucb.cashin.ui.deudas.DeudasScreen
 import org.ucb.cashin.ui.inicio.InicioScreen
 import org.ucb.cashin.ui.metas.MetasScreen
+import org.ucb.cashin.ui.perfil.OpcionPerfil
 import org.ucb.cashin.ui.perfil.PerfilScreen
+import org.ucb.cashin.ui.planificados.PlanificadosScreen
 import org.ucb.cashin.ui.registros.AnotarScreen
 import org.ucb.cashin.ui.registros.HistorialScreen
 import kotlin.reflect.KClass
@@ -53,7 +67,7 @@ private enum class Pestana(
 ) {
     INICIO(Rutas.Inicio, Rutas.Inicio::class, R.string.nav_inicio, Icons.Outlined.Home),
     HISTORIAL(Rutas.Historial, Rutas.Historial::class, R.string.nav_historial, Icons.AutoMirrored.Outlined.ReceiptLong),
-    ANOTAR(Rutas.Anotar, Rutas.Anotar::class, R.string.nav_anotar, Icons.Filled.AddCircle),
+    ANOTAR(Rutas.Anotar, Rutas.Anotar::class, R.string.nav_anotar, Icons.Filled.Add),
     METAS(Rutas.Metas, Rutas.Metas::class, R.string.nav_metas, Icons.Outlined.Flag),
     PERFIL(Rutas.Perfil, Rutas.Perfil::class, R.string.nav_perfil, Icons.Outlined.Person),
 }
@@ -101,27 +115,26 @@ fun PrincipalNavHost() {
             NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
                 Pestana.entries.forEach { pestana ->
                     val seleccionada = destino?.hierarchy?.any { it.hasRoute(pestana.clase) } == true
-                    val esAnotar = pestana == Pestana.ANOTAR
-                    NavigationBarItem(
-                        selected = seleccionada,
-                        onClick = { irAPestana(pestana.ruta) },
-                        icon = {
-                            Icon(
-                                imageVector = pestana.icono,
-                                contentDescription = stringResource(pestana.etiqueta),
-                                tint = if (esAnotar) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-                                modifier = if (esAnotar) Modifier.size(40.dp) else Modifier,
-                            )
-                        },
-                        label = if (esAnotar) null else { { Text(stringResource(pestana.etiqueta)) } },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.secondary,
-                            selectedTextColor = MaterialTheme.colorScheme.secondary,
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
-                    )
+                    if (pestana == Pestana.ANOTAR) {
+                        BotonAnotar(
+                            seleccionada = seleccionada,
+                            onClick = { irAPestana(pestana.ruta) },
+                        )
+                    } else {
+                        NavigationBarItem(
+                            selected = seleccionada,
+                            onClick = { irAPestana(pestana.ruta) },
+                            icon = { Icon(imageVector = pestana.icono, contentDescription = null) },
+                            label = { Text(stringResource(pestana.etiqueta)) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.secondary,
+                                selectedTextColor = MaterialTheme.colorScheme.secondary,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
+                        )
+                    }
                 }
             }
         },
@@ -141,6 +154,7 @@ fun PrincipalNavHost() {
             composable<Rutas.Historial> {
                 HistorialScreen(
                     onRegistroClick = { registroId -> abrirRegistro(registroId) },
+                    onAnotar = { irAPestana(Rutas.Anotar) },
                 )
             }
 
@@ -170,7 +184,64 @@ fun PrincipalNavHost() {
             }
 
             composable<Rutas.Metas> { MetasScreen() }
-            composable<Rutas.Perfil> { PerfilScreen() }
+
+            composable<Rutas.Perfil> {
+                PerfilScreen(onOpcion = { opcion -> nav.navigate(rutaDe(opcion)) })
+            }
+
+            // Pantallas que se abren desde el menú del Perfil.
+            composable<Rutas.MisCategorias> { CategoriasScreen(onAtras = { nav.popBackStack() }) }
+            composable<Rutas.Planificados> { PlanificadosScreen(onAtras = { nav.popBackStack() }) }
+            composable<Rutas.Deudas> { DeudasScreen(onAtras = { nav.popBackStack() }) }
+            composable<Rutas.Desafios> { DesafiosScreen(onAtras = { nav.popBackStack() }) }
+        }
+    }
+}
+
+/** Ruta de cada opción del menú del Perfil. */
+private fun rutaDe(opcion: OpcionPerfil): Any = when (opcion) {
+    OpcionPerfil.MIS_CATEGORIAS -> Rutas.MisCategorias
+    OpcionPerfil.PLANIFICADOS -> Rutas.Planificados
+    OpcionPerfil.DEUDAS -> Rutas.Deudas
+    OpcionPerfil.DESAFIOS -> Rutas.Desafios
+}
+
+/**
+ * El "+" del centro: un círculo verde oscuro con el signo en blanco, sin texto.
+ * Ocupa el mismo ancho que una pestaña. Cuando se está en Anotar, lo rodea un aro verde claro.
+ */
+@Composable
+private fun RowScope.BotonAnotar(
+    seleccionada: Boolean,
+    onClick: () -> Unit,
+) {
+    val descripcion = stringResource(R.string.nav_anotar)
+
+    Box(
+        modifier = Modifier.weight(1f),
+        contentAlignment = Alignment.Center,
+    ) {
+        Surface(
+            onClick = onClick,
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.secondary,
+            contentColor = MaterialTheme.colorScheme.onSecondary,
+            border = if (seleccionada) BorderStroke(4.dp, MaterialTheme.colorScheme.primaryContainer) else null,
+            shadowElevation = 4.dp,
+            modifier = Modifier
+                .size(56.dp)
+                .semantics {
+                    role = Role.Tab
+                    selected = seleccionada
+                },
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = descripcion,
+                    modifier = Modifier.size(28.dp),
+                )
+            }
         }
     }
 }
