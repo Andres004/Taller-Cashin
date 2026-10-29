@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
@@ -29,11 +30,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.ucb.cashin.R
@@ -42,6 +45,9 @@ import org.ucb.cashin.model.AvanceMeta
 import org.ucb.cashin.model.ErrorApp
 import org.ucb.cashin.model.EstadoMeta
 import org.ucb.cashin.model.TipoAporte
+import org.ucb.cashin.prediccion.EstimacionMeta
+import org.ucb.cashin.prediccion.FuenteAhorro
+import org.ucb.cashin.prediccion.MensajeAvatar
 import org.ucb.cashin.ui.components.AvatarBurbuja
 import org.ucb.cashin.ui.components.BarraProgreso
 import org.ucb.cashin.ui.components.CashinBoton
@@ -53,6 +59,9 @@ import org.ucb.cashin.ui.components.Emocion
 import org.ucb.cashin.ui.components.EstadoCargando
 import org.ucb.cashin.ui.components.EstadoError
 import org.ucb.cashin.ui.components.VarianteBoton
+import org.ucb.cashin.ui.components.emocion
+import org.ucb.cashin.ui.components.textoConfianza
+import org.ucb.cashin.ui.components.texto
 import org.ucb.cashin.ui.components.mensaje
 import org.ucb.cashin.ui.theme.CashinColores
 import org.ucb.cashin.ui.theme.CashinTheme
@@ -153,9 +162,17 @@ fun DetalleMetaContenido(
             ) {
                 item(key = "avance") { TarjetaAvance(avance = avance, completada = estado.completada) }
 
-                // Se llena en el paso de IA (HU-20). Va justo debajo del encabezado.
-                if (!estado.completada) {
-                    item(key = "ia") { EspacioCuandoLoLogro() }
+                // HU-20: justo debajo del encabezado. No se muestra si ya llegó al objetivo.
+                val estimacion = estado.estimacion
+                val mensajeIa = estado.mensajeIa
+                if (!avance.alcanzada && estimacion != null && mensajeIa != null) {
+                    item(key = "ia") {
+                        TarjetaCuandoLoLogro(
+                            estimacion = estimacion,
+                            mensaje = mensajeIa,
+                            mesesDeDatos = estado.mesesDeDatos,
+                        )
+                    }
                 }
 
                 if (avance.alcanzada) {
@@ -315,21 +332,100 @@ private fun TarjetaAvance(avance: AvanceMeta, completada: Boolean) {
     }
 }
 
-/** Lugar reservado para la estimación de la IA (HU-20, Sprint 4). */
+/**
+ * HU-20: "¿Cuándo lo logro?" con el motor de predicción.
+ * - Meses y fecha aproximada, o "al ritmo actual no se alcanza".
+ * - Ahorro mensual usado y de dónde salió (aportes o ingresos − gastos).
+ * - Con fecha límite: si llega a tiempo o cuánto haría falta por mes.
+ * - Confianza y el mensaje de Cashi.
+ */
 @Composable
-private fun EspacioCuandoLoLogro() {
+private fun TarjetaCuandoLoLogro(
+    estimacion: EstimacionMeta,
+    mensaje: MensajeAvatar,
+    mesesDeDatos: Int,
+) {
+    val color = MaterialTheme.colorScheme.onTertiaryContainer
+
     CashinTarjeta(color = MaterialTheme.colorScheme.tertiaryContainer) {
-        Text(
-            text = stringResource(R.string.metas_cuando_titulo),
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onTertiaryContainer,
-        )
-        Text(
-            text = stringResource(R.string.metas_cuando_pronto),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onTertiaryContainer,
-            modifier = Modifier.padding(top = Espacio.xs),
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Outlined.AutoAwesome,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.padding(end = Espacio.s),
+            )
+            Text(
+                text = stringResource(R.string.metas_cuando_titulo),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = color,
+            )
+        }
+
+        if (estimacion.fuente != FuenteAhorro.SIN_DATOS) {
+            // "~5 meses · marzo 2027" o "Al ritmo actual no se alcanza"
+            val meses = estimacion.meses
+            val fecha = estimacion.fechaEstimada
+            Text(
+                text = if (meses != null && fecha != null) {
+                    pluralStringResource(R.plurals.ia_meses_fecha, meses, meses, Formato.mes(fecha).lowercase())
+                } else {
+                    stringResource(R.string.ia_no_se_alcanza)
+                },
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = color,
+                modifier = Modifier.padding(top = Espacio.s),
+            )
+
+            // "Ahorras ~Bs 350,00 al mes · según tus aportes"
+            Text(
+                text = stringResource(
+                    R.string.ia_ritmo,
+                    Formato.monto(estimacion.ahorroMensual),
+                    stringResource(
+                        if (estimacion.fuente == FuenteAhorro.APORTES) R.string.ia_fuente_aportes else R.string.ia_fuente_capacidad,
+                    ),
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = color,
+                modifier = Modifier.padding(top = Espacio.xs),
+            )
+
+            // Con fecha límite: ✅ llega a tiempo o ⚠️ cuánto hace falta.
+            when (estimacion.llegaAntesDeLaFecha) {
+                true -> Text(
+                    text = stringResource(R.string.ia_a_tiempo),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = CashinColores.ingreso,
+                    modifier = Modifier.padding(top = Espacio.xs),
+                )
+                false -> Text(
+                    text = stringResource(
+                        R.string.ia_necesitas,
+                        Formato.monto(estimacion.ahorroNecesarioPorMes ?: BigDecimal.ZERO),
+                    ),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = CashinColores.gasto,
+                    modifier = Modifier.padding(top = Espacio.xs),
+                )
+                null -> Unit
+            }
+
+            Text(
+                text = textoConfianza(estimacion.confianza, mesesDeDatos),
+                style = MaterialTheme.typography.bodySmall,
+                color = color,
+                modifier = Modifier.padding(top = Espacio.xs),
+            )
+        }
+
+        AvatarBurbuja(
+            mensaje = mensaje.texto(),
+            emocion = mensaje.animo.emocion(),
+            tamanoAvatar = 64.dp,
+            modifier = Modifier.padding(top = Espacio.m),
         )
     }
 }

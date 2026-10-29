@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ucb.cashin.R
 import org.ucb.cashin.data.MetaRepository
+import org.ucb.cashin.data.ResumenRepository
 import org.ucb.cashin.di.fabricaDe
 import org.ucb.cashin.model.AporteMeta
 import org.ucb.cashin.model.AvanceMeta
@@ -18,6 +19,14 @@ import org.ucb.cashin.model.EstadoMeta
 import org.ucb.cashin.model.NuevoAporteMeta
 import org.ucb.cashin.model.TipoAporte
 import org.ucb.cashin.model.comoErrorApp
+import org.ucb.cashin.prediccion.EstimacionMeta
+import org.ucb.cashin.prediccion.FuenteAhorro
+import org.ucb.cashin.prediccion.MensajeAvatar
+import org.ucb.cashin.prediccion.construirSerie
+import org.ucb.cashin.prediccion.estimarMeta
+import org.ucb.cashin.prediccion.mensajeParaMeta
+import org.ucb.cashin.prediccion.pronosticarSiguienteMes
+import java.time.YearMonth
 import org.ucb.cashin.util.Formato
 
 /** Todo lo que la pantalla de una meta necesita para dibujarse. */
@@ -27,6 +36,12 @@ data class DetalleMetaUiState(
     val aportes: List<AporteMeta> = emptyList(),
     val cargando: Boolean = true,
     val error: ErrorApp? = null,
+
+    /** HU-20: "¿Cuándo lo logro?" calculado por el motor de predicción. */
+    val estimacion: EstimacionMeta? = null,
+    val mensajeIa: MensajeAvatar? = null,
+    /** Cuántos meses de datos usó la estimación (para mostrar la confianza). */
+    val mesesDeDatos: Int = 0,
 
     /** Diálogo "Anoté un ahorro / retiro": null = cerrado. */
     val dialogoTipo: TipoAporte? = null,
@@ -50,10 +65,12 @@ data class DetalleMetaUiState(
 /**
  * HU-18: anotar un ahorro o un retiro (el retiro no supera lo ahorrado).
  * HU-19: ver el avance de la meta con barra, monto y porcentaje.
+ * HU-20: estimar cuándo se logra con el motor de predicción (el ViewModel solo lo orquesta).
  * Al llegar al 100 % se puede marcar como completada.
  */
 class DetalleMetaViewModel(
     private val metaRepository: MetaRepository,
+    private val resumenRepository: ResumenRepository,
     private val metaId: String,
 ) : ViewModel() {
 
@@ -61,8 +78,9 @@ class DetalleMetaViewModel(
     val uiState: StateFlow<DetalleMetaUiState> = _uiState.asStateFlow()
 
     /**
-     * Trae el avance (de la vista) y la lista de ahorros y retiros.
-     * La pantalla lo llama cada vez que se abre, así se ven los cambios al volver de editar.
+     * Trae el avance (de la vista), los ahorros y retiros, y la historia de meses
+     * para la estimación. La pantalla lo llama cada vez que se abre; también se llama
+     * después de anotar, así la estimación se recalcula sola.
      */
     fun cargar() {
         viewModelScope.launch {
@@ -71,9 +89,34 @@ class DetalleMetaViewModel(
                 _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) }
                 return@launch
             }
-            metaRepository.listarAportes(metaId)
-                .onSuccess { aportes -> _uiState.update { it.copy(avance = avance, aportes = aportes, cargando = false) } }
-                .onFailure { e -> _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) } }
+            val aportes = metaRepository.listarAportes(metaId).getOrElse { e ->
+                _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) }
+                return@launch
+            }
+            // Si la historia no se puede leer, la meta igual se muestra: la estimación queda "sin datos".
+            val historial = resumenRepository.historialMensual().getOrDefault(emptyList())
+
+            val hoy = Formato.hoy()
+            val pronosticoIngresos = pronosticarSiguienteMes(construirSerie(historial, hoy) { it.totalIngresos })
+            val pronosticoGastos = pronosticarSiguienteMes(construirSerie(historial, hoy) { it.totalGastos })
+            val estimacion = estimarMeta(avance, aportes, pronosticoIngresos, pronosticoGastos, hoy)
+
+            val mesesDeDatos = when (estimacion.fuente) {
+                FuenteAhorro.APORTES -> aportes.map { YearMonth.from(it.fecha) }.distinct().size.coerceAtMost(3)
+                FuenteAhorro.CAPACIDAD -> minOf(pronosticoIngresos.mesesUsados, pronosticoGastos.mesesUsados)
+                FuenteAhorro.SIN_DATOS -> 0
+            }
+
+            _uiState.update {
+                it.copy(
+                    avance = avance,
+                    aportes = aportes,
+                    estimacion = estimacion,
+                    mensajeIa = mensajeParaMeta(estimacion),
+                    mesesDeDatos = mesesDeDatos,
+                    cargando = false,
+                )
+            }
         }
     }
 
@@ -178,6 +221,6 @@ class DetalleMetaViewModel(
         /** Igual que varchar(200) de aporte_meta.nota. */
         const val MAX_NOTA = 200
 
-        fun fabrica(metaId: String) = fabricaDe { DetalleMetaViewModel(it.metaRepository, metaId) }
+        fun fabrica(metaId: String) = fabricaDe { DetalleMetaViewModel(it.metaRepository, it.resumenRepository, metaId) }
     }
 }
