@@ -16,6 +16,7 @@
     <!-- Estados de pantalla -->
     <string name="estado_error_titulo">¡Ups! Algo no salió bien</string>
     <string name="estado_reintentar">Reintentar</string>
+    <string name="indicador_pasos_descripcion">Paso %1$d de %2$d: %3$s</string>
     <string name="en_construccion_titulo">%1$s llega pronto</string>
     <string name="en_construccion_mensaje">%1$s\n\nSe construye en el %2$s (%3$s).</string>
 
@@ -53,6 +54,12 @@
     <string name="error_dato_invalido">Revisa los datos: algo no cumple las reglas.</string>
     <string name="error_desconocido">Algo salió mal. Inténtalo de nuevo.</string>
 
+    <!-- Bienvenida -->
+    <string name="bienvenida_titulo">Tu libreta de gastos, ingresos y metas</string>
+    <string name="bienvenida_subtitulo">Anota en segundos. Cashi te acompaña.</string>
+    <string name="bienvenida_crear_cuenta">Crear cuenta</string>
+    <string name="bienvenida_iniciar_sesion">Iniciar sesión</string>
+
     <!-- Login (HU-01) -->
     <string name="login_titulo">¡Hola de nuevo!</string>
     <string name="login_subtitulo">Anota tus gastos en segundos.</string>
@@ -73,7 +80,9 @@
 
     <!-- Recuperar contraseña (HU-03) -->
     <string name="recuperar_titulo">Recupera tu contraseña</string>
-    <string name="recuperar_paso1">Escribe tu correo y te enviaremos un código de 6 dígitos.</string>
+    <string name="recuperar_paso_correo">Correo</string>
+    <string name="recuperar_paso_codigo">Código</string>
+    <string name="recuperar_paso1">Escribe tu correo y te enviaremos un código de 8 dígitos.</string>
     <string name="recuperar_enviar">Enviar código</string>
     <string name="recuperar_paso2">Revisa tu correo %1$s y escribe el código junto con tu nueva contraseña.</string>
     <string name="recuperar_cambiar">Cambiar contraseña</string>

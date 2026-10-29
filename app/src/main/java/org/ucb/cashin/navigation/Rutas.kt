@@ -11,6 +11,8 @@ import kotlinx.serialization.Serializable
  */
 object Rutas {
     // ---- Sin sesión (AuthNavHost) ----
+    /** Primera pantalla sin sesión: logo, mensaje y los botones "Crear cuenta" e "Iniciar sesión". */
+    @Serializable data object Bienvenida
     @Serializable data object Login
     @Serializable data object CrearCuenta
     @Serializable data object RecuperarContrasena
