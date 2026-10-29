@@ -158,10 +158,28 @@
 
     <!-- Placeholders del resto de pestañas -->
     <string name="metas_construccion">Aquí crearás metas de ahorro y verás cuánto te falta.</string>
-    <string name="categorias_construccion">Aquí crearás tus propias categorías y archivarás las que ya no uses.</string>
     <string name="planificados_construccion">Aquí anotarás los pagos e ingresos que se repiten, como el alquiler o el sueldo.</string>
     <string name="deudas_construccion">Aquí anotarás lo que debes y lo que te deben, y los abonos de cada deuda.</string>
     <string name="desafios_construccion">Aquí elegirás desafíos semanales y mensuales para ganar XP.</string>
+
+    <!-- Mis categorías (HU-11, HU-12) -->
+    <string name="categorias_tab_gasto">Gasto</string>
+    <string name="categorias_tab_ingreso">Ingreso</string>
+    <string name="categorias_nueva">Nueva categoría</string>
+    <string name="categorias_del_sistema">Del sistema</string>
+    <string name="categorias_archivada">Archivada</string>
+    <string name="categorias_archivar">Archivar</string>
+    <string name="categorias_desarchivar">Desarchivar</string>
+    <string name="categorias_archivar_titulo">¿Archivar categoría?</string>
+    <string name="categorias_archivar_mensaje">\"%1$s\" ya no aparecerá al anotar, pero tus anotaciones anteriores la seguirán mostrando.</string>
+    <string name="categorias_nombre">Nombre</string>
+    <string name="categorias_icono">Ícono</string>
+    <string name="categorias_color">Color</string>
+    <string name="categorias_crear">Crear</string>
+    <string name="categorias_error_nombre">Escribe un nombre de hasta 50 caracteres</string>
+    <string name="categorias_error_repetida">Ya tienes una categoría con ese nombre</string>
+    <string name="categorias_vacio_titulo">Aún no hay categorías</string>
+    <string name="categorias_vacio_mensaje">Crea una categoría propia con el botón de abajo.</string>
 
     <!-- Perfil (HU-04, HU-05) -->
     <string name="perfil_editar_nombre">Editar nombre</string>

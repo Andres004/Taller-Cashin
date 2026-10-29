@@ -38,3 +38,10 @@ object CashinColores {
     val progreso = VerdeClaro
     val progresoFondo = CremaTarjeta
 }
+
+
+/** Colores que se pueden elegir para una categoría propia (HU-11), en hex #RRGGBB como en la BD. */
+val ColoresCategoria = listOf(
+    "#4CAF50", "#2E7D32", "#1F6E8C", "#E08A2C",
+    "#C0473A", "#8E5BA8", "#D4829C", "#6B6F68",
+)
