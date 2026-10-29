@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
@@ -36,7 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
@@ -174,12 +175,19 @@ fun CategoriasContenido(
             title = { Text(stringResource(R.string.categorias_archivar_titulo)) },
             text = { Text(stringResource(R.string.categorias_archivar_mensaje, categoria.nombre)) },
             confirmButton = {
-                TextButton(onClick = { porArchivar = null; onArchivar(categoria, true) }) {
+                TextButton(
+                    onClick = {
+                        porArchivar = null
+                        onArchivar(categoria, true)
+                    },
+                ) {
                     Text(stringResource(R.string.categorias_archivar), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { porArchivar = null }) { Text(stringResource(R.string.accion_cancelar)) }
+                TextButton(onClick = { porArchivar = null }) {
+                    Text(stringResource(R.string.accion_cancelar))
+                }
             },
             containerColor = MaterialTheme.colorScheme.background,
         )
@@ -197,6 +205,10 @@ fun CategoriasContenido(
     }
 }
 
+/**
+ * Una categoría: ícono, nombre y etiqueta ("Del sistema" o "Archivada").
+ * Las del sistema no tienen botón: no se pueden archivar (RLS solo deja cambiar las propias).
+ */
 @Composable
 private fun FilaCategoria(
     categoria: Categoria,
@@ -250,6 +262,10 @@ private fun FilaCategoria(
     }
 }
 
+/**
+ * Formulario para crear una categoría: nombre, ícono y color.
+ * El contenido se desplaza para que en celulares pequeños no se corten los colores.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DialogoNuevaCategoria(
@@ -266,7 +282,10 @@ private fun DialogoNuevaCategoria(
         onDismissRequest = onCerrar,
         title = { Text(stringResource(R.string.categorias_nueva)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(Espacio.m),
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            ) {
                 CashinCampoTexto(
                     etiqueta = stringResource(R.string.categorias_nombre),
                     valor = estado.nombre,
@@ -332,7 +351,11 @@ private fun DialogoNuevaCategoria(
                         ) {
                             if (elegido) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White)
+                                    Icon(
+                                        imageVector = Icons.Filled.Check,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                    )
                                 }
                             }
                         }
@@ -374,7 +397,15 @@ private fun CategoriasPreview() = CashinTheme {
                 Categoria(id = "3", usuarioId = "u", nombre = "Gimnasio", tipo = TipoRegistro.GASTO, icono = "health", color = "#C0473A", archivada = true),
             ),
         ),
-        onAtras = {}, onReintentar = {}, onTipoCambio = {}, onNueva = {}, onArchivar = { _, _ -> },
-        onNombreCambio = {}, onIconoCambio = {}, onColorCambio = {}, onCrear = {}, onCerrarDialogo = {},
+        onAtras = {},
+        onReintentar = {},
+        onTipoCambio = {},
+        onNueva = {},
+        onArchivar = { _, _ -> },
+        onNombreCambio = {},
+        onIconoCambio = {},
+        onColorCambio = {},
+        onCrear = {},
+        onCerrarDialogo = {},
     )
 }

@@ -173,7 +173,7 @@
     <string name="categorias_vacio_mensaje">Crea una categoría con tu propio nombre, ícono y color para anotar más rápido.</string>
     <string name="categorias_nueva">Nueva categoría</string>
     <string name="categorias_archivar_titulo">¿Archivar esta categoría?</string>
-    <string name="categorias_archivar_mensaje">Ya no aparecerá al anotar, pero tus anotaciones con esta categoría siguen en el historial.</string>
+    <string name="categorias_archivar_mensaje">«%1$s» ya no aparecerá al anotar, pero tus anotaciones con esta categoría siguen en el historial.</string>
     <string name="categorias_archivar">Archivar</string>
     <string name="categorias_desarchivar">Desarchivar</string>
     <string name="categorias_archivada">Archivada</string>
@@ -183,7 +183,7 @@
     <string name="categorias_color">Color</string>
     <string name="categorias_crear">Crear categoría</string>
     <string name="categorias_error_nombre">Escribe un nombre de hasta 50 caracteres</string>
-    <string name="categorias_error_repetida">Ya tienes una categoría con ese nombre</string>
+    <string name="categorias_error_repetida">Ya existe una categoría con ese nombre</string>
 
     <!-- Placeholders del resto de pestañas -->
     <string name="metas_construccion">Aquí crearás metas de ahorro y verás cuánto te falta.</string>

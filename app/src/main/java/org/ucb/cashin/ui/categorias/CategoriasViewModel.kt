@@ -41,7 +41,15 @@ data class CategoriasUiState(
 /** Nombres de ícono que entiende `iconoCategoria()`. */
 val ICONOS = listOf("restaurant", "bus", "home", "health", "school", "movie", "work", "store", "gift", "more")
 
+/** Igual que varchar(50) de la columna categoria.nombre. */
 private const val MAX_NOMBRE = 50
+
+/**
+ * "  Café " y "café" cuentan como el mismo nombre.
+ * Se compara sin espacios de más y sin distinguir mayúsculas.
+ */
+fun mismoNombre(a: String, b: String): Boolean =
+    a.trim().equals(b.trim(), ignoreCase = true)
 
 /** HU-11 / HU-12: crear categorías propias y archivarlas sin perder el historial. */
 class CategoriasViewModel(
@@ -101,11 +109,20 @@ class CategoriasViewModel(
     fun crear() {
         val estado = _uiState.value
         if (estado.guardando) return
+
         val nombre = estado.nombre.trim()
-        if (nombre.isEmpty() || nombre.length > MAX_NOMBRE) {
+        if (nombre.isEmpty()) {
             _uiState.update { it.copy(errorNombre = R.string.categorias_error_nombre) }
             return
         }
+
+        // La BD solo impide repetir un nombre entre las categorías del mismo usuario.
+        // Aquí también se evita repetir una del sistema ("Alimentación") o con otras mayúsculas.
+        if (estado.categorias.any { mismoNombre(it.nombre, nombre) }) {
+            _uiState.update { it.copy(errorNombre = R.string.categorias_error_repetida) }
+            return
+        }
+
         val usuarioId = authRepository.usuarioIdActual()
         if (usuarioId == null) {
             _uiState.update { it.copy(errorGuardar = ErrorApp.SIN_PERMISO) }
@@ -138,6 +155,7 @@ class CategoriasViewModel(
         }
     }
 
+    /** HU-12: con [archivada] = true se archiva; con false vuelve a aparecer al anotar. */
     fun archivar(categoria: Categoria, archivada: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(errorAccion = null) }
@@ -146,8 +164,6 @@ class CategoriasViewModel(
                 .onFailure { e -> _uiState.update { it.copy(errorAccion = e.comoErrorApp()) } }
         }
     }
-
-    fun descartarErrorAccion() = _uiState.update { it.copy(errorAccion = null) }
 
     /** Activas primero (del sistema y luego propias); las archivadas van al final. */
     private fun ordenar(lista: List<Categoria>): List<Categoria> =
