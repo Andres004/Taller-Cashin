@@ -243,21 +243,20 @@
     <string name="metas_error_descripcion">Escribe una descripción corta</string>
     <string name="metas_error_fecha">La fecha límite tiene que ser después de hoy</string>
     <string name="metas_creada">¡Meta creada! Anota tu primer ahorro.</string>
-    <string name="metas_de">%1$s de %2$s</string>
+    <string name="metas_de_porcentaje">%1$s de %2$s (%3$d %%)</string>
     <string name="metas_de_objetivo">de %1$s</string>
     <string name="metas_ahorrado">Llevas ahorrado</string>
-    <string name="metas_porcentaje">%1$d %%</string>
     <string name="metas_porcentaje_falta">%1$d %% · Te faltan %2$s</string>
     <string name="metas_alcanzada">¡Meta alcanzada! 🎉</string>
     <string name="metas_hasta">Hasta el %1$s</string>
     <string name="metas_sin_fecha">Sin fecha límite</string>
     <string name="metas_lograste">¡Lo lograste! Llegaste a tu meta. Cashi está orgulloso de ti.</string>
-    <string name="metas_anotar_ahorro">Ahorro</string>
-    <string name="metas_anotar_retiro">Retiro</string>
+    <string name="metas_anotar_ahorro">Anoté un ahorro</string>
+    <string name="metas_anotar_retiro">Anoté un retiro</string>
     <string name="metas_ahorro">Ahorro</string>
     <string name="metas_retiro">Retiro</string>
     <string name="metas_disponible_retirar">Tienes %1$s ahorrado en esta meta.</string>
-    <string name="metas_error_retiro">No puedes retirar más de lo ahorrado (%1$s)</string>
+    <string name="metas_error_retiro">No puedes retirar más de lo que ahorraste (%1$s)</string>
     <string name="metas_movimientos">Movimientos</string>
     <string name="metas_sin_movimientos">Todavía no anotaste ahorros en esta meta.</string>
     <string name="metas_cuando_titulo">¿Cuándo lo logro?</string>
@@ -266,6 +265,13 @@
     <string name="metas_cancelar_titulo">¿Quitar esta meta?</string>
     <string name="metas_cancelar_mensaje">«%1$s» ya no aparecerá en tus metas.</string>
     <string name="metas_cancelada">Meta quitada</string>
+    <string name="metas_marcar_completada">Marcar como completada</string>
+    <string name="metas_estado_completada">✓ Completada</string>
+    <string name="metas_completada_mensaje">¡Meta cumplida! Ya está guardada en tus metas completadas.</string>
+    <string name="metas_sin_activas">No tienes metas activas. ¡Crea una nueva!</string>
+    <string name="metas_completadas">Completadas (%1$d)</string>
+    <string name="metas_ver_completadas">Ver metas completadas</string>
+    <string name="metas_ocultar_completadas">Ocultar metas completadas</string>
 
     <!-- Placeholders del resto de pestañas -->
     <string name="categorias_construccion">Aquí crearás tus propias categorías y archivarás las que ya no uses.</string>
