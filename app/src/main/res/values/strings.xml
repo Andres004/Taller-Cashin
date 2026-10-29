@@ -223,8 +223,48 @@
     <string name="frecuencia_mensual">Mensual</string>
     <string name="frecuencia_anual">Anual</string>
 
+    <!-- Metas de ahorro (HU-17, HU-18, HU-19) -->
+    <string name="metas_vacio_titulo">Todavía no tienes metas</string>
+    <string name="metas_vacio_mensaje">Ponte un objetivo, como un celular o un viaje, y anota lo que vas apartando para verlo crecer.</string>
+    <string name="metas_vacio_accion">Crear mi primera meta</string>
+    <string name="metas_nueva">Nueva meta</string>
+    <string name="metas_nombre">¿Para qué ahorras?</string>
+    <string name="metas_nombre_ejemplo">Ej.: celular nuevo, viaje, laptop</string>
+    <string name="metas_monto_objetivo">¿Cuánto necesitas?</string>
+    <string name="metas_fecha_limite">¿Hasta cuándo? (opcional)</string>
+    <string name="metas_sin_fecha_opcional">Sin fecha límite</string>
+    <string name="metas_quitar_fecha">Quitar fecha</string>
+    <string name="metas_descripcion">Descripción (opcional)</string>
+    <string name="metas_descripcion_ejemplo">Ej.: el modelo que vi en la tienda</string>
+    <string name="metas_crear">Crear meta</string>
+    <string name="metas_error_nombre">Escribe para qué ahorras</string>
+    <string name="metas_error_fecha">La fecha límite tiene que ser después de hoy</string>
+    <string name="metas_creada">¡Meta creada! Anota tu primer ahorro.</string>
+    <string name="metas_de">%1$s de %2$s</string>
+    <string name="metas_de_objetivo">de %1$s</string>
+    <string name="metas_ahorrado">Llevas ahorrado</string>
+    <string name="metas_porcentaje">%1$d %%</string>
+    <string name="metas_porcentaje_falta">%1$d %% · Te faltan %2$s</string>
+    <string name="metas_alcanzada">¡Meta alcanzada! 🎉</string>
+    <string name="metas_hasta">Hasta el %1$s</string>
+    <string name="metas_sin_fecha">Sin fecha límite</string>
+    <string name="metas_lograste">¡Lo lograste! Llegaste a tu meta. Cashi está orgulloso de ti.</string>
+    <string name="metas_anotar_ahorro">Ahorro</string>
+    <string name="metas_anotar_retiro">Retiro</string>
+    <string name="metas_ahorro">Ahorro</string>
+    <string name="metas_retiro">Retiro</string>
+    <string name="metas_disponible_retirar">Tienes %1$s ahorrado en esta meta.</string>
+    <string name="metas_error_retiro">No puedes retirar más de lo ahorrado (%1$s)</string>
+    <string name="metas_movimientos">Movimientos</string>
+    <string name="metas_sin_movimientos">Todavía no anotaste ahorros en esta meta.</string>
+    <string name="metas_cuando_titulo">¿Cuándo lo logro?</string>
+    <string name="metas_cuando_pronto">Muy pronto Cashi te dirá cuánto te falta según tu ritmo de ahorro.</string>
+    <string name="metas_cancelar">Quitar meta</string>
+    <string name="metas_cancelar_titulo">¿Quitar esta meta?</string>
+    <string name="metas_cancelar_mensaje">«%1$s» ya no aparecerá en tus metas.</string>
+    <string name="metas_cancelada">Meta quitada</string>
+
     <!-- Placeholders del resto de pestañas -->
-    <string name="metas_construccion">Aquí crearás metas de ahorro y verás cuánto te falta.</string>
     <string name="categorias_construccion">Aquí crearás tus propias categorías y archivarás las que ya no uses.</string>
     <string name="deudas_construccion">Aquí anotarás lo que debes y lo que te deben, y los abonos de cada deuda.</string>
     <string name="desafios_construccion">Aquí elegirás desafíos semanales y mensuales para ganar XP.</string>
