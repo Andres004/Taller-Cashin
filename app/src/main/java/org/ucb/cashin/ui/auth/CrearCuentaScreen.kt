@@ -21,6 +21,7 @@ import org.ucb.cashin.ui.theme.CashinTheme
 @Composable
 fun CrearCuentaScreen(
     onIrALogin: () -> Unit,
+    onAtras: () -> Unit,
     viewModel: CrearCuentaViewModel = viewModel(factory = CrearCuentaViewModel.Factory),
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
@@ -32,6 +33,7 @@ fun CrearCuentaScreen(
         onConfirmarCambio = viewModel::onConfirmarCambio,
         onCrear = viewModel::crearCuenta,
         onIrALogin = onIrALogin,
+        onAtras = onAtras,
     )
 }
 
@@ -44,13 +46,14 @@ fun CrearCuentaContenido(
     onConfirmarCambio: (String) -> Unit,
     onCrear: () -> Unit,
     onIrALogin: () -> Unit,
+    onAtras: () -> Unit,
 ) {
     AuthLayout(
         titulo = stringResource(R.string.registro_titulo),
         subtitulo = stringResource(R.string.registro_subtitulo),
         snackbar = remember { SnackbarHostState() },
         error = estado.error,
-        onAtras = onIrALogin,
+        onAtras = onAtras,
     ) {
         // Cuenta creada pero falta confirmar el correo: se reemplaza el formulario.
         val correoEnviado = estado.correoConfirmacion
@@ -111,6 +114,6 @@ private fun CrearCuentaPreview() = CashinTheme {
     CrearCuentaContenido(
         estado = CrearCuentaUiState(nombre = "Ana", errorContrasena = R.string.validacion_contrasena),
         onNombreCambio = {}, onCorreoCambio = {}, onContrasenaCambio = {},
-        onConfirmarCambio = {}, onCrear = {}, onIrALogin = {},
+        onConfirmarCambio = {}, onCrear = {}, onIrALogin = {}, onAtras = {},
     )
 }

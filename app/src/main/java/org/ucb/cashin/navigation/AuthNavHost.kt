@@ -43,7 +43,10 @@ fun AuthNavHost() {
             )
         }
         composable<Rutas.CrearCuenta> {
-            CrearCuentaScreen(onIrALogin = irALogin)
+            CrearCuentaScreen(
+                onIrALogin = irALogin,
+                onAtras = { nav.popBackStack() },
+            )
         }
         composable<Rutas.RecuperarContrasena> {
             RecuperarScreen(onAtras = { nav.popBackStack() })
