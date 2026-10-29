@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Remove
@@ -29,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -90,6 +92,7 @@ fun DetalleMetaScreen(
         onMontoAporteCambio = viewModel::onMontoAporteCambio,
         onNotaAporteCambio = viewModel::onNotaAporteCambio,
         onGuardarAporte = viewModel::guardarAporte,
+        onCompletarMeta = viewModel::completarMeta,
         onCancelarMeta = viewModel::cancelarMeta,
     )
 }
@@ -106,6 +109,7 @@ fun DetalleMetaContenido(
     onMontoAporteCambio: (String) -> Unit,
     onNotaAporteCambio: (String) -> Unit,
     onGuardarAporte: () -> Unit,
+    onCompletarMeta: () -> Unit,
     onCancelarMeta: () -> Unit,
 ) {
     var confirmarCancelar by remember { mutableStateOf(false) }
@@ -117,14 +121,14 @@ fun DetalleMetaContenido(
             onAtras = onAtras,
             acciones = {
                 if (avance != null) {
-                    IconButton(onClick = onEditar, enabled = !estado.cancelando) {
+                    IconButton(onClick = onEditar, enabled = !estado.cambiandoEstado) {
                         Icon(
                             imageVector = Icons.Outlined.Edit,
                             contentDescription = stringResource(R.string.metas_editar),
                             tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
-                    IconButton(onClick = { confirmarCancelar = true }, enabled = !estado.cancelando) {
+                    IconButton(onClick = { confirmarCancelar = true }, enabled = !estado.cambiandoEstado) {
                         Icon(
                             imageVector = Icons.Outlined.Delete,
                             contentDescription = stringResource(R.string.metas_cancelar),
@@ -147,24 +151,42 @@ fun DetalleMetaContenido(
                 contentPadding = PaddingValues(horizontal = Espacio.pantalla, vertical = Espacio.s),
                 verticalArrangement = Arrangement.spacedBy(Espacio.m),
             ) {
-                item(key = "avance") { TarjetaAvance(avance) }
+                item(key = "avance") { TarjetaAvance(avance = avance, completada = estado.completada) }
+
+                // Se llena en el paso de IA (HU-20). Va justo debajo del encabezado.
+                if (!estado.completada) {
+                    item(key = "ia") { EspacioCuandoLoLogro() }
+                }
 
                 if (avance.alcanzada) {
                     item(key = "celebracion") {
-                        AvatarBurbuja(
-                            mensaje = stringResource(R.string.metas_lograste),
-                            emocion = Emocion.CELEBRANDO,
-                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                            AvatarBurbuja(
+                                mensaje = stringResource(
+                                    if (estado.completada) R.string.metas_completada_mensaje else R.string.metas_lograste,
+                                ),
+                                emocion = Emocion.CELEBRANDO,
+                            )
+                            if (!estado.completada) {
+                                CashinBoton(
+                                    texto = stringResource(R.string.metas_marcar_completada),
+                                    onClick = onCompletarMeta,
+                                    icono = Icons.Outlined.CheckCircle,
+                                    cargando = estado.cambiandoEstado,
+                                )
+                            }
+                        }
                     }
                 }
 
-                item(key = "botones") {
-                    Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                // Una meta completada ya no recibe ahorros ni retiros.
+                // Uno debajo del otro y de borde a borde: así el texto entra completo en una línea.
+                if (!estado.completada) item(key = "botones") {
+                    Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
                         CashinBoton(
                             texto = stringResource(R.string.metas_anotar_ahorro),
                             onClick = { onAbrirDialogo(TipoAporte.AHORRO) },
                             icono = Icons.Outlined.Add,
-                            modifier = Modifier.weight(1f),
                         )
                         CashinBoton(
                             texto = stringResource(R.string.metas_anotar_retiro),
@@ -173,13 +195,13 @@ fun DetalleMetaContenido(
                             icono = Icons.Outlined.Remove,
                             // Sin nada ahorrado no hay qué retirar.
                             habilitado = avance.totalAhorrado.signum() > 0,
-                            modifier = Modifier.weight(1f),
                         )
                     }
-                    estado.errorCancelar?.let { MensajeError(it.mensaje()) }
                 }
 
-                item(key = "ia") { EspacioCuandoLoLogro() }
+                estado.errorEstado?.let { error ->
+                    item(key = "error-estado") { MensajeError(error.mensaje()) }
+                }
 
                 item(key = "titulo-movimientos") {
                     Text(
@@ -195,7 +217,7 @@ fun DetalleMetaContenido(
                         Text(
                             text = stringResource(R.string.metas_sin_movimientos),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.onBackground,
                         )
                     }
                 } else {
@@ -242,14 +264,25 @@ fun DetalleMetaContenido(
     }
 }
 
-/** HU-19: "Bs 350,00" grande, "de Bs 2.500,00", la barra y "14 % · Te faltan Bs 2.150,00". */
+/**
+ * HU-19: "Bs 350,00" grande, "de Bs 2.500,00", la barra y "14 % · Te faltan Bs 2.150,00".
+ * Si ya está completada, lo dice arriba.
+ */
 @Composable
-private fun TarjetaAvance(avance: AvanceMeta) {
+private fun TarjetaAvance(avance: AvanceMeta, completada: Boolean) {
     CashinTarjeta {
+        if (completada) {
+            Text(
+                text = stringResource(R.string.metas_estado_completada),
+                style = MaterialTheme.typography.labelLarge,
+                color = CashinColores.ingreso,
+                modifier = Modifier.padding(bottom = Espacio.xs),
+            )
+        }
         Text(
             text = stringResource(R.string.metas_ahorrado),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onBackground,
         )
         Text(
             text = Formato.monto(avance.totalAhorrado),
@@ -259,7 +292,7 @@ private fun TarjetaAvance(avance: AvanceMeta) {
         Text(
             text = stringResource(R.string.metas_de_objetivo, Formato.monto(avance.montoObjetivo)),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = Espacio.m),
         )
         BarraProgreso(progreso = avance.progreso)
@@ -277,7 +310,7 @@ private fun TarjetaAvance(avance: AvanceMeta) {
             text = avance.fechaLimite?.let { stringResource(R.string.metas_hasta, Formato.fechaCorta(it)) }
                 ?: stringResource(R.string.metas_sin_fecha),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onBackground,
         )
     }
 }
@@ -289,6 +322,7 @@ private fun EspacioCuandoLoLogro() {
         Text(
             text = stringResource(R.string.metas_cuando_titulo),
             style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onTertiaryContainer,
         )
         Text(
@@ -310,13 +344,14 @@ private fun FilaAporte(aporte: AporteMeta) {
                 Text(
                     text = stringResource(if (esRetiro) R.string.metas_retiro else R.string.metas_ahorro),
                     style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 Text(
                     text = aporte.nota?.let { stringResource(R.string.historial_hora_nota, Formato.encabezadoDia(aporte.fecha), it) }
                         ?: Formato.encabezadoDia(aporte.fecha),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -355,7 +390,7 @@ private fun DialogoAporte(
                     Text(
                         text = stringResource(R.string.metas_disponible_retirar, Formato.monto(totalAhorrado)),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
                 }
                 CashinCampoMonto(
@@ -426,6 +461,7 @@ private fun DetalleMetaPreview() = CashinTheme {
         onMontoAporteCambio = {},
         onNotaAporteCambio = {},
         onGuardarAporte = {},
+        onCompletarMeta = {},
         onCancelarMeta = {},
     )
 }
