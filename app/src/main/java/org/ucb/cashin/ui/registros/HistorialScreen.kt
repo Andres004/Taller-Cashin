@@ -16,6 +16,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material3.DatePickerColors
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DropdownMenu
@@ -363,9 +365,11 @@ private fun CalendarioRango(
     )
     val inicio = calendario.selectedStartDateMillis
     val fin = calendario.selectedEndDateMillis
+    val colores = coloresDeCalendario()
 
     DatePickerDialog(
         onDismissRequest = onCancelar,
+        colors = colores,
         confirmButton = {
             TextButton(
                 onClick = {
@@ -390,11 +394,43 @@ private fun CalendarioRango(
                     modifier = Modifier.padding(start = Espacio.l, top = Espacio.m),
                 )
             },
+            headline = {
+                Text(
+                    text = stringResource(
+                        R.string.historial_rango,
+                        inicio?.let { Formato.fechaCorta(it.aFechaUtc()) } ?: stringResource(R.string.historial_desde),
+                        fin?.let { Formato.fechaCorta(it.aFechaUtc()) } ?: stringResource(R.string.historial_hasta),
+                    ),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(start = Espacio.l, bottom = Espacio.s),
+                )
+            },
             showModeToggle = false,
+            colors = colores,
             modifier = Modifier.weight(1f),
         )
     }
 }
+
+/**
+ * Colores del calendario: los días elegidos en verde oscuro y el rango en verde
+ * con letras blancas, para que se distingan bien sobre el fondo crema.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun coloresDeCalendario(): DatePickerColors = DatePickerDefaults.colors(
+    containerColor = MaterialTheme.colorScheme.background,
+    titleContentColor = MaterialTheme.colorScheme.onBackground,
+    headlineContentColor = MaterialTheme.colorScheme.onBackground,
+    weekdayContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    dayContentColor = MaterialTheme.colorScheme.onBackground,
+    selectedDayContainerColor = MaterialTheme.colorScheme.secondary,
+    selectedDayContentColor = MaterialTheme.colorScheme.onSecondary,
+    dayInSelectionRangeContainerColor = MaterialTheme.colorScheme.primary,
+    dayInSelectionRangeContentColor = MaterialTheme.colorScheme.onPrimary,
+    todayDateBorderColor = MaterialTheme.colorScheme.secondary,
+    todayContentColor = MaterialTheme.colorScheme.secondary,
+)
 
 private fun LocalDate.aMilisUtc(): Long = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 

@@ -161,6 +161,8 @@
     <string name="historial_periodo_personalizado">Personalizado</string>
     <string name="historial_rango">%1$s – %2$s</string>
     <string name="historial_elegir_rango">Elige desde y hasta qué fecha</string>
+    <string name="historial_desde">Desde</string>
+    <string name="historial_hasta">Hasta</string>
     <string name="historial_sin_resultados_titulo">Nada por aquí</string>
     <string name="historial_sin_resultados_mensaje">No hay anotaciones con estos filtros. Prueba con otras fechas, otro tipo u otra categoría.</string>
 
