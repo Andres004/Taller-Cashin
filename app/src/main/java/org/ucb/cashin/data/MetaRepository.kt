@@ -11,7 +11,7 @@ import org.ucb.cashin.model.Meta
 import org.ucb.cashin.model.NuevaMeta
 import org.ucb.cashin.model.NuevoAporteMeta
 
-/** Para cancelar una meta sin borrar sus ahorros anotados. */
+/** Para completar o cancelar una meta sin borrar sus ahorros anotados. */
 @Serializable
 private data class EstadoDeMeta(val estado: EstadoMeta)
 
@@ -79,9 +79,13 @@ class MetaRepository(private val supabase: SupabaseClient) {
         }.decodeSingle<AporteMeta>()
     }
 
-    /** Quita la meta de la lista (queda CANCELADA); sus ahorros anotados no se borran. */
-    suspend fun cancelar(metaId: String): Result<Unit> = llamada {
-        supabase.from("meta").update(EstadoDeMeta(EstadoMeta.CANCELADA)) {
+    /**
+     * Cambia el estado de la meta:
+     * COMPLETADA cuando la persona la marca como lograda; CANCELADA para quitarla de la lista.
+     * En ningún caso se borran sus ahorros anotados.
+     */
+    suspend fun cambiarEstado(metaId: String, estado: EstadoMeta): Result<Unit> = llamada {
+        supabase.from("meta").update(EstadoDeMeta(estado)) {
             filter { eq("id", metaId) }
         }
         Unit

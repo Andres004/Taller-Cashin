@@ -14,6 +14,7 @@ import org.ucb.cashin.di.fabricaDe
 import org.ucb.cashin.model.AporteMeta
 import org.ucb.cashin.model.AvanceMeta
 import org.ucb.cashin.model.ErrorApp
+import org.ucb.cashin.model.EstadoMeta
 import org.ucb.cashin.model.NuevoAporteMeta
 import org.ucb.cashin.model.TipoAporte
 import org.ucb.cashin.model.comoErrorApp
@@ -27,7 +28,7 @@ data class DetalleMetaUiState(
     val cargando: Boolean = true,
     val error: ErrorApp? = null,
 
-    /** Diálogo "Anotar ahorro / retiro": null = cerrado. */
+    /** Diálogo "Anoté un ahorro / retiro": null = cerrado. */
     val dialogoTipo: TipoAporte? = null,
     val montoAporte: String = "",
     val notaAporte: String = "",
@@ -35,15 +36,21 @@ data class DetalleMetaUiState(
     val errorAporte: ErrorApp? = null,
     val guardandoAporte: Boolean = false,
 
-    val cancelando: Boolean = false,
-    val errorCancelar: ErrorApp? = null,
+    /** Completar o cancelar la meta en curso. */
+    val cambiandoEstado: Boolean = false,
+    val errorEstado: ErrorApp? = null,
     /** La meta se canceló: la pantalla vuelve atrás. */
     val cancelada: Boolean = false,
-)
+) {
+    /** Ya está marcada como completada: no se anotan más ahorros ni retiros. */
+    val completada: Boolean
+        get() = avance?.estado == EstadoMeta.COMPLETADA
+}
 
 /**
  * HU-18: anotar un ahorro o un retiro (el retiro no supera lo ahorrado).
  * HU-19: ver el avance de la meta con barra, monto y porcentaje.
+ * Al llegar al 100 % se puede marcar como completada.
  */
 class DetalleMetaViewModel(
     private val metaRepository: MetaRepository,
@@ -70,8 +77,11 @@ class DetalleMetaViewModel(
         }
     }
 
-    fun abrirDialogo(tipo: TipoAporte) = _uiState.update {
-        it.copy(dialogoTipo = tipo, montoAporte = "", notaAporte = "", errorMontoAporte = null, errorAporte = null)
+    fun abrirDialogo(tipo: TipoAporte) {
+        if (_uiState.value.completada) return
+        _uiState.update {
+            it.copy(dialogoTipo = tipo, montoAporte = "", notaAporte = "", errorMontoAporte = null, errorAporte = null)
+        }
     }
 
     fun cerrarDialogo() {
@@ -132,14 +142,29 @@ class DetalleMetaViewModel(
         }
     }
 
+    /** "Marcar como completada": solo cuando ya llegó al objetivo. (El XP llega en el Sprint 4.) */
+    fun completarMeta() {
+        val avance = _uiState.value.avance ?: return
+        if (!avance.alcanzada || _uiState.value.cambiandoEstado) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(cambiandoEstado = true, errorEstado = null) }
+            metaRepository.cambiarEstado(metaId, EstadoMeta.COMPLETADA)
+                .onSuccess {
+                    _uiState.update { it.copy(cambiandoEstado = false) }
+                    cargar()
+                }
+                .onFailure { e -> _uiState.update { it.copy(cambiandoEstado = false, errorEstado = e.comoErrorApp()) } }
+        }
+    }
+
     /** Quita la meta (queda CANCELADA). La pantalla ya pidió confirmación. */
     fun cancelarMeta() {
-        if (_uiState.value.cancelando) return
+        if (_uiState.value.cambiandoEstado) return
         viewModelScope.launch {
-            _uiState.update { it.copy(cancelando = true, errorCancelar = null) }
-            metaRepository.cancelar(metaId)
-                .onSuccess { _uiState.update { it.copy(cancelando = false, cancelada = true) } }
-                .onFailure { e -> _uiState.update { it.copy(cancelando = false, errorCancelar = e.comoErrorApp()) } }
+            _uiState.update { it.copy(cambiandoEstado = true, errorEstado = null) }
+            metaRepository.cambiarEstado(metaId, EstadoMeta.CANCELADA)
+                .onSuccess { _uiState.update { it.copy(cambiandoEstado = false, cancelada = true) } }
+                .onFailure { e -> _uiState.update { it.copy(cambiandoEstado = false, errorEstado = e.comoErrorApp()) } }
         }
     }
 

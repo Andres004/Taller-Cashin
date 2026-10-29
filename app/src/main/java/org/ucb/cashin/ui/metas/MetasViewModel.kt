@@ -11,17 +11,24 @@ import org.ucb.cashin.data.MetaRepository
 import org.ucb.cashin.di.fabricaDe
 import org.ucb.cashin.model.AvanceMeta
 import org.ucb.cashin.model.ErrorApp
+import org.ucb.cashin.model.EstadoMeta
 import org.ucb.cashin.model.comoErrorApp
 import java.math.BigDecimal
 import java.math.RoundingMode
 
 /** Todo lo que la pestaña Metas necesita para dibujarse. */
 data class MetasUiState(
-    /** Primero las que faltan completar, después las alcanzadas. */
-    val metas: List<AvanceMeta> = emptyList(),
+    /** Metas ACTIVAS (las alcanzadas que aún no se marcaron como completadas también van aquí). */
+    val activas: List<AvanceMeta> = emptyList(),
+    /** Metas marcadas como COMPLETADAS, en su sección plegable. */
+    val completadas: List<AvanceMeta> = emptyList(),
+    /** Si la sección "Completadas" está abierta. */
+    val verCompletadas: Boolean = false,
     val cargando: Boolean = true,
     val error: ErrorApp? = null,
-)
+) {
+    val sinMetas: Boolean get() = activas.isEmpty() && completadas.isEmpty()
+}
 
 /** Si lo ahorrado ya llegó al objetivo. */
 val AvanceMeta.alcanzada: Boolean
@@ -42,7 +49,7 @@ val AvanceMeta.porcentaje: Int
             .coerceIn(0, 100)
     }
 
-/** HU-19: lista de metas con su avance (vista v_avance_meta). */
+/** HU-19: lista de metas con su avance (vista v_avance_meta), separando las completadas. */
 class MetasViewModel(
     private val metaRepository: MetaRepository,
 ) : ViewModel() {
@@ -53,14 +60,17 @@ class MetasViewModel(
     /** Se llama cada vez que se abre la pestaña (después de crear una meta o anotar un ahorro). */
     fun cargar() {
         viewModelScope.launch {
-            _uiState.update { it.copy(cargando = it.metas.isEmpty(), error = null) }
+            _uiState.update { it.copy(cargando = it.sinMetas, error = null) }
             metaRepository.listarAvances()
                 .onSuccess { lista ->
-                    _uiState.update { it.copy(metas = lista.sortedBy { meta -> meta.alcanzada }, cargando = false) }
+                    val (completadas, activas) = lista.partition { meta -> meta.estado == EstadoMeta.COMPLETADA }
+                    _uiState.update { it.copy(activas = activas, completadas = completadas, cargando = false) }
                 }
                 .onFailure { e -> _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) } }
         }
     }
+
+    fun onVerCompletadasCambio() = _uiState.update { it.copy(verCompletadas = !it.verCompletadas) }
 
     companion object {
         val Factory = fabricaDe { MetasViewModel(it.metaRepository) }
