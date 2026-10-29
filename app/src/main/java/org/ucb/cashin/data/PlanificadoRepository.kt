@@ -3,6 +3,8 @@ package org.ucb.cashin.data
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Order
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import org.ucb.cashin.model.AvancePlanificado
 import org.ucb.cashin.model.EstadoDePlanificado
 import org.ucb.cashin.model.EstadoPlanificado
@@ -34,36 +36,58 @@ class PlanificadoRepository(private val supabase: SupabaseClient) {
     }
 
     /**
-     * HU-16: "Ya lo pagué / cobré".
-     * 1. Crea la anotación en `registro` con `planificado_id` (suma XP y racha como cualquier anotación).
-     * 2. Mueve la próxima fecha según la frecuencia; si era UNICA, lo cierra (CANCELADO).
-     * Devuelve la anotación creada.
+     * HU-16: "Ya lo pagué / cobré". Un periodo solo se puede marcar UNA vez:
+     *
+     * 1. Mueve la próxima fecha (o cierra si era UNICA), pero SOLO si en la base de datos
+     *    la fecha sigue siendo la que el usuario vio. Si otro toque (u otro celular) ya la
+     *    movió, no se cambia nada y se devuelve null: ese periodo ya estaba anotado.
+     * 2. Crea la anotación en `registro` con `planificado_id`.
+     * 3. Si la anotación falla, devuelve la fecha a como estaba, para no perder ese periodo.
      */
-    suspend fun registrarPago(planificado: RegistroPlanificado): Result<Registro> = llamada {
-        val registro = supabase.from("registro").insert(
-            NuevoRegistro(
-                categoriaId = planificado.categoriaId,
-                tipo = planificado.tipo,
-                monto = planificado.monto,
-                medioPago = planificado.medioPago,
-                nota = planificado.nombre,
-                planificadoId = planificado.id,
-            ),
-        ) {
-            select()
-        }.decodeSingle<Registro>()
-
+    suspend fun registrarPago(planificado: RegistroPlanificado): Result<Registro?> = llamada {
         val siguiente = planificado.frecuencia.siguienteFecha(planificado.proximaFecha)
         val avance = if (siguiente == null) {
             AvancePlanificado(proximaFecha = planificado.proximaFecha, estado = EstadoPlanificado.CANCELADO)
         } else {
-            AvancePlanificado(proximaFecha = siguiente, estado = planificado.estado)
-        }
-        supabase.from("registro_planificado").update(avance) {
-            filter { eq("id", planificado.id) }
+            AvancePlanificado(proximaFecha = siguiente, estado = EstadoPlanificado.ACTIVO)
         }
 
-        registro
+        val movidos = supabase.from("registro_planificado").update(avance) {
+            filter {
+                eq("id", planificado.id)
+                eq("proxima_fecha", planificado.proximaFecha.toString())
+                eq("estado", EstadoPlanificado.ACTIVO.name)
+            }
+            select()
+        }.decodeList<RegistroPlanificado>()
+
+        if (movidos.isEmpty()) return@llamada null
+
+        try {
+            supabase.from("registro").insert(
+                NuevoRegistro(
+                    categoriaId = planificado.categoriaId,
+                    tipo = planificado.tipo,
+                    monto = planificado.monto,
+                    medioPago = planificado.medioPago,
+                    nota = planificado.nombre,
+                    planificadoId = planificado.id,
+                ),
+            ) {
+                select()
+            }.decodeSingle<Registro>()
+        } catch (e: Throwable) {
+            withContext(NonCancellable) {
+                runCatching {
+                    supabase.from("registro_planificado").update(
+                        AvancePlanificado(proximaFecha = planificado.proximaFecha, estado = EstadoPlanificado.ACTIVO),
+                    ) {
+                        filter { eq("id", planificado.id) }
+                    }
+                }
+            }
+            throw e
+        }
     }
 
     /**

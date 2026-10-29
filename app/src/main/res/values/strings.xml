@@ -209,6 +209,8 @@
     <string name="planificados_ya_pague">Ya lo pagué</string>
     <string name="planificados_ya_cobre">Ya lo cobré</string>
     <string name="planificados_anotando">Anotando…</string>
+    <string name="planificados_disponible_desde">Disponible desde %1$s</string>
+    <string name="planificados_ya_estaba_anotado">Ese periodo ya estaba anotado. Revisa tu historial.</string>
     <string name="planificados_quitar">Quitar</string>
     <string name="planificados_quitar_titulo">¿Quitar este pago esperado?</string>
     <string name="planificados_quitar_mensaje">«%1$s» ya no aparecerá en esta lista. Lo que ya anotaste sigue en tu historial.</string>

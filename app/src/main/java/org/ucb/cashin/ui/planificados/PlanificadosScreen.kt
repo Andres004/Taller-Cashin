@@ -40,7 +40,9 @@ import org.ucb.cashin.model.Categoria
 import org.ucb.cashin.model.Frecuencia
 import org.ucb.cashin.model.RegistroPlanificado
 import org.ucb.cashin.model.TipoRegistro
+import org.ucb.cashin.model.disponibleDesde
 import org.ucb.cashin.model.estaVencido
+import org.ucb.cashin.model.sePuedeMarcar
 import org.ucb.cashin.ui.components.CashinBoton
 import org.ucb.cashin.ui.components.CashinTarjeta
 import org.ucb.cashin.ui.components.CashinTopBar
@@ -118,9 +120,10 @@ fun PlanificadosContenido(
                 )
 
                 else -> Column(modifier = Modifier.fillMaxSize()) {
-                    if (estado.errorAccion != null) {
+                    val textoAviso = estado.errorAccion?.mensaje() ?: estado.avisoAccion?.let { stringResource(it) }
+                    if (textoAviso != null) {
                         Text(
-                            text = estado.errorAccion.mensaje(),
+                            text = textoAviso,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                             modifier = Modifier.padding(horizontal = Espacio.pantalla, vertical = Espacio.s),
@@ -182,6 +185,8 @@ fun PlanificadosContenido(
  * Arriba: ícono, nombre, "Mensual · 5 nov." y el monto.
  * Abajo: "Quitar" y "Ya lo pagué" (gasto) o "Ya lo cobré" (ingreso).
  * Si la fecha ya pasó, la línea de la fecha se pinta en rojo con "Vencido".
+ * Si todavía falta para la fecha, el botón queda apagado con "Disponible desde 24 nov.":
+ * así un mismo periodo no se puede marcar dos veces.
  */
 @Composable
 private fun TarjetaPlanificado(
@@ -196,6 +201,7 @@ private fun TarjetaPlanificado(
     val color = colorCategoria(item.categoria?.color, MaterialTheme.colorScheme.primary)
     val hoy = Formato.hoy()
     val vencido = planificado.estaVencido(hoy)
+    val sePuedeMarcar = planificado.sePuedeMarcar(hoy)
     val fecha = when (planificado.proximaFecha) {
         hoy -> stringResource(R.string.planificados_hoy)
         else -> Formato.fechaCorta(planificado.proximaFecha)
@@ -257,15 +263,17 @@ private fun TarjetaPlanificado(
             TextButton(onClick = onQuitar, enabled = !bloqueado) {
                 Text(stringResource(R.string.planificados_quitar), color = MaterialTheme.colorScheme.error)
             }
-            TextButton(onClick = onRegistrarPago, enabled = !bloqueado) {
+            TextButton(onClick = onRegistrarPago, enabled = !bloqueado && sePuedeMarcar) {
                 Text(
-                    stringResource(
-                        when {
-                            procesando -> R.string.planificados_anotando
-                            esGasto -> R.string.planificados_ya_pague
-                            else -> R.string.planificados_ya_cobre
-                        },
-                    ),
+                    when {
+                        procesando -> stringResource(R.string.planificados_anotando)
+                        !sePuedeMarcar -> stringResource(
+                            R.string.planificados_disponible_desde,
+                            Formato.fechaCorta(planificado.disponibleDesde()),
+                        )
+                        esGasto -> stringResource(R.string.planificados_ya_pague)
+                        else -> stringResource(R.string.planificados_ya_cobre)
+                    },
                 )
             }
         }
