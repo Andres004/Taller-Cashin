@@ -202,7 +202,7 @@ fun PrincipalNavHost() {
             composable<Rutas.NuevaMeta> {
                 NuevaMetaScreen(
                     onAtras = { nav.popBackStack() },
-                    onCreada = { metaId ->
+                    onGuardada = { metaId ->
                         // Se reemplaza el formulario por el detalle: "atrás" vuelve a la lista de metas.
                         nav.navigate(Rutas.DetalleMeta(metaId)) {
                             popUpTo<Rutas.NuevaMeta> { inclusive = true }
@@ -217,9 +217,22 @@ fun PrincipalNavHost() {
                 DetalleMetaScreen(
                     metaId = ruta.metaId,
                     onAtras = { nav.popBackStack() },
+                    onEditar = { nav.navigate(Rutas.EditarMeta(ruta.metaId)) },
                     onCancelada = {
                         nav.popBackStack()
                         mostrarMensaje(textoMetaCancelada)
+                    },
+                )
+            }
+
+            composable<Rutas.EditarMeta> { entradaActual ->
+                val ruta = entradaActual.toRoute<Rutas.EditarMeta>()
+                NuevaMetaScreen(
+                    metaId = ruta.metaId,
+                    onAtras = { nav.popBackStack() },
+                    onGuardada = {
+                        nav.popBackStack()
+                        mostrarMensaje(textoCambiosGuardados)
                     },
                 )
             }

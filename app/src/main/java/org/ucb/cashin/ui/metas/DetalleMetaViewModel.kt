@@ -53,11 +53,10 @@ class DetalleMetaViewModel(
     private val _uiState = MutableStateFlow(DetalleMetaUiState())
     val uiState: StateFlow<DetalleMetaUiState> = _uiState.asStateFlow()
 
-    init {
-        cargar()
-    }
-
-    /** Trae el avance (de la vista) y la lista de ahorros y retiros. */
+    /**
+     * Trae el avance (de la vista) y la lista de ahorros y retiros.
+     * La pantalla lo llama cada vez que se abre, así se ven los cambios al volver de editar.
+     */
     fun cargar() {
         viewModelScope.launch {
             _uiState.update { it.copy(cargando = it.avance == null, error = null) }

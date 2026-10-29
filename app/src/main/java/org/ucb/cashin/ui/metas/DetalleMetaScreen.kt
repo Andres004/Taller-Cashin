@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -66,10 +67,14 @@ import java.math.BigDecimal
 fun DetalleMetaScreen(
     metaId: String,
     onAtras: () -> Unit,
+    onEditar: () -> Unit,
     onCancelada: () -> Unit,
     viewModel: DetalleMetaViewModel = viewModel(factory = DetalleMetaViewModel.fabrica(metaId)),
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Se recarga cada vez que se entra (por ejemplo al volver de editar la meta).
+    LaunchedEffect(Unit) { viewModel.cargar() }
 
     LaunchedEffect(estado.cancelada) {
         if (estado.cancelada) onCancelada()
@@ -78,6 +83,7 @@ fun DetalleMetaScreen(
     DetalleMetaContenido(
         estado = estado,
         onAtras = onAtras,
+        onEditar = onEditar,
         onReintentar = viewModel::cargar,
         onAbrirDialogo = viewModel::abrirDialogo,
         onCerrarDialogo = viewModel::cerrarDialogo,
@@ -93,6 +99,7 @@ fun DetalleMetaScreen(
 fun DetalleMetaContenido(
     estado: DetalleMetaUiState,
     onAtras: () -> Unit,
+    onEditar: () -> Unit,
     onReintentar: () -> Unit,
     onAbrirDialogo: (TipoAporte) -> Unit,
     onCerrarDialogo: () -> Unit,
@@ -110,6 +117,13 @@ fun DetalleMetaContenido(
             onAtras = onAtras,
             acciones = {
                 if (avance != null) {
+                    IconButton(onClick = onEditar, enabled = !estado.cancelando) {
+                        Icon(
+                            imageVector = Icons.Outlined.Edit,
+                            contentDescription = stringResource(R.string.metas_editar),
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
                     IconButton(onClick = { confirmarCancelar = true }, enabled = !estado.cancelando) {
                         Icon(
                             imageVector = Icons.Outlined.Delete,
@@ -405,6 +419,7 @@ private fun DetalleMetaPreview() = CashinTheme {
             ),
         ),
         onAtras = {},
+        onEditar = {},
         onReintentar = {},
         onAbrirDialogo = {},
         onCerrarDialogo = {},

@@ -33,6 +33,8 @@ object Rutas {
     @Serializable data object NuevaMeta
     /** HU-18, HU-19 · Sprint 3. */
     @Serializable data class DetalleMeta(val metaId: String)
+    /** Formulario de Nueva meta con la meta ya cargada para corregirla. */
+    @Serializable data class EditarMeta(val metaId: String)
 
     // Se abren desde el menú del Perfil.
     /** HU-11, HU-12 · Sprint 3. */

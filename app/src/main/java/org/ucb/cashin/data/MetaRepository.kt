@@ -47,6 +47,21 @@ class MetaRepository(private val supabase: SupabaseClient) {
         }.decodeList<AporteMeta>()
     }
 
+    /** Una meta por su id, para poder editarla. */
+    suspend fun obtener(metaId: String): Result<Meta> = llamada {
+        supabase.from("meta").select {
+            filter { eq("id", metaId) }
+        }.decodeSingle<Meta>()
+    }
+
+    /** Guarda los cambios de nombre, monto objetivo, fecha límite y descripción. */
+    suspend fun actualizar(metaId: String, cambios: NuevaMeta): Result<Meta> = llamada {
+        supabase.from("meta").update(cambios) {
+            filter { eq("id", metaId) }
+            select()
+        }.decodeSingle<Meta>()
+    }
+
     /** HU-17: crea una meta (nombre, monto objetivo y fecha límite opcional). */
     suspend fun crear(nueva: NuevaMeta): Result<Meta> = llamada {
         supabase.from("meta").insert(nueva) {

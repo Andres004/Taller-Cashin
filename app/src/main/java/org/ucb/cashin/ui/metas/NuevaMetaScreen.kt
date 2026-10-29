@@ -44,6 +44,8 @@ import org.ucb.cashin.ui.components.CashinBoton
 import org.ucb.cashin.ui.components.CashinCampoMonto
 import org.ucb.cashin.ui.components.CashinCampoTexto
 import org.ucb.cashin.ui.components.CashinTopBar
+import org.ucb.cashin.ui.components.EstadoCargando
+import org.ucb.cashin.ui.components.EstadoError
 import org.ucb.cashin.ui.components.mensaje
 import org.ucb.cashin.ui.theme.CashinTheme
 import org.ucb.cashin.ui.theme.Espacio
@@ -52,22 +54,27 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
-/** HU-17: formulario para crear una meta. Al guardarla se abre su detalle. */
+/**
+ * HU-17: formulario para crear una meta.
+ * Con un [metaId] sirve para editarla (mismos campos y mismas validaciones).
+ */
 @Composable
 fun NuevaMetaScreen(
     onAtras: () -> Unit,
-    onCreada: (metaId: String) -> Unit,
-    viewModel: NuevaMetaViewModel = viewModel(factory = NuevaMetaViewModel.Factory),
+    onGuardada: (metaId: String) -> Unit,
+    metaId: String? = null,
+    viewModel: NuevaMetaViewModel = viewModel(factory = NuevaMetaViewModel.fabrica(metaId)),
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(estado.metaCreadaId) {
-        estado.metaCreadaId?.let { onCreada(it) }
+    LaunchedEffect(estado.metaGuardadaId) {
+        estado.metaGuardadaId?.let { onGuardada(it) }
     }
 
     NuevaMetaContenido(
         estado = estado,
         onAtras = onAtras,
+        onReintentar = viewModel::cargarMeta,
         onNombreCambio = viewModel::onNombreCambio,
         onMontoCambio = viewModel::onMontoCambio,
         onFechaCambio = viewModel::onFechaCambio,
@@ -76,11 +83,12 @@ fun NuevaMetaScreen(
     )
 }
 
-/** Solo dibuja el formulario. */
+/** Solo dibuja el formulario. En edición también muestra la carga y el error al traer la meta. */
 @Composable
 fun NuevaMetaContenido(
     estado: NuevaMetaUiState,
     onAtras: () -> Unit,
+    onReintentar: () -> Unit,
     onNombreCambio: (String) -> Unit,
     onMontoCambio: (String) -> Unit,
     onFechaCambio: (LocalDate?) -> Unit,
@@ -91,69 +99,82 @@ fun NuevaMetaContenido(
     val habilitado = !estado.guardando
 
     Column(modifier = Modifier.fillMaxSize()) {
-        CashinTopBar(titulo = stringResource(R.string.metas_nueva), onAtras = onAtras)
+        CashinTopBar(
+            titulo = stringResource(if (estado.esEdicion) R.string.metas_editar else R.string.metas_nueva),
+            onAtras = onAtras,
+        )
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .imePadding()
-                .padding(horizontal = Espacio.pantalla, vertical = Espacio.s),
-            verticalArrangement = Arrangement.spacedBy(Espacio.l),
-        ) {
-            CashinCampoTexto(
-                etiqueta = stringResource(R.string.metas_nombre),
-                valor = estado.nombre,
-                onValorCambio = onNombreCambio,
-                placeholder = stringResource(R.string.metas_nombre_ejemplo),
-                error = estado.errorNombre?.let { stringResource(it) },
-                accionIme = ImeAction.Next,
-                habilitado = habilitado,
-                capitalizar = true,
-            )
+        when {
+            estado.cargandoMeta -> EstadoCargando()
 
-            CashinCampoMonto(
-                valor = estado.montoObjetivo,
-                onValorCambio = onMontoCambio,
-                etiqueta = stringResource(R.string.metas_monto_objetivo),
-                error = estado.errorMonto?.let { stringResource(it) },
-                colorMonto = MaterialTheme.colorScheme.secondary,
-                habilitado = habilitado,
-            )
+            estado.errorMeta != null -> EstadoError(mensaje = estado.errorMeta.mensaje(), onReintentar = onReintentar)
 
-            Column {
-                Text(
-                    text = stringResource(R.string.metas_fecha_limite),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(start = 12.dp, bottom = 6.dp),
-                )
-                CampoFechaOpcional(
-                    fecha = estado.fechaLimite,
-                    conError = estado.errorFecha != null,
+            else -> Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .imePadding()
+                    .padding(horizontal = Espacio.pantalla, vertical = Espacio.s),
+                verticalArrangement = Arrangement.spacedBy(Espacio.l),
+            ) {
+                CashinCampoTexto(
+                    etiqueta = stringResource(R.string.metas_nombre),
+                    valor = estado.nombre,
+                    onValorCambio = onNombreCambio,
+                    placeholder = stringResource(R.string.metas_nombre_ejemplo),
+                    error = estado.errorNombre?.let { stringResource(it) },
+                    accionIme = ImeAction.Next,
                     habilitado = habilitado,
-                    onClick = { mostrarCalendario = true },
-                    onQuitar = { onFechaCambio(null) },
+                    capitalizar = true,
                 )
-                estado.errorFecha?.let { MensajeError(stringResource(it)) }
+
+                CashinCampoMonto(
+                    valor = estado.montoObjetivo,
+                    onValorCambio = onMontoCambio,
+                    etiqueta = stringResource(R.string.metas_monto_objetivo),
+                    error = estado.errorMonto?.let { stringResource(it) },
+                    colorMonto = MaterialTheme.colorScheme.secondary,
+                    habilitado = habilitado,
+                )
+
+                CashinCampoTexto(
+                    etiqueta = stringResource(R.string.metas_descripcion),
+                    valor = estado.descripcion,
+                    onValorCambio = onDescripcionCambio,
+                    placeholder = stringResource(R.string.metas_descripcion_ejemplo),
+                    error = estado.errorDescripcion?.let { stringResource(it) },
+                    accionIme = ImeAction.Done,
+                    habilitado = habilitado,
+                    capitalizar = true,
+                )
+
+                Column {
+                    Text(
+                        text = stringResource(R.string.metas_fecha_limite),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(start = 12.dp, bottom = 6.dp),
+                    )
+                    CampoFechaOpcional(
+                        fecha = estado.fechaLimite,
+                        conError = estado.errorFecha != null,
+                        habilitado = habilitado,
+                        onClick = { mostrarCalendario = true },
+                        onQuitar = { onFechaCambio(null) },
+                    )
+                    estado.errorFecha?.let { MensajeError(stringResource(it)) }
+                }
+
+                // Aviso junto al botón: así se nota aunque el campo con error haya quedado fuera de la pantalla.
+                if (estado.hayErrores) MensajeError(stringResource(R.string.formulario_revisa_campos))
+                estado.error?.let { MensajeError(it.mensaje()) }
+
+                CashinBoton(
+                    texto = stringResource(if (estado.esEdicion) R.string.anotar_guardar_cambios else R.string.metas_crear),
+                    onClick = onGuardar,
+                    cargando = estado.guardando,
+                )
             }
-
-            CashinCampoTexto(
-                etiqueta = stringResource(R.string.metas_descripcion),
-                valor = estado.descripcion,
-                onValorCambio = onDescripcionCambio,
-                placeholder = stringResource(R.string.metas_descripcion_ejemplo),
-                accionIme = ImeAction.Done,
-                habilitado = habilitado,
-            )
-
-            estado.error?.let { MensajeError(it.mensaje()) }
-
-            CashinBoton(
-                texto = stringResource(R.string.metas_crear),
-                onClick = onGuardar,
-                cargando = estado.guardando,
-            )
         }
     }
 
@@ -169,7 +190,7 @@ fun NuevaMetaContenido(
     }
 }
 
-/** "Sin fecha límite (opcional)" o la fecha elegida con una ✕ para quitarla. */
+/** "Sin fecha límite" o la fecha elegida con una ✕ para quitarla. */
 @Composable
 private fun CampoFechaOpcional(
     fecha: LocalDate?,
@@ -234,7 +255,7 @@ private fun CalendarioFechaLimite(
     val manana = Formato.hoy().plusDays(1)
     val mananaMilis = manana.aMilisUtc()
     val calendario = rememberDatePickerState(
-        initialSelectedDateMillis = fecha?.aMilisUtc(),
+        initialSelectedDateMillis = fecha?.takeIf { !it.isBefore(manana) }?.aMilisUtc(),
         initialDisplayedMonthMillis = (fecha ?: manana).aMilisUtc(),
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis >= mananaMilis
@@ -288,10 +309,15 @@ private fun MensajeError(texto: String) {
 
 @Preview(showBackground = true, backgroundColor = 0xFFFCF7EA)
 @Composable
-private fun NuevaMetaPreview() = CashinTheme {
+private fun NuevaMetaConErroresPreview() = CashinTheme {
     NuevaMetaContenido(
-        estado = NuevaMetaUiState(nombre = "Celular nuevo", montoObjetivo = "2500"),
+        estado = NuevaMetaUiState(
+            errorNombre = R.string.metas_error_nombre,
+            errorMonto = R.string.validacion_monto,
+            errorDescripcion = R.string.metas_error_descripcion,
+        ),
         onAtras = {},
+        onReintentar = {},
         onNombreCambio = {},
         onMontoCambio = {},
         onFechaCambio = {},
