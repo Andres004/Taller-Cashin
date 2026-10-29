@@ -50,7 +50,9 @@ import org.ucb.cashin.ui.categorias.CategoriasScreen
 import org.ucb.cashin.ui.desafios.DesafiosScreen
 import org.ucb.cashin.ui.deudas.DeudasScreen
 import org.ucb.cashin.ui.inicio.InicioScreen
+import org.ucb.cashin.ui.metas.DetalleMetaScreen
 import org.ucb.cashin.ui.metas.MetasScreen
+import org.ucb.cashin.ui.metas.NuevaMetaScreen
 import org.ucb.cashin.ui.perfil.OpcionPerfil
 import org.ucb.cashin.ui.perfil.PerfilScreen
 import org.ucb.cashin.model.TipoRegistro
@@ -94,6 +96,8 @@ fun PrincipalNavHost() {
     val textoPagoAnotado = stringResource(R.string.planificados_pago_anotado)
     val textoCobroAnotado = stringResource(R.string.planificados_cobro_anotado)
     val textoPlanificadoGuardado = stringResource(R.string.planificados_guardado)
+    val textoMetaCreada = stringResource(R.string.metas_creada)
+    val textoMetaCancelada = stringResource(R.string.metas_cancelada)
 
     fun mostrarMensaje(texto: String) {
         scope.launch { snackbar.showSnackbar(texto) }
@@ -188,7 +192,37 @@ fun PrincipalNavHost() {
                 )
             }
 
-            composable<Rutas.Metas> { MetasScreen() }
+            composable<Rutas.Metas> {
+                MetasScreen(
+                    onNueva = { nav.navigate(Rutas.NuevaMeta) },
+                    onMetaClick = { metaId -> nav.navigate(Rutas.DetalleMeta(metaId)) },
+                )
+            }
+
+            composable<Rutas.NuevaMeta> {
+                NuevaMetaScreen(
+                    onAtras = { nav.popBackStack() },
+                    onCreada = { metaId ->
+                        // Se reemplaza el formulario por el detalle: "atrás" vuelve a la lista de metas.
+                        nav.navigate(Rutas.DetalleMeta(metaId)) {
+                            popUpTo<Rutas.NuevaMeta> { inclusive = true }
+                        }
+                        mostrarMensaje(textoMetaCreada)
+                    },
+                )
+            }
+
+            composable<Rutas.DetalleMeta> { entradaActual ->
+                val ruta = entradaActual.toRoute<Rutas.DetalleMeta>()
+                DetalleMetaScreen(
+                    metaId = ruta.metaId,
+                    onAtras = { nav.popBackStack() },
+                    onCancelada = {
+                        nav.popBackStack()
+                        mostrarMensaje(textoMetaCancelada)
+                    },
+                )
+            }
 
             composable<Rutas.Perfil> {
                 PerfilScreen(onOpcion = { opcion -> nav.navigate(rutaDe(opcion)) })

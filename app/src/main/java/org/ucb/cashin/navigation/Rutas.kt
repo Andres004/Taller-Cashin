@@ -28,6 +28,12 @@ object Rutas {
     /** Formulario de Anotar con una anotación ya cargada para corregirla o borrarla. */
     @Serializable data class EditarRegistro(val registroId: String)
 
+    // Se abren desde la pestaña Metas.
+    /** HU-17 · Sprint 3. */
+    @Serializable data object NuevaMeta
+    /** HU-18, HU-19 · Sprint 3. */
+    @Serializable data class DetalleMeta(val metaId: String)
+
     // Se abren desde el menú del Perfil.
     /** HU-11, HU-12 · Sprint 3. */
     @Serializable data object MisCategorias
