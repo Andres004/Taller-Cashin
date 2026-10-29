@@ -3,6 +3,7 @@ package org.ucb.cashin.prediccion
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
+import java.time.YearMonth
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.sqrt
@@ -105,6 +106,20 @@ fun proyectarMesActual(
         peso * ritmo + (1 - peso) * pronosticoDelMes.esperado.toDouble()
     }
     return aMonto(max(proyeccion, 0.0))
+}
+
+/**
+ * Pronostica el **próximo mes** (el que viene después del actual).
+ * Como el mes actual todavía no termina, se agrega a la serie con su [proyeccionActual].
+ * Sin historia de meses completos no se pronostica.
+ */
+fun pronosticarProximoMes(
+    serie: List<PuntoMensual>,
+    proyeccionActual: BigDecimal,
+    hoy: LocalDate,
+): Pronostico {
+    if (serie.isEmpty()) return Pronostico.SIN_DATOS
+    return pronosticarSiguienteMes(serie + PuntoMensual(YearMonth.from(hoy), proyeccionActual.toDouble()))
 }
 
 /**

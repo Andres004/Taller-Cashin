@@ -123,6 +123,23 @@ class PronosticoTest {
         assertEquals(bd("900.00"), proyeccion)
     }
 
+    // ---------------------------------------------------------- pronosticarProximoMes
+
+    @Test fun `sin meses completos no pronostica el proximo mes`() {
+        val p = pronosticarProximoMes(emptyList(), bd("500"), LocalDate.of(2026, 10, 15))
+
+        assertEquals(Confianza.SIN_DATOS, p.confianza)
+    }
+
+    @Test fun `el proximo mes suma la proyeccion del mes actual a la serie`() {
+        // Serie enero–septiembre de 1000 y octubre proyectado en 1000 → noviembre ≈ 1000.
+        val nueveMeses = serie(1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0)
+        val p = pronosticarProximoMes(nueveMeses, bd("1000"), LocalDate.of(2026, 10, 15))
+
+        assertEquals(bd("1000.00"), p.esperado)
+        assertEquals(Confianza.ALTA, p.confianza)
+    }
+
     // ---------------------------------------------------------- errorMedioAbsoluto
 
     @Test fun `con menos de cuatro meses no se puede evaluar`() {
