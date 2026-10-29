@@ -61,6 +61,7 @@ import java.time.YearMonth
 @Composable
 fun HistorialScreen(
     onRegistroClick: (registroId: String) -> Unit,
+    onAnotar: () -> Unit,
     viewModel: HistorialViewModel = viewModel(factory = HistorialViewModel.Factory),
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
@@ -74,6 +75,7 @@ fun HistorialScreen(
         onFiltroCambio = viewModel::onFiltroCambio,
         onMesCambio = viewModel::onMesCambio,
         onRegistroClick = onRegistroClick,
+        onAnotar = onAnotar,
     )
 }
 
@@ -88,6 +90,7 @@ fun HistorialContenido(
     onFiltroCambio: (FiltroTipo) -> Unit,
     onMesCambio: (YearMonth) -> Unit,
     onRegistroClick: (registroId: String) -> Unit,
+    onAnotar: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         CashinTopBar(titulo = stringResource(R.string.nav_historial))
@@ -104,6 +107,8 @@ fun HistorialContenido(
                 titulo = stringResource(R.string.historial_vacio_titulo),
                 mensaje = stringResource(R.string.historial_vacio_mensaje),
                 emocion = Emocion.FELIZ,
+                textoAccion = stringResource(R.string.historial_vacio_accion),
+                onAccion = onAnotar,
             )
 
             else -> {
@@ -298,5 +303,6 @@ private fun HistorialPreview() = CashinTheme {
         onFiltroCambio = {},
         onMesCambio = {},
         onRegistroClick = {},
+        onAnotar = {},
     )
 }

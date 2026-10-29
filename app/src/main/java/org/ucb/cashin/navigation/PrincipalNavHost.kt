@@ -149,6 +149,7 @@ fun PrincipalNavHost() {
             composable<Rutas.Historial> {
                 HistorialScreen(
                     onRegistroClick = { registroId -> abrirRegistro(registroId) },
+                    onAnotar = { irAPestana(Rutas.Anotar) },
                 )
             }
 
