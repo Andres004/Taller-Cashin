@@ -13,6 +13,7 @@ import org.ucb.cashin.data.AuthRepository
 import org.ucb.cashin.data.PerfilRepository
 import org.ucb.cashin.di.fabricaDe
 import org.ucb.cashin.model.ErrorApp
+import org.ucb.cashin.model.Moneda
 import org.ucb.cashin.model.Perfil
 import org.ucb.cashin.model.PerfilEditable
 import org.ucb.cashin.model.comoErrorApp
@@ -31,12 +32,13 @@ data class PerfilUiState(
     @StringRes val errorNombre: Int? = null,
     val guardandoNombre: Boolean = false,
     val errorGuardar: ErrorApp? = null,
+    val guardandoMoneda: Boolean = false,
     val cerrandoSesion: Boolean = false,
     val error: ErrorApp? = null,
 )
 
 /**
- * HU-05: ver el progreso (nivel, XP y racha) y cambiar el nombre.
+ * HU-05: ver el progreso (nivel, XP y racha) y cambiar el nombre y la moneda.
  * HU-04: cerrar sesión.
  */
 class PerfilViewModel(
@@ -102,7 +104,33 @@ class PerfilViewModel(
         }
     }
 
-    /** Al cerrar sesión, CashinRaiz vuelve sola a la pantalla de Login. */
+    /**
+     * HU-05: guarda la moneda elegida (Bs o $us) sin tocar el nombre ni el avatar.
+     * Si falla, el perfil se queda con la moneda que tenía y se muestra el error.
+     */
+    fun cambiarMoneda(moneda: Moneda) {
+        val estado = _uiState.value
+        val perfil = estado.perfil ?: return
+        if (estado.guardandoMoneda || perfil.moneda == moneda) return
+
+        val cambios = PerfilEditable(
+            nombre = perfil.nombre,
+            moneda = moneda,
+            avatar = perfil.avatar,
+        )
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(guardandoMoneda = true, error = null) }
+            perfilRepository.actualizar(perfil.id, cambios)
+                .onSuccess { actualizado ->
+                    mostrarPerfil(actualizado)
+                    _uiState.update { it.copy(guardandoMoneda = false) }
+                }
+                .onFailure { e -> _uiState.update { it.copy(guardandoMoneda = false, error = e.comoErrorApp()) } }
+        }
+    }
+
+    /** Al cerrar sesión, CashinRaiz vuelve sola a la pantalla de Bienvenida. */
     fun cerrarSesion() {
         viewModelScope.launch {
             _uiState.update { it.copy(cerrandoSesion = true, error = null) }

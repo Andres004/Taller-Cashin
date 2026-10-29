@@ -1,6 +1,9 @@
 package org.ucb.cashin.ui.perfil
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -9,14 +12,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -28,16 +38,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.ucb.cashin.R
 import org.ucb.cashin.model.ErrorApp
+import org.ucb.cashin.model.Moneda
 import org.ucb.cashin.model.Perfil
 import org.ucb.cashin.ui.components.AvatarImagen
 import org.ucb.cashin.ui.components.BarraProgreso
@@ -51,10 +66,11 @@ import org.ucb.cashin.ui.components.mensaje
 import org.ucb.cashin.ui.theme.CashinColores
 import org.ucb.cashin.ui.theme.CashinTheme
 import org.ucb.cashin.ui.theme.Espacio
+import org.ucb.cashin.util.Formato
 import java.time.LocalDate
 
 /**
- * HU-05: perfil con nombre, nivel, XP y racha, y la opción de cambiar el nombre.
+ * HU-05: perfil con nombre, nivel, XP, racha y moneda, y la opción de cambiar el nombre y la moneda.
  * HU-04: cerrar sesión.
  */
 @Composable
@@ -71,6 +87,7 @@ fun PerfilScreen(viewModel: PerfilViewModel = viewModel(factory = PerfilViewMode
         onNombreCambio = viewModel::onNombreCambio,
         onGuardarNombre = viewModel::guardarNombre,
         onCancelarEdicion = viewModel::onCancelarEdicion,
+        onMonedaCambio = viewModel::cambiarMoneda,
         onCerrarSesion = viewModel::cerrarSesion,
     )
 }
@@ -84,6 +101,7 @@ fun PerfilContenido(
     onNombreCambio: (String) -> Unit,
     onGuardarNombre: () -> Unit,
     onCancelarEdicion: () -> Unit,
+    onMonedaCambio: (Moneda) -> Unit,
     onCerrarSesion: () -> Unit,
 ) {
     var confirmarCierre by rememberSaveable { mutableStateOf(false) }
@@ -98,10 +116,11 @@ fun PerfilContenido(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Espacio.m),
         ) {
-            AvatarImagen(emocion = Emocion.COOL, tamano = 140.dp)
-
             when {
-                estado.cargando -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                estado.cargando -> CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(vertical = Espacio.xl),
+                )
 
                 estado.errorCarga != null -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
@@ -121,7 +140,9 @@ fun PerfilContenido(
                     perfil = estado.perfil,
                     correo = estado.correo,
                     racha = estado.racha,
+                    guardandoMoneda = estado.guardandoMoneda,
                     onEditarNombre = onEditarNombre,
+                    onMonedaCambio = onMonedaCambio,
                 )
             }
 
@@ -169,37 +190,18 @@ fun PerfilContenido(
     }
 }
 
-/** Nombre, correo, botón para editar el nombre, nivel con XP y las dos rachas. */
+/** Encabezado con Cashi, nombre y correo; nivel con XP; las dos rachas; y la moneda. */
 @Composable
 private fun DatosDelPerfil(
     perfil: Perfil,
     correo: String,
     racha: Int,
+    guardandoMoneda: Boolean,
     onEditarNombre: () -> Unit,
+    onMonedaCambio: (Moneda) -> Unit,
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Espacio.m),
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = perfil.nombre,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = correo,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            CashinBoton(
-                texto = stringResource(R.string.perfil_editar_nombre),
-                onClick = onEditarNombre,
-                variante = VarianteBoton.TEXTO,
-                icono = Icons.Outlined.Edit,
-            )
-        }
+    Column(verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
+        EncabezadoPerfil(nombre = perfil.nombre, correo = correo, onEditarNombre = onEditarNombre)
 
         TarjetaNivel(perfil = perfil)
 
@@ -219,6 +221,63 @@ private fun DatosDelPerfil(
                 dias = perfil.rachaMaxima,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
             )
+        }
+
+        TarjetaMoneda(moneda = perfil.moneda, guardando = guardandoMoneda, onMonedaCambio = onMonedaCambio)
+    }
+}
+
+/** Cashi en un círculo, el nombre y el correo al lado, y el botón de lápiz para editar el nombre. */
+@Composable
+private fun EncabezadoPerfil(nombre: String, correo: String, onEditarNombre: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Espacio.m),
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.tertiaryContainer,
+            border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
+            modifier = Modifier.size(68.dp),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                AvatarImagen(emocion = Emocion.COOL, tamano = 56.dp)
+            }
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = nombre,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = correo,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        Surface(
+            onClick = onEditarNombre,
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            modifier = Modifier.size(44.dp),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Outlined.Edit,
+                    contentDescription = stringResource(R.string.perfil_editar_nombre),
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
     }
 }
@@ -266,6 +325,49 @@ private fun TarjetaRacha(titulo: String, dias: Int, modifier: Modifier = Modifie
             style = MaterialTheme.typography.headlineSmall,
             color = CashinColores.racha,
         )
+    }
+}
+
+/** "Moneda" con dos opciones, Bs y $us. La elegida va en verde oscuro. */
+@Composable
+private fun TarjetaMoneda(moneda: Moneda, guardando: Boolean, onMonedaCambio: (Moneda) -> Unit) {
+    CashinTarjeta {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.perfil_moneda),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f),
+            )
+            Row(
+                modifier = Modifier.selectableGroup(),
+                horizontalArrangement = Arrangement.spacedBy(Espacio.xs),
+            ) {
+                Moneda.entries.forEach { opcion ->
+                    val elegida = opcion == moneda
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .height(40.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(if (elegida) MaterialTheme.colorScheme.secondary else Color.Transparent)
+                            .selectable(
+                                selected = elegida,
+                                enabled = !guardando,
+                                role = Role.RadioButton,
+                                onClick = { onMonedaCambio(opcion) },
+                            )
+                            .padding(horizontal = Espacio.m),
+                    ) {
+                        Text(
+                            text = Formato.simboloMoneda(opcion.name),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = if (elegida) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -318,7 +420,7 @@ private fun DialogoEditarNombre(
     )
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFCF7EA)
+@Preview(showBackground = true, backgroundColor = 0xFFFCF7EA, heightDp = 800)
 @Composable
 private fun PerfilPreview() = CashinTheme {
     PerfilContenido(
@@ -328,11 +430,11 @@ private fun PerfilPreview() = CashinTheme {
                 id = "u",
                 nombre = "Carlos",
                 xp = 230,
-                rachaActual = 3,
-                rachaMaxima = 5,
+                rachaActual = 4,
+                rachaMaxima = 9,
                 ultimoRegistro = LocalDate.now(),
             ),
-            racha = 3,
+            racha = 4,
             cargando = false,
         ),
         onReintentar = {},
@@ -340,6 +442,7 @@ private fun PerfilPreview() = CashinTheme {
         onNombreCambio = {},
         onGuardarNombre = {},
         onCancelarEdicion = {},
+        onMonedaCambio = {},
         onCerrarSesion = {},
     )
 }
