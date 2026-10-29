@@ -14,6 +14,15 @@ import org.ucb.cashin.data.ResumenRepository
 import org.ucb.cashin.di.fabricaDe
 import org.ucb.cashin.model.ErrorApp
 import org.ucb.cashin.model.comoErrorApp
+import org.ucb.cashin.prediccion.Confianza
+import org.ucb.cashin.prediccion.MensajeAvatar
+import org.ucb.cashin.prediccion.Pronostico
+import org.ucb.cashin.prediccion.TipoMensaje
+import org.ucb.cashin.prediccion.construirSerie
+import org.ucb.cashin.prediccion.mensajeParaProyeccion
+import org.ucb.cashin.prediccion.pronosticarProximoMes
+import org.ucb.cashin.prediccion.pronosticarSiguienteMes
+import org.ucb.cashin.prediccion.proyectarMesActual
 import org.ucb.cashin.ui.registros.RegistroConCategoria
 import org.ucb.cashin.ui.registros.unirConCategorias
 import org.ucb.cashin.util.Formato
@@ -30,15 +39,30 @@ data class InicioUiState(
     val xp: Int = 0,
     val progresoNivel: Float = 0f,
     val ultimas: List<RegistroConCategoria> = emptyList(),
+    /** Pronóstico del gasto de este mes, hecho solo con los meses completos anteriores. */
+    val pronosticoMes: Pronostico = Pronostico.SIN_DATOS,
+    /** Cómo terminará este mes al ritmo actual. */
+    val proyeccionMes: BigDecimal = BigDecimal.ZERO,
+    /** Pronóstico del próximo mes (rango mínimo–máximo). */
+    val pronosticoProximo: Pronostico = Pronostico.SIN_DATOS,
+    /** Mensaje del motor para Cashi (gasto normal o más rápido de lo común). */
+    val mensajeIa: MensajeAvatar? = null,
     val cargando: Boolean = true,
     val error: ErrorApp? = null,
 ) {
     /** Ingresos menos gastos del mes. Es solo una diferencia de anotaciones, no un saldo. */
     val diferencia: BigDecimal get() = totalIngresos - totalGastos
+
+    /** Hay al menos un mes completo de historia para pronosticar. */
+    val hayPronostico: Boolean get() = pronosticoMes.confianza != Confianza.SIN_DATOS
+
+    /** La proyección del mes supera el máximo pronosticado: se gasta más rápido que de costumbre. */
+    val gastaMasRapido: Boolean get() = mensajeIa?.tipo == TipoMensaje.GASTO_MAS_RAPIDO
 }
 
 /**
  * HU-13: resumen del mes, racha, XP y últimas anotaciones.
+ * IA predictiva: proyección del gasto de este mes y pronóstico del próximo (paquete prediccion/).
  */
 class InicioViewModel(
     private val perfilRepository: PerfilRepository,
@@ -77,7 +101,16 @@ class InicioViewModel(
                 return@launch
             }
 
+            // Si la historia no se puede leer, Inicio igual se muestra: el pronóstico queda "sin datos".
+            val historial = resumenRepository.historialMensual().getOrDefault(emptyList())
+
             val hoy = Formato.hoy()
+            val gastoDelMes = totales?.totalGastos ?: BigDecimal.ZERO
+            val serieGastos = construirSerie(historial, hoy) { it.totalGastos }
+            val pronosticoMes = pronosticarSiguienteMes(serieGastos)
+            val proyeccion = proyectarMesActual(gastoDelMes, hoy, pronosticoMes)
+            val pronosticoProximo = pronosticarProximoMes(serieGastos, proyeccion, hoy)
+
             yaSeMostro = true
             _uiState.update {
                 it.copy(
@@ -90,6 +123,10 @@ class InicioViewModel(
                     xp = perfil.xp,
                     progresoNivel = perfil.progresoNivel,
                     ultimas = unirConCategorias(ultimas, categorias),
+                    pronosticoMes = pronosticoMes,
+                    proyeccionMes = proyeccion,
+                    pronosticoProximo = pronosticoProximo,
+                    mensajeIa = mensajeParaProyeccion(proyeccion, pronosticoMes),
                     cargando = false,
                     error = null,
                 )

@@ -121,6 +121,10 @@
     <string name="inicio_ultimas">Últimas anotaciones</string>
     <string name="inicio_ver_todo">Ver todo</string>
     <string name="inicio_sin_anotaciones">Todavía no tienes anotaciones. Toca + para empezar.</string>
+    <string name="inicio_pronostico">Pronóstico</string>
+    <string name="inicio_pronostico_sin_datos">Necesito al menos un mes completo de anotaciones para pronosticar.</string>
+    <string name="inicio_pronostico_mes">Al ritmo actual terminarás %1$s con ~%2$s de gastos.</string>
+    <string name="inicio_pronostico_proximo">Próximo mes: entre %1$s y %2$s.</string>
 
     <!-- Anotar (HU-06, HU-07) y editar (HU-08) -->
     <string name="anotar_tipo_gasto">Gasto</string>
