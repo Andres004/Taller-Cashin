@@ -46,9 +46,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import kotlinx.coroutines.launch
 import org.ucb.cashin.R
+import org.ucb.cashin.ui.categorias.CategoriasScreen
+import org.ucb.cashin.ui.desafios.DesafiosScreen
+import org.ucb.cashin.ui.deudas.DeudasScreen
 import org.ucb.cashin.ui.inicio.InicioScreen
 import org.ucb.cashin.ui.metas.MetasScreen
+import org.ucb.cashin.ui.perfil.OpcionPerfil
 import org.ucb.cashin.ui.perfil.PerfilScreen
+import org.ucb.cashin.ui.planificados.PlanificadosScreen
 import org.ucb.cashin.ui.registros.AnotarScreen
 import org.ucb.cashin.ui.registros.HistorialScreen
 import kotlin.reflect.KClass
@@ -179,9 +184,26 @@ fun PrincipalNavHost() {
             }
 
             composable<Rutas.Metas> { MetasScreen() }
-            composable<Rutas.Perfil> { PerfilScreen() }
+
+            composable<Rutas.Perfil> {
+                PerfilScreen(onOpcion = { opcion -> nav.navigate(rutaDe(opcion)) })
+            }
+
+            // Pantallas que se abren desde el menú del Perfil.
+            composable<Rutas.MisCategorias> { CategoriasScreen(onAtras = { nav.popBackStack() }) }
+            composable<Rutas.Planificados> { PlanificadosScreen(onAtras = { nav.popBackStack() }) }
+            composable<Rutas.Deudas> { DeudasScreen(onAtras = { nav.popBackStack() }) }
+            composable<Rutas.Desafios> { DesafiosScreen(onAtras = { nav.popBackStack() }) }
         }
     }
+}
+
+/** Ruta de cada opción del menú del Perfil. */
+private fun rutaDe(opcion: OpcionPerfil): Any = when (opcion) {
+    OpcionPerfil.MIS_CATEGORIAS -> Rutas.MisCategorias
+    OpcionPerfil.PLANIFICADOS -> Rutas.Planificados
+    OpcionPerfil.DEUDAS -> Rutas.Deudas
+    OpcionPerfil.DESAFIOS -> Rutas.Desafios
 }
 
 /**

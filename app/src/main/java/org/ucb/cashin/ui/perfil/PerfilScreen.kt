@@ -1,7 +1,9 @@
 package org.ucb.cashin.ui.perfil
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,10 +22,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -40,6 +48,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -69,12 +78,20 @@ import org.ucb.cashin.ui.theme.Espacio
 import org.ucb.cashin.util.Formato
 import java.time.LocalDate
 
+/** Opciones del menú del Perfil. Cada una abre la pantalla de su módulo. */
+enum class OpcionPerfil { MIS_CATEGORIAS, PLANIFICADOS, DEUDAS, DESAFIOS }
+
 /**
  * HU-05: perfil con nombre, nivel, XP, racha y moneda, y la opción de cambiar el nombre y la moneda.
  * HU-04: cerrar sesión.
+ * El menú lleva a Mis categorías, Pagos esperados, Deudas y Desafíos; quien abre esta
+ * pantalla decide a qué ruta ir con [onOpcion].
  */
 @Composable
-fun PerfilScreen(viewModel: PerfilViewModel = viewModel(factory = PerfilViewModel.Factory)) {
+fun PerfilScreen(
+    onOpcion: (OpcionPerfil) -> Unit,
+    viewModel: PerfilViewModel = viewModel(factory = PerfilViewModel.Factory),
+) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
 
     // Se recarga cada vez que se entra a la pestaña, para ver el XP y la racha al día.
@@ -88,6 +105,7 @@ fun PerfilScreen(viewModel: PerfilViewModel = viewModel(factory = PerfilViewMode
         onGuardarNombre = viewModel::guardarNombre,
         onCancelarEdicion = viewModel::onCancelarEdicion,
         onMonedaCambio = viewModel::cambiarMoneda,
+        onOpcion = onOpcion,
         onCerrarSesion = viewModel::cerrarSesion,
     )
 }
@@ -102,6 +120,7 @@ fun PerfilContenido(
     onGuardarNombre: () -> Unit,
     onCancelarEdicion: () -> Unit,
     onMonedaCambio: (Moneda) -> Unit,
+    onOpcion: (OpcionPerfil) -> Unit,
     onCerrarSesion: () -> Unit,
 ) {
     var confirmarCierre by rememberSaveable { mutableStateOf(false) }
@@ -144,6 +163,10 @@ fun PerfilContenido(
                     onEditarNombre = onEditarNombre,
                     onMonedaCambio = onMonedaCambio,
                 )
+            }
+
+            if (estado.perfil != null) {
+                MenuPerfil(onOpcion = onOpcion)
             }
 
             estado.error?.let {
@@ -371,6 +394,74 @@ private fun TarjetaMoneda(moneda: Moneda, guardando: Boolean, onMonedaCambio: (M
     }
 }
 
+/** Lista de opciones con ícono, nombre y una flecha ">", separadas por líneas finas. */
+@Composable
+private fun MenuPerfil(onOpcion: (OpcionPerfil) -> Unit) {
+    val linea = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        border = BorderStroke(1.dp, linea),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column {
+            OpcionPerfil.entries.forEachIndexed { indice, opcion ->
+                if (indice > 0) {
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = Espacio.m), color = linea)
+                }
+                FilaMenu(opcion = opcion, onClick = { onOpcion(opcion) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilaMenu(opcion: OpcionPerfil, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onClick)
+            .height(52.dp)
+            .padding(horizontal = Espacio.m),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Espacio.m),
+    ) {
+        Icon(
+            imageVector = opcion.icono(),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            text = stringResource(opcion.etiqueta()),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@StringRes
+private fun OpcionPerfil.etiqueta(): Int = when (this) {
+    OpcionPerfil.MIS_CATEGORIAS -> R.string.perfil_mis_categorias
+    OpcionPerfil.PLANIFICADOS -> R.string.perfil_planificados
+    OpcionPerfil.DEUDAS -> R.string.perfil_deudas
+    OpcionPerfil.DESAFIOS -> R.string.perfil_desafios
+}
+
+private fun OpcionPerfil.icono(): ImageVector = when (this) {
+    OpcionPerfil.MIS_CATEGORIAS -> Icons.Outlined.GridView
+    OpcionPerfil.PLANIFICADOS -> Icons.Outlined.CalendarMonth
+    OpcionPerfil.DEUDAS -> Icons.Outlined.SwapHoriz
+    OpcionPerfil.DESAFIOS -> Icons.Outlined.EmojiEvents
+}
+
 /** Diálogo para escribir el nombre nuevo. No se puede cerrar mientras se guarda. */
 @Composable
 private fun DialogoEditarNombre(
@@ -420,7 +511,7 @@ private fun DialogoEditarNombre(
     )
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFCF7EA, heightDp = 800)
+@Preview(showBackground = true, backgroundColor = 0xFFFCF7EA, heightDp = 900)
 @Composable
 private fun PerfilPreview() = CashinTheme {
     PerfilContenido(
@@ -443,6 +534,7 @@ private fun PerfilPreview() = CashinTheme {
         onGuardarNombre = {},
         onCancelarEdicion = {},
         onMonedaCambio = {},
+        onOpcion = {},
         onCerrarSesion = {},
     )
 }
