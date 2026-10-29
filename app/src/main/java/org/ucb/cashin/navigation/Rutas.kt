@@ -33,6 +33,8 @@ object Rutas {
     @Serializable data object MisCategorias
     /** HU-15, HU-16 · Sprint 3. */
     @Serializable data object Planificados
+    /** HU-15: formulario de un pago o ingreso esperado (se abre desde Planificados). */
+    @Serializable data object NuevoPlanificado
     /** HU-22, HU-23 · Sprint 4. */
     @Serializable data object Desafios
     /** HU-25, HU-26 · Sprint 5. */

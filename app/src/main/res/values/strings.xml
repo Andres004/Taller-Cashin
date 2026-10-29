@@ -185,10 +185,38 @@
     <string name="categorias_error_nombre">Escribe un nombre de hasta 50 caracteres</string>
     <string name="categorias_error_repetida">Ya existe una categoría con ese nombre</string>
 
+    <!-- Pagos e ingresos esperados (HU-15, HU-16) -->
+    <string name="planificados_vacio_titulo">Nada esperado por ahora</string>
+    <string name="planificados_vacio_mensaje">Anota lo que pagas o cobras seguido, como el alquiler o el sueldo, y márcalo con un toque cuando pase.</string>
+    <string name="planificados_nuevo">Nuevo pago o ingreso esperado</string>
+    <string name="planificados_nombre">Nombre</string>
+    <string name="planificados_nombre_ejemplo_gasto">Ej.: alquiler, internet, pensión</string>
+    <string name="planificados_nombre_ejemplo_ingreso">Ej.: sueldo, mesada, clases</string>
+    <string name="planificados_error_nombre">Escribe un nombre</string>
+    <string name="planificados_frecuencia">¿Cada cuánto?</string>
+    <string name="planificados_fecha_pago">¿Cuándo toca pagar?</string>
+    <string name="planificados_fecha_cobro">¿Cuándo toca cobrar?</string>
+    <string name="planificados_frecuencia_fecha">%1$s · %2$s</string>
+    <string name="planificados_hoy">hoy</string>
+    <string name="planificados_vencido">Vencido · %1$s</string>
+    <string name="planificados_ya_pague">Ya lo pagué</string>
+    <string name="planificados_ya_cobre">Ya lo cobré</string>
+    <string name="planificados_anotando">Anotando…</string>
+    <string name="planificados_quitar">Quitar</string>
+    <string name="planificados_quitar_titulo">¿Quitar este pago esperado?</string>
+    <string name="planificados_quitar_mensaje">«%1$s» ya no aparecerá en esta lista. Lo que ya anotaste sigue en tu historial.</string>
+    <string name="planificados_guardado">Guardado. Te lo mostramos cuando toque.</string>
+    <string name="planificados_pago_anotado">¡Pago anotado en tu historial!</string>
+    <string name="planificados_cobro_anotado">¡Cobro anotado en tu historial!</string>
+    <string name="frecuencia_unica">Una vez</string>
+    <string name="frecuencia_semanal">Semanal</string>
+    <string name="frecuencia_quincenal">Quincenal</string>
+    <string name="frecuencia_mensual">Mensual</string>
+    <string name="frecuencia_anual">Anual</string>
+
     <!-- Placeholders del resto de pestañas -->
     <string name="metas_construccion">Aquí crearás metas de ahorro y verás cuánto te falta.</string>
     <string name="categorias_construccion">Aquí crearás tus propias categorías y archivarás las que ya no uses.</string>
-    <string name="planificados_construccion">Aquí anotarás los pagos e ingresos que se repiten, como el alquiler o el sueldo.</string>
     <string name="deudas_construccion">Aquí anotarás lo que debes y lo que te deben, y los abonos de cada deuda.</string>
     <string name="desafios_construccion">Aquí elegirás desafíos semanales y mensuales para ganar XP.</string>
 

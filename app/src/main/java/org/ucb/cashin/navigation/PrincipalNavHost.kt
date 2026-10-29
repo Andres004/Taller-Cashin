@@ -53,6 +53,8 @@ import org.ucb.cashin.ui.inicio.InicioScreen
 import org.ucb.cashin.ui.metas.MetasScreen
 import org.ucb.cashin.ui.perfil.OpcionPerfil
 import org.ucb.cashin.ui.perfil.PerfilScreen
+import org.ucb.cashin.model.TipoRegistro
+import org.ucb.cashin.ui.planificados.NuevoPlanificadoScreen
 import org.ucb.cashin.ui.planificados.PlanificadosScreen
 import org.ucb.cashin.ui.registros.AnotarScreen
 import org.ucb.cashin.ui.registros.HistorialScreen
@@ -89,6 +91,9 @@ fun PrincipalNavHost() {
     val textoAnotadoXp = stringResource(R.string.anotar_guardado_xp)
     val textoCambiosGuardados = stringResource(R.string.anotar_cambios_guardados)
     val textoEliminada = stringResource(R.string.anotar_eliminada)
+    val textoPagoAnotado = stringResource(R.string.planificados_pago_anotado)
+    val textoCobroAnotado = stringResource(R.string.planificados_cobro_anotado)
+    val textoPlanificadoGuardado = stringResource(R.string.planificados_guardado)
 
     fun mostrarMensaje(texto: String) {
         scope.launch { snackbar.showSnackbar(texto) }
@@ -191,7 +196,24 @@ fun PrincipalNavHost() {
 
             // Pantallas que se abren desde el menú del Perfil.
             composable<Rutas.MisCategorias> { CategoriasScreen(onAtras = { nav.popBackStack() }) }
-            composable<Rutas.Planificados> { PlanificadosScreen(onAtras = { nav.popBackStack() }) }
+            composable<Rutas.Planificados> {
+                PlanificadosScreen(
+                    onAtras = { nav.popBackStack() },
+                    onNuevo = { nav.navigate(Rutas.NuevoPlanificado) },
+                    onPagoAnotado = { tipo ->
+                        mostrarMensaje(if (tipo == TipoRegistro.GASTO) textoPagoAnotado else textoCobroAnotado)
+                    },
+                )
+            }
+            composable<Rutas.NuevoPlanificado> {
+                NuevoPlanificadoScreen(
+                    onAtras = { nav.popBackStack() },
+                    onGuardado = {
+                        nav.popBackStack()
+                        mostrarMensaje(textoPlanificadoGuardado)
+                    },
+                )
+            }
             composable<Rutas.Deudas> { DeudasScreen(onAtras = { nav.popBackStack() }) }
             composable<Rutas.Desafios> { DesafiosScreen(onAtras = { nav.popBackStack() }) }
         }
