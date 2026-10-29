@@ -1,17 +1,35 @@
 package org.ucb.cashin.ui.registros
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SelectableChipColors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -33,10 +51,11 @@ import org.ucb.cashin.ui.theme.Espacio
 import org.ucb.cashin.util.Formato
 import java.math.BigDecimal
 import java.time.Instant
-import java.time.LocalDate
+import java.time.YearMonth
 
 /**
- * HU-09: historial de anotaciones agrupado por día.
+ * HU-09: historial de anotaciones agrupado por día, con el total de cada día.
+ * HU-10 (parte): filtros por tipo y por mes.
  * HU-08: al tocar una anotación se abre para editarla o eliminarla.
  */
 @Composable
@@ -52,15 +71,22 @@ fun HistorialScreen(
     HistorialContenido(
         estado = estado,
         onReintentar = viewModel::cargar,
+        onFiltroCambio = viewModel::onFiltroCambio,
+        onMesCambio = viewModel::onMesCambio,
         onRegistroClick = onRegistroClick,
     )
 }
 
-/** Solo dibuja. Muestra uno de los 4 estados: cargando, error, vacío o la lista. */
+/**
+ * Solo dibuja. Estados: cargando, error, sin anotaciones (todavía no anotó nada),
+ * filtro sin resultados, o la lista.
+ */
 @Composable
 fun HistorialContenido(
     estado: HistorialUiState,
     onReintentar: () -> Unit,
+    onFiltroCambio: (FiltroTipo) -> Unit,
+    onMesCambio: (YearMonth) -> Unit,
     onRegistroClick: (registroId: String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
@@ -74,18 +100,115 @@ fun HistorialContenido(
                 onReintentar = onReintentar,
             )
 
-            estado.dias.isEmpty() -> EstadoVacio(
+            !estado.hayAnotaciones -> EstadoVacio(
                 titulo = stringResource(R.string.historial_vacio_titulo),
                 mensaje = stringResource(R.string.historial_vacio_mensaje),
                 emocion = Emocion.FELIZ,
             )
 
-            else -> ListaPorDia(dias = estado.dias, onRegistroClick = onRegistroClick)
+            else -> {
+                FiltrosHistorial(
+                    filtro = estado.filtro,
+                    mes = estado.mes,
+                    meses = estado.mesesDisponibles,
+                    onFiltroCambio = onFiltroCambio,
+                    onMesCambio = onMesCambio,
+                    modifier = Modifier.padding(horizontal = Espacio.pantalla),
+                )
+
+                if (estado.dias.isEmpty()) {
+                    EstadoVacio(
+                        titulo = stringResource(R.string.historial_sin_resultados_titulo),
+                        mensaje = stringResource(R.string.historial_sin_resultados_mensaje),
+                        emocion = Emocion.NEUTRAL,
+                    )
+                } else {
+                    ListaPorDia(dias = estado.dias, onRegistroClick = onRegistroClick)
+                }
+            }
         }
     }
 }
 
-/** Un encabezado por día ("Hoy", "Ayer", "Sábado 24 de octubre") y debajo sus anotaciones. */
+/** "Todo | Gastos | Ingresos" y el selector de mes, en una fila que se acomoda si no entra. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FiltrosHistorial(
+    filtro: FiltroTipo,
+    mes: YearMonth?,
+    meses: List<YearMonth>,
+    onFiltroCambio: (FiltroTipo) -> Unit,
+    onMesCambio: (YearMonth) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    FlowRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Espacio.s),
+        verticalArrangement = Arrangement.spacedBy(Espacio.xs),
+    ) {
+        FiltroTipo.entries.forEach { opcion ->
+            FilterChip(
+                selected = opcion == filtro,
+                onClick = { onFiltroCambio(opcion) },
+                label = { Text(stringResource(opcion.etiqueta())) },
+                colors = coloresDeChip(),
+            )
+        }
+        if (mes != null) {
+            SelectorMes(mes = mes, meses = meses, onMesCambio = onMesCambio)
+        }
+    }
+}
+
+/** Chip con el mes elegido; al tocarlo abre la lista de meses que tienen anotaciones. */
+@Composable
+private fun SelectorMes(
+    mes: YearMonth,
+    meses: List<YearMonth>,
+    onMesCambio: (YearMonth) -> Unit,
+) {
+    var abierto by remember { mutableStateOf(false) }
+
+    Box {
+        FilterChip(
+            selected = false,
+            onClick = { abierto = true },
+            label = { Text(nombreMes(mes)) },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.ArrowDropDown,
+                    contentDescription = stringResource(R.string.historial_elegir_mes),
+                )
+            },
+            colors = coloresDeChip(),
+        )
+        DropdownMenu(
+            expanded = abierto,
+            onDismissRequest = { abierto = false },
+            containerColor = MaterialTheme.colorScheme.background,
+        ) {
+            meses.forEach { opcion ->
+                DropdownMenuItem(
+                    text = { Text(nombreMes(opcion)) },
+                    onClick = {
+                        abierto = false
+                        onMesCambio(opcion)
+                    },
+                )
+            }
+        }
+    }
+}
+
+/** Los mismos colores que los chips de medio de pago en Anotar. */
+@Composable
+private fun coloresDeChip(): SelectableChipColors = FilterChipDefaults.filterChipColors(
+    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+)
+
+/** Un encabezado por día ("Hoy", "Ayer", "lunes 26 de octubre") y debajo sus anotaciones. */
 @Composable
 private fun ListaPorDia(
     dias: List<DiaHistorial>,
@@ -97,7 +220,7 @@ private fun ListaPorDia(
     ) {
         dias.forEach { dia ->
             item(key = dia.fecha.toString()) {
-                EncabezadoDia(fecha = dia.fecha)
+                EncabezadoDia(dia = dia)
             }
             items(items = dia.registros, key = { it.registro.id }) { anotacion ->
                 FilaRegistro(
@@ -110,14 +233,37 @@ private fun ListaPorDia(
     }
 }
 
+/** Nombre del día a la izquierda y, a la derecha, cuánto suma ese día ("- Bs 32,50"). */
 @Composable
-private fun EncabezadoDia(fecha: LocalDate) {
-    Text(
-        text = Formato.encabezadoDia(fecha),
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onBackground,
-        modifier = Modifier.padding(top = Espacio.s),
-    )
+private fun EncabezadoDia(dia: DiaHistorial) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = Espacio.s),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = Formato.encabezadoDia(dia.fecha),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = Formato.montoConSigno(dia.total.abs(), esGasto = dia.total.signum() < 0),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** YearMonth(2026, 10) → "Octubre 2026". */
+private fun nombreMes(mes: YearMonth): String = Formato.mes(mes.atDay(1))
+
+@StringRes
+private fun FiltroTipo.etiqueta(): Int = when (this) {
+    FiltroTipo.TODO -> R.string.historial_filtro_todo
+    FiltroTipo.GASTOS -> R.string.historial_filtro_gastos
+    FiltroTipo.INGRESOS -> R.string.historial_filtro_ingresos
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFFFCF7EA)
@@ -143,9 +289,14 @@ private fun HistorialPreview() = CashinTheme {
                     ),
                 ),
             ),
+            mes = YearMonth.now(),
+            mesesDisponibles = listOf(YearMonth.now()),
+            hayAnotaciones = true,
             cargando = false,
         ),
         onReintentar = {},
+        onFiltroCambio = {},
+        onMesCambio = {},
         onRegistroClick = {},
     )
 }

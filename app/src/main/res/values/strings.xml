@@ -143,11 +143,17 @@
     <string name="anotar_cambios_guardados">Cambios guardados</string>
     <string name="anotar_eliminada">Anotación eliminada</string>
 
-    <!-- Historial (HU-09) -->
+    <!-- Historial (HU-09, HU-10) -->
     <string name="historial_vacio_titulo">Aún no anotaste nada</string>
     <string name="historial_vacio_mensaje">Toca + para anotar tu primer gasto o ingreso.</string>
     <string name="historial_sin_categoria">Sin categoría</string>
     <string name="historial_hora_nota">%1$s · %2$s</string>
+    <string name="historial_filtro_todo">Todo</string>
+    <string name="historial_filtro_gastos">Gastos</string>
+    <string name="historial_filtro_ingresos">Ingresos</string>
+    <string name="historial_elegir_mes">Elegir mes</string>
+    <string name="historial_sin_resultados_titulo">Nada por aquí</string>
+    <string name="historial_sin_resultados_mensaje">No hay anotaciones con este filtro. Prueba con otro mes o tipo.</string>
 
     <!-- Placeholders del resto de pestañas -->
     <string name="metas_construccion">Aquí crearás metas de ahorro y verás cuánto te falta.</string>

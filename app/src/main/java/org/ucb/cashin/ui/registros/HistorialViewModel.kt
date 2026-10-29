@@ -13,9 +13,12 @@ import org.ucb.cashin.di.fabricaDe
 import org.ucb.cashin.model.Categoria
 import org.ucb.cashin.model.ErrorApp
 import org.ucb.cashin.model.Registro
+import org.ucb.cashin.model.TipoRegistro
 import org.ucb.cashin.model.comoErrorApp
 import org.ucb.cashin.util.Formato
+import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.YearMonth
 
 /** Una anotación junto con su categoría, lista para mostrarse. */
 data class RegistroConCategoria(
@@ -27,11 +30,28 @@ data class RegistroConCategoria(
 data class DiaHistorial(
     val fecha: LocalDate,
     val registros: List<RegistroConCategoria>,
-)
+) {
+    /** Ingresos menos gastos de ese día, contando solo lo que se está mostrando. */
+    val total: BigDecimal
+        get() = registros.fold(BigDecimal.ZERO) { suma, anotacion ->
+            if (anotacion.registro.tipo == TipoRegistro.INGRESO) suma + anotacion.registro.monto
+            else suma - anotacion.registro.monto
+        }
+}
+
+/** Qué tipo de anotaciones muestra el historial. */
+enum class FiltroTipo { TODO, GASTOS, INGRESOS }
 
 /** Todo lo que la pantalla Historial necesita para dibujarse. */
 data class HistorialUiState(
     val dias: List<DiaHistorial> = emptyList(),
+    val filtro: FiltroTipo = FiltroTipo.TODO,
+    /** Mes que se está viendo. Null solo mientras no hay ninguna anotación. */
+    val mes: YearMonth? = null,
+    /** Meses que tienen al menos una anotación, del más reciente al más antiguo. */
+    val mesesDisponibles: List<YearMonth> = emptyList(),
+    /** False si el usuario todavía no anotó nada (distinto de "el filtro no encontró nada"). */
+    val hayAnotaciones: Boolean = false,
     val cargando: Boolean = true,
     val error: ErrorApp? = null,
 )
@@ -43,7 +63,9 @@ fun unirConCategorias(registros: List<Registro>, categorias: List<Categoria>): L
 }
 
 /**
- * HU-09: todas las anotaciones de la más reciente a la más antigua, agrupadas por día.
+ * HU-09: anotaciones de la más reciente a la más antigua, agrupadas por día.
+ * HU-10 (parte): filtro por tipo (Todo, Gastos, Ingresos) y por mes.
+ * Los filtros se aplican sobre lo que ya se cargó, sin volver a llamar a Supabase.
  */
 class HistorialViewModel(
     private val registroRepository: RegistroRepository,
@@ -53,13 +75,16 @@ class HistorialViewModel(
     private val _uiState = MutableStateFlow(HistorialUiState())
     val uiState: StateFlow<HistorialUiState> = _uiState.asStateFlow()
 
+    /** Todas las anotaciones del usuario, sin filtrar. */
+    private var todas: List<RegistroConCategoria> = emptyList()
+
     /**
      * Carga el historial. Se llama cada vez que se abre la pantalla, así siempre
      * muestra lo último. Si ya hay datos, se actualizan sin mostrar la carga otra vez.
      */
     fun cargar() {
         viewModelScope.launch {
-            _uiState.update { it.copy(cargando = it.dias.isEmpty(), error = null) }
+            _uiState.update { it.copy(cargando = !it.hayAnotaciones, error = null) }
 
             val categorias = categoriaRepository.listarTodas().getOrElse { e ->
                 mostrarError(e)
@@ -70,11 +95,51 @@ class HistorialViewModel(
                 return@launch
             }
 
+            todas = unirConCategorias(registros, categorias)
+            val meses = todas.map { mesDe(it) }.distinct()
+
             _uiState.update {
-                it.copy(dias = agruparPorDia(unirConCategorias(registros, categorias)), cargando = false)
+                it.copy(
+                    mesesDisponibles = meses,
+                    // Se mantiene el mes elegido; si ya no tiene anotaciones, se muestra el más reciente.
+                    mes = it.mes?.takeIf { mes -> mes in meses } ?: meses.firstOrNull(),
+                    hayAnotaciones = todas.isNotEmpty(),
+                    cargando = false,
+                )
             }
+            aplicarFiltros()
         }
     }
+
+    fun onFiltroCambio(filtro: FiltroTipo) {
+        _uiState.update { it.copy(filtro = filtro) }
+        aplicarFiltros()
+    }
+
+    fun onMesCambio(mes: YearMonth) {
+        _uiState.update { it.copy(mes = mes) }
+        aplicarFiltros()
+    }
+
+    /** Arma los días con las anotaciones que cumplen el filtro de tipo y el mes elegido. */
+    private fun aplicarFiltros() {
+        _uiState.update { estado ->
+            val visibles = todas.filter { anotacion ->
+                cumpleTipo(anotacion, estado.filtro) && mesDe(anotacion) == estado.mes
+            }
+            estado.copy(dias = agruparPorDia(visibles))
+        }
+    }
+
+    private fun cumpleTipo(anotacion: RegistroConCategoria, filtro: FiltroTipo): Boolean = when (filtro) {
+        FiltroTipo.TODO -> true
+        FiltroTipo.GASTOS -> anotacion.registro.tipo == TipoRegistro.GASTO
+        FiltroTipo.INGRESOS -> anotacion.registro.tipo == TipoRegistro.INGRESO
+    }
+
+    /** Mes de la anotación en hora de Bolivia. */
+    private fun mesDe(anotacion: RegistroConCategoria): YearMonth =
+        YearMonth.from(Formato.fechaDe(anotacion.registro.fechaHora))
 
     private fun mostrarError(e: Throwable) =
         _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) }
