@@ -34,6 +34,7 @@ import org.ucb.cashin.ui.theme.Espacio
 fun LoginScreen(
     onCrearCuenta: () -> Unit,
     onOlvideContrasena: () -> Unit,
+    onAtras: (() -> Unit)? = null,
     viewModel: LoginViewModel = viewModel(factory = LoginViewModel.Factory),
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
@@ -50,6 +51,7 @@ fun LoginScreen(
         onGoogle = { scope.launch { snackbar.showSnackbar(textoGooglePronto) } }, // HU-02 · Sprint 2
         onCrearCuenta = onCrearCuenta,
         onOlvideContrasena = onOlvideContrasena,
+        onAtras = onAtras,
     )
 }
 
@@ -64,12 +66,14 @@ fun LoginContenido(
     onGoogle: () -> Unit,
     onCrearCuenta: () -> Unit,
     onOlvideContrasena: () -> Unit,
+    onAtras: (() -> Unit)? = null,
 ) {
     AuthLayout(
         titulo = stringResource(R.string.login_titulo),
         subtitulo = stringResource(R.string.login_subtitulo),
         snackbar = snackbar,
         error = estado.error,
+        onAtras = onAtras,
     ) {
         CashinCampoTexto(
             etiqueta = stringResource(R.string.campo_correo),
