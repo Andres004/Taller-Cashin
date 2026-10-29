@@ -1,27 +1,32 @@
 package org.ucb.cashin.ui.registros
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -32,8 +37,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -115,6 +123,7 @@ fun AnotarContenido(
 ) {
     val foco = LocalFocusManager.current
     var confirmarEliminar by rememberSaveable { mutableStateOf(false) }
+    val ocupado = estado.cargando || estado.eliminando
 
     Column(modifier = Modifier.fillMaxSize()) {
         CashinTopBar(
@@ -138,13 +147,15 @@ fun AnotarContenido(
                     .padding(horizontal = Espacio.pantalla, vertical = Espacio.s),
                 verticalArrangement = Arrangement.spacedBy(Espacio.l),
             ) {
-                SelectorTipo(tipo = estado.tipo, onTipoCambio = onTipoCambio)
+                SelectorTipo(tipo = estado.tipo, onTipoCambio = onTipoCambio, habilitado = !ocupado)
 
                 CashinCampoMonto(
                     valor = estado.monto,
                     onValorCambio = onMontoCambio,
+                    etiqueta = stringResource(R.string.anotar_monto),
                     error = estado.errorMonto?.let { stringResource(it) },
-                    colorMonto = if (estado.tipo == TipoRegistro.GASTO) CashinColores.gasto else CashinColores.ingreso,
+                    colorMonto = colorDelTipo(estado.tipo),
+                    habilitado = !ocupado,
                 )
 
                 Column {
@@ -153,13 +164,18 @@ fun AnotarContenido(
                         estado = estado,
                         onCategoriaElegida = onCategoriaElegida,
                         onReintentar = onReintentarCategorias,
+                        habilitado = !ocupado,
                     )
                     estado.errorCategoria?.let { MensajeError(texto = stringResource(it)) }
                 }
 
                 Column {
                     EtiquetaSeccion(texto = stringResource(R.string.anotar_medio_pago))
-                    SelectorMedioPago(medioPago = estado.medioPago, onMedioPagoCambio = onMedioPagoCambio)
+                    SelectorMedioPago(
+                        medioPago = estado.medioPago,
+                        onMedioPagoCambio = onMedioPagoCambio,
+                        habilitado = !ocupado,
+                    )
                 }
 
                 CashinCampoTexto(
@@ -169,7 +185,7 @@ fun AnotarContenido(
                     placeholder = stringResource(R.string.anotar_nota_ejemplo),
                     accionIme = ImeAction.Done,
                     onAccionIme = { foco.clearFocus() },
-                    habilitado = !estado.cargando && !estado.eliminando,
+                    habilitado = !ocupado,
                 )
 
                 estado.error?.let { MensajeError(texto = it.mensaje()) }
@@ -185,7 +201,7 @@ fun AnotarContenido(
                         CashinBoton(
                             texto = stringResource(R.string.anotar_eliminar),
                             onClick = { confirmarEliminar = true },
-                            variante = VarianteBoton.SECUNDARIO,
+                            variante = VarianteBoton.PELIGRO,
                             icono = Icons.Outlined.Delete,
                             cargando = estado.eliminando,
                             habilitado = !estado.cargando,
@@ -203,7 +219,7 @@ fun AnotarContenido(
             text = { Text(stringResource(R.string.anotar_eliminar_mensaje)) },
             confirmButton = {
                 TextButton(onClick = { confirmarEliminar = false; onEliminar() }) {
-                    Text(stringResource(R.string.anotar_eliminar))
+                    Text(stringResource(R.string.anotar_eliminar), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -214,19 +230,52 @@ fun AnotarContenido(
     }
 }
 
-/** Botones "Gasto | Ingreso". */
-@OptIn(ExperimentalMaterial3Api::class)
+/** Rojo para gastos y verde para ingresos, igual que en el historial. */
 @Composable
-private fun SelectorTipo(tipo: TipoRegistro, onTipoCambio: (TipoRegistro) -> Unit) {
-    val tipos = TipoRegistro.entries
-    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-        tipos.forEachIndexed { indice, opcion ->
-            SegmentedButton(
-                selected = opcion == tipo,
-                onClick = { onTipoCambio(opcion) },
-                shape = SegmentedButtonDefaults.itemShape(index = indice, count = tipos.size),
-                label = { Text(stringResource(opcion.etiqueta())) },
-            )
+private fun colorDelTipo(tipo: TipoRegistro): Color =
+    if (tipo == TipoRegistro.GASTO) CashinColores.gasto else CashinColores.ingreso
+
+/**
+ * "Gasto | Ingreso" como una píldora con dos mitades. La mitad elegida se pinta
+ * del color de su tipo (rojo o verde) con el texto en blanco.
+ */
+@Composable
+private fun SelectorTipo(tipo: TipoRegistro, onTipoCambio: (TipoRegistro) -> Unit, habilitado: Boolean) {
+    val pildora = RoundedCornerShape(50)
+    Surface(
+        shape = pildora,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(4.dp)
+                .selectableGroup(),
+        ) {
+            TipoRegistro.entries.forEach { opcion ->
+                val elegido = opcion == tipo
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp)
+                        .clip(pildora)
+                        .background(if (elegido) colorDelTipo(opcion) else Color.Transparent)
+                        .selectable(
+                            selected = elegido,
+                            enabled = habilitado,
+                            role = Role.RadioButton,
+                            onClick = { onTipoCambio(opcion) },
+                        ),
+                ) {
+                    Text(
+                        text = stringResource(opcion.etiqueta()),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (elegido) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
     }
 }
@@ -237,6 +286,7 @@ private fun SeccionCategorias(
     estado: AnotarUiState,
     onCategoriaElegida: (Categoria) -> Unit,
     onReintentar: () -> Unit,
+    habilitado: Boolean,
 ) {
     when {
         estado.cargandoCategorias -> Box(
@@ -267,23 +317,47 @@ private fun SeccionCategorias(
             categorias = estado.categorias,
             seleccionadaId = estado.categoriaId,
             onSeleccionar = onCategoriaElegida,
+            conError = estado.errorCategoria != null,
+            habilitado = habilitado,
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
 
-/** Efectivo, QR, Tarjeta, Transferencia u Otro. Efectivo viene elegido por defecto. */
+/**
+ * Efectivo, QR, Tarjeta, Transferencia u Otro (HU-06). Siempre hay uno marcado:
+ * empieza en Efectivo y al tocar otro se cambia, nunca queda vacío.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SelectorMedioPago(medioPago: MedioPago, onMedioPagoCambio: (MedioPago) -> Unit) {
+private fun SelectorMedioPago(
+    medioPago: MedioPago,
+    onMedioPagoCambio: (MedioPago) -> Unit,
+    habilitado: Boolean,
+) {
     FlowRow(
+        modifier = Modifier.selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(Espacio.s),
         verticalArrangement = Arrangement.spacedBy(Espacio.xs),
     ) {
         MedioPago.entries.forEach { opcion ->
+            val elegido = opcion == medioPago
             FilterChip(
-                selected = opcion == medioPago,
+                selected = elegido,
                 onClick = { onMedioPagoCambio(opcion) },
+                enabled = habilitado,
                 label = { Text(stringResource(opcion.etiqueta())) },
+                colors = FilterChipDefaults.filterChipColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = habilitado,
+                    selected = elegido,
+                    borderColor = MaterialTheme.colorScheme.outline,
+                    selectedBorderColor = MaterialTheme.colorScheme.primary,
+                ),
             )
         }
     }
@@ -325,32 +399,45 @@ private fun MedioPago.etiqueta(): Int = when (this) {
     MedioPago.OTRO -> R.string.anotar_medio_otro
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFCF7EA)
+private val categoriasDeEjemplo = listOf(
+    Categoria(id = "1", nombre = "Alimentación", tipo = TipoRegistro.GASTO, icono = "restaurant", color = "#4CAF50"),
+    Categoria(id = "2", nombre = "Transporte", tipo = TipoRegistro.GASTO, icono = "bus", color = "#2E7D32"),
+    Categoria(id = "3", nombre = "Vivienda", tipo = TipoRegistro.GASTO, icono = "home", color = "#81C784"),
+    Categoria(id = "4", nombre = "Salud", tipo = TipoRegistro.GASTO, icono = "health", color = "#FF8C32"),
+    Categoria(id = "5", nombre = "Educación", tipo = TipoRegistro.GASTO, icono = "school", color = "#1F6E8C"),
+)
+
+@Preview(showBackground = true, backgroundColor = 0xFFFCF7EA, heightDp = 900)
+@Composable
+private fun AnotarConErroresPreview() = CashinTheme {
+    AnotarContenido(
+        estado = AnotarUiState(
+            categorias = categoriasDeEjemplo,
+            cargandoCategorias = false,
+            errorMonto = R.string.validacion_monto,
+            errorCategoria = R.string.validacion_categoria,
+        ),
+        onTipoCambio = {}, onMontoCambio = {}, onCategoriaElegida = {}, onMedioPagoCambio = {},
+        onNotaCambio = {}, onGuardar = {}, onEliminar = {}, onReintentarCategorias = {},
+        onReintentarRegistro = {}, onAtras = null,
+    )
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFCF7EA, heightDp = 900)
 @Composable
 private fun EditarPreview() = CashinTheme {
     AnotarContenido(
         estado = AnotarUiState(
             esEdicion = true,
-            monto = "20,5",
-            categorias = listOf(
-                Categoria(id = "1", nombre = "Alimentación", tipo = TipoRegistro.GASTO, icono = "restaurant", color = "#4CAF50"),
-                Categoria(id = "2", nombre = "Transporte", tipo = TipoRegistro.GASTO, icono = "bus", color = "#2E7D32"),
-                Categoria(id = "3", nombre = "Salud", tipo = TipoRegistro.GASTO, icono = "health", color = "#FF8C32"),
-            ),
+            monto = "20",
+            categorias = categoriasDeEjemplo,
             categoriaId = "1",
             medioPago = MedioPago.QR,
             nota = "Almuerzo",
             cargandoCategorias = false,
         ),
-        onTipoCambio = {},
-        onMontoCambio = {},
-        onCategoriaElegida = {},
-        onMedioPagoCambio = {},
-        onNotaCambio = {},
-        onGuardar = {},
-        onEliminar = {},
-        onReintentarCategorias = {},
-        onReintentarRegistro = {},
-        onAtras = {},
+        onTipoCambio = {}, onMontoCambio = {}, onCategoriaElegida = {}, onMedioPagoCambio = {},
+        onNotaCambio = {}, onGuardar = {}, onEliminar = {}, onReintentarCategorias = {},
+        onReintentarRegistro = {}, onAtras = {},
     )
 }

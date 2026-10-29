@@ -120,6 +120,7 @@
     <!-- Anotar (HU-06, HU-07) y editar (HU-08) -->
     <string name="anotar_tipo_gasto">Gasto</string>
     <string name="anotar_tipo_ingreso">Ingreso</string>
+    <string name="anotar_monto">Monto</string>
     <string name="anotar_categoria">Categoría</string>
     <string name="anotar_medio_pago">Medio de pago</string>
     <string name="anotar_medio_efectivo">Efectivo</string>

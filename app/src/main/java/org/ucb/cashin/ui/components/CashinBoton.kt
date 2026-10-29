@@ -24,12 +24,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.ucb.cashin.ui.theme.CashinTheme
 
-enum class VarianteBoton { PRINCIPAL, SECUNDARIO, TEXTO }
+enum class VarianteBoton { PRINCIPAL, SECUNDARIO, PELIGRO, TEXTO }
 
 /**
  * Botón estándar de Cashin (píldora verde de 54 dp).
  * - PRINCIPAL: acción principal de la pantalla (una sola por pantalla).
  * - SECUNDARIO: con borde, para acciones alternativas ("Continuar con Google").
+ * - PELIGRO: con borde rojo, para acciones que borran algo ("Eliminar").
  * - TEXTO: enlaces ("¿Olvidaste tu contraseña?").
  * Mientras [cargando] es true se muestra un indicador y el botón no responde.
  */
@@ -50,8 +51,11 @@ fun CashinBoton(
             CircularProgressIndicator(
                 strokeWidth = 2.dp,
                 modifier = Modifier.size(22.dp),
-                color = if (variante == VarianteBoton.PRINCIPAL) MaterialTheme.colorScheme.onPrimary
-                else MaterialTheme.colorScheme.primary,
+                color = when (variante) {
+                    VarianteBoton.PRINCIPAL -> MaterialTheme.colorScheme.onPrimary
+                    VarianteBoton.PELIGRO -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.primary
+                },
             )
         } else {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -86,6 +90,15 @@ fun CashinBoton(
             colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.secondary),
         ) { contenido() }
 
+        VarianteBoton.PELIGRO -> OutlinedButton(
+            onClick = onClick,
+            enabled = activo,
+            shape = forma,
+            border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.error),
+            modifier = modifier.fillMaxWidth().height(54.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+        ) { contenido() }
+
         VarianteBoton.TEXTO -> TextButton(
             onClick = onClick,
             enabled = activo,
@@ -102,6 +115,7 @@ private fun CashinBotonPreview() = CashinTheme {
         CashinBoton("Iniciar sesión", onClick = {})
         CashinBoton("Guardando", onClick = {}, cargando = true)
         CashinBoton("Continuar con Google", onClick = {}, variante = VarianteBoton.SECUNDARIO)
+        CashinBoton("Eliminar", onClick = {}, variante = VarianteBoton.PELIGRO)
         CashinBoton("¿Olvidaste tu contraseña?", onClick = {}, variante = VarianteBoton.TEXTO)
     }
 }
