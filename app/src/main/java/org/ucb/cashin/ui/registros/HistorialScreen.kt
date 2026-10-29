@@ -15,14 +15,22 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material3.DatePickerColors
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableChipColors
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,17 +53,21 @@ import org.ucb.cashin.ui.components.EstadoCargando
 import org.ucb.cashin.ui.components.EstadoError
 import org.ucb.cashin.ui.components.EstadoVacio
 import org.ucb.cashin.ui.components.FilaRegistro
+import org.ucb.cashin.ui.components.colorCategoria
+import org.ucb.cashin.ui.components.iconoCategoria
 import org.ucb.cashin.ui.components.mensaje
 import org.ucb.cashin.ui.theme.CashinTheme
 import org.ucb.cashin.ui.theme.Espacio
 import org.ucb.cashin.util.Formato
 import java.math.BigDecimal
 import java.time.Instant
+import java.time.LocalDate
 import java.time.YearMonth
+import java.time.ZoneOffset
 
 /**
  * HU-09: historial de anotaciones agrupado por día, con el total de cada día.
- * HU-10 (parte): filtros por tipo y por mes.
+ * HU-10: filtros por tipo, categoría y fechas (hoy, esta semana, mes o rango personalizado).
  * HU-08: al tocar una anotación se abre para editarla o eliminarla.
  */
 @Composable
@@ -73,7 +85,10 @@ fun HistorialScreen(
         estado = estado,
         onReintentar = viewModel::cargar,
         onFiltroCambio = viewModel::onFiltroCambio,
+        onCategoriaCambio = viewModel::onCategoriaCambio,
+        onPeriodoCambio = viewModel::onPeriodoCambio,
         onMesCambio = viewModel::onMesCambio,
+        onRangoCambio = viewModel::onRangoCambio,
         onRegistroClick = onRegistroClick,
         onAnotar = onAnotar,
     )
@@ -81,14 +96,17 @@ fun HistorialScreen(
 
 /**
  * Solo dibuja. Estados: cargando, error, sin anotaciones (todavía no anotó nada),
- * filtro sin resultados, o la lista.
+ * filtros sin resultados, o la lista.
  */
 @Composable
 fun HistorialContenido(
     estado: HistorialUiState,
     onReintentar: () -> Unit,
     onFiltroCambio: (FiltroTipo) -> Unit,
+    onCategoriaCambio: (categoriaId: String?) -> Unit,
+    onPeriodoCambio: (FiltroPeriodo) -> Unit,
     onMesCambio: (YearMonth) -> Unit,
+    onRangoCambio: (desde: LocalDate, hasta: LocalDate) -> Unit,
     onRegistroClick: (registroId: String) -> Unit,
     onAnotar: () -> Unit,
 ) {
@@ -113,11 +131,12 @@ fun HistorialContenido(
 
             else -> {
                 FiltrosHistorial(
-                    filtro = estado.filtro,
-                    mes = estado.mes,
-                    meses = estado.mesesDisponibles,
+                    estado = estado,
                     onFiltroCambio = onFiltroCambio,
+                    onCategoriaCambio = onCategoriaCambio,
+                    onPeriodoCambio = onPeriodoCambio,
                     onMesCambio = onMesCambio,
+                    onRangoCambio = onRangoCambio,
                     modifier = Modifier.padding(horizontal = Espacio.pantalla),
                 )
 
@@ -135,48 +154,171 @@ fun HistorialContenido(
     }
 }
 
-/** "Todo | Gastos | Ingresos" y el selector de mes, en una fila que se acomoda si no entra. */
+/**
+ * Dos filas de chips que se acomodan si no entran:
+ *  1. "Todo | Gastos | Ingresos" y la categoría.
+ *  2. "Hoy | Esta semana | Octubre 2026 ▾ | Personalizado".
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FiltrosHistorial(
-    filtro: FiltroTipo,
-    mes: YearMonth?,
-    meses: List<YearMonth>,
+    estado: HistorialUiState,
     onFiltroCambio: (FiltroTipo) -> Unit,
+    onCategoriaCambio: (categoriaId: String?) -> Unit,
+    onPeriodoCambio: (FiltroPeriodo) -> Unit,
     onMesCambio: (YearMonth) -> Unit,
+    onRangoCambio: (desde: LocalDate, hasta: LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    FlowRow(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(Espacio.s),
-        verticalArrangement = Arrangement.spacedBy(Espacio.xs),
-    ) {
-        FiltroTipo.entries.forEach { opcion ->
+    var mostrarCalendario by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Espacio.s),
+            verticalArrangement = Arrangement.spacedBy(Espacio.xs),
+        ) {
+            FiltroTipo.entries.forEach { opcion ->
+                FilterChip(
+                    selected = opcion == estado.filtro,
+                    onClick = { onFiltroCambio(opcion) },
+                    label = { Text(stringResource(opcion.etiqueta())) },
+                    colors = coloresDeChip(),
+                )
+            }
+            SelectorCategoriaFiltro(
+                categorias = estado.categoriasDisponibles,
+                seleccionadaId = estado.categoriaId,
+                onCategoriaCambio = onCategoriaCambio,
+            )
+        }
+
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Espacio.s),
+            verticalArrangement = Arrangement.spacedBy(Espacio.xs),
+        ) {
             FilterChip(
-                selected = opcion == filtro,
-                onClick = { onFiltroCambio(opcion) },
-                label = { Text(stringResource(opcion.etiqueta())) },
+                selected = estado.periodo == FiltroPeriodo.HOY,
+                onClick = { onPeriodoCambio(FiltroPeriodo.HOY) },
+                label = { Text(stringResource(R.string.historial_periodo_hoy)) },
+                colors = coloresDeChip(),
+            )
+            FilterChip(
+                selected = estado.periodo == FiltroPeriodo.SEMANA,
+                onClick = { onPeriodoCambio(FiltroPeriodo.SEMANA) },
+                label = { Text(stringResource(R.string.historial_periodo_semana)) },
+                colors = coloresDeChip(),
+            )
+            if (estado.mes != null) {
+                SelectorMes(
+                    mes = estado.mes,
+                    meses = estado.mesesDisponibles,
+                    seleccionado = estado.periodo == FiltroPeriodo.MES,
+                    onMesCambio = onMesCambio,
+                )
+            }
+            FilterChip(
+                selected = estado.periodo == FiltroPeriodo.PERSONALIZADO,
+                onClick = { mostrarCalendario = true },
+                label = { Text(textoRango(estado)) },
+                leadingIcon = { Icon(imageVector = Icons.Outlined.DateRange, contentDescription = null) },
                 colors = coloresDeChip(),
             )
         }
-        if (mes != null) {
-            SelectorMes(mes = mes, meses = meses, onMesCambio = onMesCambio)
+    }
+
+    if (mostrarCalendario) {
+        CalendarioRango(
+            rangoActual = estado.rango,
+            onConfirmar = { desde, hasta ->
+                mostrarCalendario = false
+                onRangoCambio(desde, hasta)
+            },
+            onCancelar = { mostrarCalendario = false },
+        )
+    }
+}
+
+/** "Personalizado" o, si ya se eligió un rango, "24 oct. – 29 oct.". */
+@Composable
+private fun textoRango(estado: HistorialUiState): String {
+    val rango = estado.rango
+    return if (estado.periodo == FiltroPeriodo.PERSONALIZADO && rango != null) {
+        stringResource(R.string.historial_rango, Formato.fechaCorta(rango.desde), Formato.fechaCorta(rango.hasta))
+    } else {
+        stringResource(R.string.historial_periodo_personalizado)
+    }
+}
+
+/** Chip "Categoría ▾"; al tocarlo abre la lista con las categorías que tienen anotaciones. */
+@Composable
+private fun SelectorCategoriaFiltro(
+    categorias: List<Categoria>,
+    seleccionadaId: String?,
+    onCategoriaCambio: (categoriaId: String?) -> Unit,
+) {
+    var abierto by remember { mutableStateOf(false) }
+    val seleccionada = categorias.firstOrNull { it.id == seleccionadaId }
+
+    Box {
+        FilterChip(
+            selected = seleccionada != null,
+            onClick = { abierto = true },
+            label = { Text(seleccionada?.nombre ?: stringResource(R.string.historial_filtro_categoria)) },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.ArrowDropDown,
+                    contentDescription = stringResource(R.string.historial_elegir_categoria),
+                )
+            },
+            colors = coloresDeChip(),
+        )
+        DropdownMenu(
+            expanded = abierto,
+            onDismissRequest = { abierto = false },
+            containerColor = MaterialTheme.colorScheme.background,
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.historial_todas_categorias)) },
+                onClick = {
+                    abierto = false
+                    onCategoriaCambio(null)
+                },
+            )
+            categorias.forEach { categoria ->
+                DropdownMenuItem(
+                    text = { Text(categoria.nombre) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = iconoCategoria(categoria.icono),
+                            contentDescription = null,
+                            tint = colorCategoria(categoria.color, MaterialTheme.colorScheme.primary),
+                        )
+                    },
+                    onClick = {
+                        abierto = false
+                        onCategoriaCambio(categoria.id)
+                    },
+                )
+            }
         }
     }
 }
 
-/** Chip con el mes elegido; al tocarlo abre la lista de meses que tienen anotaciones. */
+/** Chip con el mes; al tocarlo abre la lista de meses que tienen anotaciones. */
 @Composable
 private fun SelectorMes(
     mes: YearMonth,
     meses: List<YearMonth>,
+    seleccionado: Boolean,
     onMesCambio: (YearMonth) -> Unit,
 ) {
     var abierto by remember { mutableStateOf(false) }
 
     Box {
         FilterChip(
-            selected = false,
+            selected = seleccionado,
             onClick = { abierto = true },
             label = { Text(nombreMes(mes)) },
             trailingIcon = {
@@ -204,6 +346,95 @@ private fun SelectorMes(
         }
     }
 }
+
+/**
+ * Calendario para elegir "desde" y "hasta".
+ * El calendario trabaja con milisegundos en UTC a la medianoche; por eso se convierte
+ * con ZoneOffset.UTC (con la hora de Bolivia se correría un día).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CalendarioRango(
+    rangoActual: RangoFechas?,
+    onConfirmar: (desde: LocalDate, hasta: LocalDate) -> Unit,
+    onCancelar: () -> Unit,
+) {
+    val calendario = rememberDateRangePickerState(
+        initialSelectedStartDateMillis = rangoActual?.desde?.aMilisUtc(),
+        initialSelectedEndDateMillis = rangoActual?.hasta?.aMilisUtc(),
+    )
+    val inicio = calendario.selectedStartDateMillis
+    val fin = calendario.selectedEndDateMillis
+    val colores = coloresDeCalendario()
+
+    DatePickerDialog(
+        onDismissRequest = onCancelar,
+        colors = colores,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (inicio != null && fin != null) onConfirmar(inicio.aFechaUtc(), fin.aFechaUtc())
+                },
+                enabled = inicio != null && fin != null,
+            ) {
+                Text(stringResource(R.string.accion_aceptar))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancelar) {
+                Text(stringResource(R.string.accion_cancelar))
+            }
+        },
+    ) {
+        DateRangePicker(
+            state = calendario,
+            title = {
+                Text(
+                    text = stringResource(R.string.historial_elegir_rango),
+                    modifier = Modifier.padding(start = Espacio.l, top = Espacio.m),
+                )
+            },
+            headline = {
+                Text(
+                    text = stringResource(
+                        R.string.historial_rango,
+                        inicio?.let { Formato.fechaCorta(it.aFechaUtc()) } ?: stringResource(R.string.historial_desde),
+                        fin?.let { Formato.fechaCorta(it.aFechaUtc()) } ?: stringResource(R.string.historial_hasta),
+                    ),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(start = Espacio.l, bottom = Espacio.s),
+                )
+            },
+            showModeToggle = false,
+            colors = colores,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+/**
+ * Colores del calendario: los días elegidos en verde oscuro y el rango en verde
+ * con letras blancas, para que se distingan bien sobre el fondo crema.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun coloresDeCalendario(): DatePickerColors = DatePickerDefaults.colors(
+    containerColor = MaterialTheme.colorScheme.background,
+    titleContentColor = MaterialTheme.colorScheme.onBackground,
+    headlineContentColor = MaterialTheme.colorScheme.onBackground,
+    weekdayContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    dayContentColor = MaterialTheme.colorScheme.onBackground,
+    selectedDayContainerColor = MaterialTheme.colorScheme.secondary,
+    selectedDayContentColor = MaterialTheme.colorScheme.onSecondary,
+    dayInSelectionRangeContainerColor = MaterialTheme.colorScheme.primary,
+    dayInSelectionRangeContentColor = MaterialTheme.colorScheme.onPrimary,
+    todayDateBorderColor = MaterialTheme.colorScheme.secondary,
+    todayContentColor = MaterialTheme.colorScheme.secondary,
+)
+
+private fun LocalDate.aMilisUtc(): Long = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+
+private fun Long.aFechaUtc(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
 
 /** Los mismos colores que los chips de medio de pago en Anotar. */
 @Composable
@@ -296,12 +527,16 @@ private fun HistorialPreview() = CashinTheme {
             ),
             mes = YearMonth.now(),
             mesesDisponibles = listOf(YearMonth.now()),
+            categoriasDisponibles = listOf(comida, sueldo),
             hayAnotaciones = true,
             cargando = false,
         ),
         onReintentar = {},
         onFiltroCambio = {},
+        onCategoriaCambio = {},
+        onPeriodoCambio = {},
         onMesCambio = {},
+        onRangoCambio = { _, _ -> },
         onRegistroClick = {},
         onAnotar = {},
     )

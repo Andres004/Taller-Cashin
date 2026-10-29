@@ -10,7 +10,9 @@ import kotlinx.serialization.json.Json
 import org.ucb.cashin.BuildConfig
 import org.ucb.cashin.data.AuthRepository
 import org.ucb.cashin.data.CategoriaRepository
+import org.ucb.cashin.data.MetaRepository
 import org.ucb.cashin.data.PerfilRepository
+import org.ucb.cashin.data.PlanificadoRepository
 import org.ucb.cashin.data.RegistroRepository
 import org.ucb.cashin.data.ResumenRepository
 
@@ -43,6 +45,10 @@ class AppContainer {
     val registroRepository: RegistroRepository by lazy { RegistroRepository(supabase) }
     val perfilRepository: PerfilRepository by lazy { PerfilRepository(supabase) }
     val resumenRepository: ResumenRepository by lazy { ResumenRepository(supabase) }
+
+    // Sprint 3
+    val planificadoRepository: PlanificadoRepository by lazy { PlanificadoRepository(supabase) }
+    val metaRepository: MetaRepository by lazy { MetaRepository(supabase) }
 
     companion object {
         /** Indica si las claves de Supabase están configuradas en local.properties. */

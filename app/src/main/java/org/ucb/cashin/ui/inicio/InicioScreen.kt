@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NorthEast
 import androidx.compose.material.icons.filled.SouthWest
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -41,6 +43,7 @@ import org.ucb.cashin.R
 import org.ucb.cashin.model.Categoria
 import org.ucb.cashin.model.Registro
 import org.ucb.cashin.model.TipoRegistro
+import org.ucb.cashin.prediccion.Confianza
 import org.ucb.cashin.ui.components.AvatarBurbuja
 import org.ucb.cashin.ui.components.BarraProgreso
 import org.ucb.cashin.ui.components.CashinBoton
@@ -50,6 +53,9 @@ import org.ucb.cashin.ui.components.EstadoCargando
 import org.ucb.cashin.ui.components.EstadoError
 import org.ucb.cashin.ui.components.FilaRegistro
 import org.ucb.cashin.ui.components.VarianteBoton
+import org.ucb.cashin.ui.components.emocion
+import org.ucb.cashin.ui.components.texto
+import org.ucb.cashin.ui.components.textoConfianza
 import org.ucb.cashin.ui.components.mensaje
 import org.ucb.cashin.ui.registros.RegistroConCategoria
 import org.ucb.cashin.ui.theme.CashinColores
@@ -107,9 +113,11 @@ fun InicioContenido(
             ) {
                 Encabezado(nombre = estado.nombre)
 
-                MensajeDelAvatar(racha = estado.racha, anotoHoy = estado.anotoHoy)
+                MensajeDelAvatar(estado = estado)
 
                 TarjetaDelMes(estado = estado)
+
+                TarjetaPronostico(estado = estado)
 
                 Row(
                     modifier = Modifier.height(IntrinsicSize.Min),
@@ -154,11 +162,21 @@ private fun Encabezado(nombre: String) {
     }
 }
 
-/** Salchi anima a anotar o celebra la racha, según si ya se anotó algo hoy. */
+/**
+ * Salchi anima a anotar o celebra la racha, según si ya se anotó algo hoy.
+ * Si el motor de predicción ve que el mes va con más gasto que de costumbre, avisa (PREOCUPADO).
+ */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun MensajeDelAvatar(racha: Int, anotoHoy: Boolean) {
-    if (anotoHoy) {
+private fun MensajeDelAvatar(estado: InicioUiState) {
+    val racha = estado.racha
+    val mensajeIa = estado.mensajeIa
+    if (estado.gastaMasRapido && mensajeIa != null) {
+        AvatarBurbuja(
+            mensaje = mensajeIa.texto(),
+            emocion = mensajeIa.animo.emocion(),
+        )
+    } else if (estado.anotoHoy) {
         AvatarBurbuja(
             mensaje = pluralStringResource(R.plurals.inicio_avatar_racha, racha, racha),
             emocion = Emocion.CELEBRANDO,
@@ -213,6 +231,78 @@ private fun TarjetaDelMes(estado: InicioUiState) {
                     modifier = Modifier.weight(1f),
                 )
             }
+        }
+    }
+}
+
+/**
+ * IA predictiva en Inicio:
+ * - "Al ritmo actual terminarás octubre con ~Bs X de gastos" (en rojo si supera el máximo pronosticado).
+ * - "Próximo mes: entre Bs mín y Bs máx".
+ * - La confianza del pronóstico.
+ * Sin un mes completo de historia, explica que todavía no puede pronosticar.
+ */
+@Composable
+private fun TarjetaPronostico(estado: InicioUiState) {
+    val hoy = Formato.hoy()
+
+    CashinTarjeta {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Outlined.AutoAwesome,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier
+                    .padding(end = Espacio.s)
+                    .size(20.dp),
+            )
+            Text(
+                text = stringResource(R.string.inicio_pronostico),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+        }
+
+        if (!estado.hayPronostico) {
+            Text(
+                text = stringResource(R.string.inicio_pronostico_sin_datos),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(top = Espacio.s),
+            )
+        } else {
+            Text(
+                text = stringResource(
+                    R.string.inicio_pronostico_mes,
+                    Formato.mes(hoy).substringBefore(' ').lowercase(),
+                    Formato.monto(estado.proyeccionMes),
+                ),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = if (estado.gastaMasRapido) CashinColores.gasto else MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(top = Espacio.s),
+            )
+
+            if (estado.pronosticoProximo.confianza != Confianza.SIN_DATOS) {
+                Text(
+                    text = stringResource(
+                        R.string.inicio_pronostico_proximo,
+                        Formato.monto(estado.pronosticoProximo.minimo),
+                        Formato.monto(estado.pronosticoProximo.maximo),
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(top = Espacio.xs),
+                )
+            }
+
+            Text(
+                text = textoConfianza(estado.pronosticoMes.confianza, estado.pronosticoMes.mesesUsados),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(top = Espacio.xs),
+            )
         }
     }
 }

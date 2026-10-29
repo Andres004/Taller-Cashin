@@ -42,6 +42,10 @@
     <string name="validacion_monto">Escribe un monto mayor a 0</string>
     <string name="validacion_categoria">Elige una categoría</string>
     <string name="validacion_medio_pago">Elige un medio de pago</string>
+    <string name="validacion_tipo">Elige si es un gasto o un ingreso</string>
+    <string name="validacion_frecuencia">Elige cada cuánto se repite</string>
+    <string name="validacion_fecha">Elige la fecha</string>
+    <string name="formulario_revisa_campos">Revisa los campos marcados en rojo.</string>
 
     <!-- Errores (ErrorApp) -->
     <string name="error_sin_conexion">Sin conexión. Revisa tu internet e inténtalo de nuevo.</string>
@@ -117,6 +121,10 @@
     <string name="inicio_ultimas">Últimas anotaciones</string>
     <string name="inicio_ver_todo">Ver todo</string>
     <string name="inicio_sin_anotaciones">Todavía no tienes anotaciones. Toca + para empezar.</string>
+    <string name="inicio_pronostico">Pronóstico</string>
+    <string name="inicio_pronostico_sin_datos">Necesito al menos un mes completo de anotaciones para pronosticar.</string>
+    <string name="inicio_pronostico_mes">Al ritmo actual terminarás %1$s con ~%2$s de gastos.</string>
+    <string name="inicio_pronostico_proximo">Próximo mes: entre %1$s y %2$s.</string>
 
     <!-- Anotar (HU-06, HU-07) y editar (HU-08) -->
     <string name="anotar_tipo_gasto">Gasto</string>
@@ -153,13 +161,153 @@
     <string name="historial_filtro_gastos">Gastos</string>
     <string name="historial_filtro_ingresos">Ingresos</string>
     <string name="historial_elegir_mes">Elegir mes</string>
+    <string name="historial_filtro_categoria">Categoría</string>
+    <string name="historial_elegir_categoria">Elegir categoría</string>
+    <string name="historial_todas_categorias">Todas las categorías</string>
+    <string name="historial_periodo_hoy">Hoy</string>
+    <string name="historial_periodo_semana">Esta semana</string>
+    <string name="historial_periodo_personalizado">Personalizado</string>
+    <string name="historial_rango">%1$s – %2$s</string>
+    <string name="historial_elegir_rango">Elige desde y hasta qué fecha</string>
+    <string name="historial_desde">Desde</string>
+    <string name="historial_hasta">Hasta</string>
     <string name="historial_sin_resultados_titulo">Nada por aquí</string>
-    <string name="historial_sin_resultados_mensaje">No hay anotaciones con este filtro. Prueba con otro mes o tipo.</string>
+    <string name="historial_sin_resultados_mensaje">No hay anotaciones con estos filtros. Prueba con otras fechas, otro tipo u otra categoría.</string>
+
+    <!-- Mis categorías (HU-11, HU-12) -->
+    <string name="categorias_tab_gasto">Gastos</string>
+    <string name="categorias_tab_ingreso">Ingresos</string>
+    <string name="categorias_vacio_titulo">Aún no tienes categorías propias</string>
+    <string name="categorias_vacio_mensaje">Crea una categoría con tu propio nombre, ícono y color para anotar más rápido.</string>
+    <string name="categorias_nueva">Nueva categoría</string>
+    <string name="categorias_archivar_titulo">¿Archivar esta categoría?</string>
+    <string name="categorias_archivar_mensaje">«%1$s» ya no aparecerá al anotar, pero tus anotaciones con esta categoría siguen en el historial.</string>
+    <string name="categorias_archivar">Archivar</string>
+    <string name="categorias_desarchivar">Desarchivar</string>
+    <string name="categorias_archivada">Archivada</string>
+    <string name="categorias_del_sistema">Del sistema</string>
+    <string name="categorias_nombre">Nombre</string>
+    <string name="categorias_icono">Ícono</string>
+    <string name="categorias_color">Color</string>
+    <string name="categorias_crear">Crear categoría</string>
+    <string name="categorias_error_nombre">Escribe un nombre de hasta 50 caracteres</string>
+    <string name="categorias_error_repetida">Ya existe una categoría con ese nombre</string>
+
+    <!-- Pagos e ingresos esperados (HU-15, HU-16) -->
+    <string name="planificados_vacio_titulo">Nada esperado por ahora</string>
+    <string name="planificados_vacio_mensaje">Anota lo que pagas o cobras seguido, como el alquiler o el sueldo, y márcalo con un toque cuando pase.</string>
+    <string name="planificados_nuevo">Nuevo pago o ingreso esperado</string>
+    <string name="planificados_tipo">¿Es un gasto o un ingreso?</string>
+    <string name="planificados_elige_tipo_primero">Elige primero si es un gasto o un ingreso.</string>
+    <string name="planificados_elegir_fecha">Elige una fecha</string>
+    <string name="planificados_error_fecha_pasada">La fecha no puede ser anterior a hoy</string>
+    <string name="planificados_nombre">Nombre</string>
+    <string name="planificados_nombre_ejemplo_gasto">Ej.: alquiler, internet, pensión</string>
+    <string name="planificados_nombre_ejemplo_ingreso">Ej.: sueldo, mesada, clases</string>
+    <string name="planificados_error_nombre">Escribe un nombre</string>
+    <string name="planificados_frecuencia">¿Cada cuánto?</string>
+    <string name="planificados_fecha_pago">¿Cuándo toca pagar?</string>
+    <string name="planificados_fecha_cobro">¿Cuándo toca cobrar?</string>
+    <string name="planificados_frecuencia_fecha">%1$s · %2$s</string>
+    <string name="planificados_hoy">hoy</string>
+    <string name="planificados_vencido">Vencido · %1$s</string>
+    <string name="planificados_ya_pague">Ya lo pagué</string>
+    <string name="planificados_ya_cobre">Ya lo cobré</string>
+    <string name="planificados_anotando">Anotando…</string>
+    <string name="planificados_disponible_desde">Disponible desde %1$s</string>
+    <string name="planificados_ya_estaba_anotado">Ese periodo ya estaba anotado. Revisa tu historial.</string>
+    <string name="planificados_quitar">Quitar</string>
+    <string name="planificados_quitar_titulo">¿Quitar este pago esperado?</string>
+    <string name="planificados_quitar_mensaje">«%1$s» ya no aparecerá en esta lista. Lo que ya anotaste sigue en tu historial.</string>
+    <string name="planificados_guardado">Guardado. Te lo mostramos cuando toque.</string>
+    <string name="planificados_pago_anotado">¡Pago anotado en tu historial!</string>
+    <string name="planificados_cobro_anotado">¡Cobro anotado en tu historial!</string>
+    <string name="frecuencia_unica">Una vez</string>
+    <string name="frecuencia_semanal">Semanal</string>
+    <string name="frecuencia_quincenal">Quincenal</string>
+    <string name="frecuencia_mensual">Mensual</string>
+    <string name="frecuencia_anual">Anual</string>
+
+    <!-- Metas de ahorro (HU-17, HU-18, HU-19) -->
+    <string name="metas_vacio_titulo">Todavía no tienes metas</string>
+    <string name="metas_vacio_mensaje">Ponte un objetivo, como un celular o un viaje, y anota lo que vas apartando para verlo crecer.</string>
+    <string name="metas_vacio_accion">Crear mi primera meta</string>
+    <string name="metas_nueva">Nueva meta</string>
+    <string name="metas_editar">Editar meta</string>
+    <string name="metas_nombre">¿Para qué ahorras?</string>
+    <string name="metas_nombre_ejemplo">Ej.: celular nuevo, viaje, laptop</string>
+    <string name="metas_monto_objetivo">¿Cuánto necesitas?</string>
+    <string name="metas_fecha_limite">¿Hasta cuándo? (opcional)</string>
+    <string name="metas_sin_fecha_opcional">Sin fecha límite</string>
+    <string name="metas_quitar_fecha">Quitar fecha</string>
+    <string name="metas_descripcion">Descripción</string>
+    <string name="metas_descripcion_ejemplo">Ej.: el modelo que vi en la tienda</string>
+    <string name="metas_crear">Crear meta</string>
+    <string name="metas_error_nombre">Escribe para qué ahorras</string>
+    <string name="metas_error_descripcion">Escribe una descripción corta</string>
+    <string name="metas_error_fecha">La fecha límite tiene que ser después de hoy</string>
+    <string name="metas_creada">¡Meta creada! Anota tu primer ahorro.</string>
+    <string name="metas_de_porcentaje">%1$s de %2$s (%3$d %%)</string>
+    <string name="metas_de_objetivo">de %1$s</string>
+    <string name="metas_ahorrado">Llevas ahorrado</string>
+    <string name="metas_porcentaje_falta">%1$d %% · Te faltan %2$s</string>
+    <string name="metas_alcanzada">¡Meta alcanzada! 🎉</string>
+    <string name="metas_hasta">Hasta el %1$s</string>
+    <string name="metas_sin_fecha">Sin fecha límite</string>
+    <string name="metas_lograste">¡Lo lograste! Llegaste a tu meta. Cashi está orgulloso de ti.</string>
+    <string name="metas_anotar_ahorro">Anoté un ahorro</string>
+    <string name="metas_anotar_retiro">Anoté un retiro</string>
+    <string name="metas_ahorro">Ahorro</string>
+    <string name="metas_retiro">Retiro</string>
+    <string name="metas_disponible_retirar">Tienes %1$s ahorrado en esta meta.</string>
+    <string name="metas_error_retiro">No puedes retirar más de lo que ahorraste (%1$s)</string>
+    <string name="metas_movimientos">Movimientos</string>
+    <string name="metas_sin_movimientos">Todavía no anotaste ahorros en esta meta.</string>
+    <string name="metas_cuando_titulo">¿Cuándo lo logro?</string>
+    <string name="metas_cancelar">Quitar meta</string>
+    <string name="metas_cancelar_titulo">¿Quitar esta meta?</string>
+    <string name="metas_cancelar_mensaje">«%1$s» ya no aparecerá en tus metas.</string>
+    <string name="metas_cancelada">Meta quitada</string>
+    <string name="metas_marcar_completada">Marcar como completada</string>
+    <string name="metas_estado_completada">✓ Completada</string>
+    <string name="metas_completada_mensaje">¡Meta cumplida! Ya está guardada en tus metas completadas.</string>
+    <string name="metas_sin_activas">No tienes metas activas. ¡Crea una nueva!</string>
+    <string name="metas_completadas">Completadas (%1$d)</string>
+    <string name="metas_ver_completadas">Ver metas completadas</string>
+    <string name="metas_ocultar_completadas">Ocultar metas completadas</string>
+
+    <!-- IA predictiva: motor de predicción (prediccion/) y mensajes de Cashi -->
+    <plurals name="ia_meses_fecha">
+        <item quantity="one">~%1$d mes · %2$s</item>
+        <item quantity="other">~%1$d meses · %2$s</item>
+    </plurals>
+    <string name="ia_no_se_alcanza">Al ritmo actual no se alcanza</string>
+    <string name="ia_ritmo">Ahorras ~%1$s al mes · %2$s</string>
+    <string name="ia_fuente_aportes">según tus aportes</string>
+    <string name="ia_fuente_capacidad">según tus ingresos y gastos</string>
+    <string name="ia_a_tiempo">✅ Llegas a tiempo</string>
+    <string name="ia_necesitas">⚠️ Necesitas %1$s al mes para llegar</string>
+    <plurals name="ia_confianza_meses">
+        <item quantity="one">Estimación con %1$d mes de datos · confianza %2$s</item>
+        <item quantity="other">Estimación con %1$d meses de datos · confianza %2$s</item>
+    </plurals>
+    <string name="ia_confianza_sin_datos">Todavía no hay datos suficientes para estimar</string>
+    <string name="ia_confianza_alta">alta</string>
+    <string name="ia_confianza_media">media</string>
+    <string name="ia_confianza_baja">baja</string>
+    <string name="ia_meta_alcanzada">¡Llegaste a tu meta! Cashi está orgulloso de ti.</string>
+    <plurals name="ia_meta_alcanzable">
+        <item quantity="one">¡Vas bien! Al ritmo actual juntas los %1$s que faltan en unos %2$d mes (%3$s).</item>
+        <item quantity="other">¡Vas bien! Al ritmo actual juntas los %1$s que faltan en unos %2$d meses (%3$s).</item>
+    </plurals>
+    <string name="ia_meta_no_llega">Al ritmo actual no llegas a tu fecha. Necesitarías ahorrar %1$s al mes.</string>
+    <string name="ia_meta_ritmo_negativo">Este mes tus gastos superan tus ingresos. Anota un ahorro para empezar.</string>
+    <string name="ia_sin_datos">Anota tus gastos unas semanas más para que pueda estimar.</string>
+    <string name="ia_gasto_mas_rapido">Vas gastando más rápido que de costumbre. ¡Ojo con los gastos de estos días!</string>
+    <string name="ia_gasto_normal">Tus gastos van dentro de lo normal este mes. ¡Sigue así!</string>
 
     <!-- Placeholders del resto de pestañas -->
-    <string name="metas_construccion">Aquí crearás metas de ahorro y verás cuánto te falta.</string>
     <string name="categorias_construccion">Aquí crearás tus propias categorías y archivarás las que ya no uses.</string>
-    <string name="planificados_construccion">Aquí anotarás los pagos e ingresos que se repiten, como el alquiler o el sueldo.</string>
     <string name="deudas_construccion">Aquí anotarás lo que debes y lo que te deben, y los abonos de cada deuda.</string>
     <string name="desafios_construccion">Aquí elegirás desafíos semanales y mensuales para ganar XP.</string>
 
