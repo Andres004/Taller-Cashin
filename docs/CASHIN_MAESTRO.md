@@ -2,7 +2,7 @@
 
 > **Spec-Driven Development.** Este documento es la fuente única de verdad del proyecto.
 > Antes de escribir código, cada integrante (y cualquier asistente de IA que usemos) lee la sección que le corresponde.
-> Si algo del código contradice este documento, **se corrige el código o se actualiza el documento mediante un pull request**; nunca se deja la contradicción.
+> Si algo del código contradice este documento, **se corrige el código o se actualiza el documento mediante un pull request**; nunca se deja la contradicción
 
 | Campo | Valor |
 |---|---|
@@ -15,7 +15,7 @@
 | Tablero | Trello: [Cashin · Taller de Sistemas de Información](https://trello.com/b/8wOuJi2k/cashin-taller-de-sistemas-de-informaci%C3%B3n) |
 | Backend | Proyecto Supabase `cashin` (São Paulo) — ✅ configurado |
 | Paquete Android | `org.ucb.cashin` (módulo `app`) |
-| Versión del documento | 1.2 — Sprint 1 cerrado, Sprint 2 en curso (24/10/2026) |
+| Versión del documento | 1.3 — Sprints 1–3 cerrados, Sprint 4 en curso (04/11/2026) |
 
 ---
 
@@ -23,7 +23,7 @@
 
 Cashin es una **app Android** donde la persona **anota** sus gastos, ingresos, pagos esperados, metas de ahorro y deudas. Un **avatar** (el perrito salchicha de Cashin) la acompaña al estilo Duolingo: da consejos, celebra rachas y propone desafíos.
 
-Lo que diferencia a Cashin es un **asistente de IA** que:
+Lo que diferencia a Cashin es un **asistente de IA predictiva propia** (no generativa, ver §8) que:
 
 1. **Propone desafíos semanales y mensuales** según el historial de la persona (por ejemplo: "Esta semana gasta máximo 150 Bs en comida fuera").
 2. **Estima cuánto tiempo falta para una meta** (por ejemplo: "Al ritmo actual juntas los 2.500 Bs del celular en ~5 meses").
@@ -38,7 +38,7 @@ Lo que diferencia a Cashin es un **asistente de IA** que:
 
 - **Registro rápido:** anotar un gasto debe tomar menos de 10 segundos (monto → categoría → guardar).
 - **Privacidad por usuario:** cada persona solo ve sus datos. Lo garantiza la base de datos (RLS), no solo la app.
-- **La IA redacta, el código calcula:** los números (promedios, meses restantes, cumplimiento de desafíos) se calculan con fórmulas. La IA solo los explica y propone ideas.
+- **El motor calcula, las plantillas explican:** los números (pronósticos, meses restantes, límites de desafíos) salen de modelos estadísticos en Kotlin; el avatar los explica con plantillas de `strings.xml`. No hay IA generativa.
 - **Hora de Bolivia:** todo cálculo por día o por mes usa `America/La_Paz`.
 - **Archivar en lugar de borrar** categorías, para no romper el historial.
 
@@ -105,12 +105,12 @@ Formato de ID: `HU-XX`. Cada HU es una tarjeta en Trello y una rama en GitHub.
 | UI | **Jetpack Compose** + Material 3 | Pantallas declarativas |
 | Navegación | **Navigation Compose** | Moverse entre pantallas |
 | Estado | **ViewModel + StateFlow + Coroutines** | Patrón MVVM |
-| Backend | **Supabase** | Base de datos, login y función de IA; no escribimos servidor |
-| Cliente Supabase | **supabase-kt** (`auth-kt`, `postgrest-kt`, `functions-kt`) + motor Ktor OkHttp | Hablar con Supabase |
+| Backend | **Supabase** | Base de datos, login y funciones SQL; no escribimos servidor |
+| Cliente Supabase | **supabase-kt** (`auth-kt`, `postgrest-kt`, `functions-kt`) + motor Ktor OkHttp | Hablar con Supabase (`functions-kt` sigue instalado pero no se usa) |
 | Serialización | **kotlinx.serialization** | Objetos Kotlin ⇄ JSON |
 | Base de datos | **PostgreSQL** (de Supabase) con **RLS** | Datos y privacidad |
 | Login con Google (Sprint 3) | **Credential Manager** vía `compose-auth` (repositorio `supabase-kt-plugins`) | Ingreso con Google nativo |
-| IA | **Supabase Edge Function** (TypeScript) + **API de Gemini** | Desafíos, consejos, estimación |
+| IA | **Motor de predicción propio** en Kotlin (paquete `prediccion/`), sin APIs externas | Pronósticos, estimación de metas, desafíos, consejos |
 | Avatar | **Lottie Compose** (animaciones) o PNG | Avatar animado |
 | Gráficos | Compose puro (Canvas) o **Vico** | Gasto por categoría |
 | Control de versiones | Git + GitHub (pull requests) | Trabajo en equipo |
@@ -136,10 +136,10 @@ Formato de ID: `HU-XX`. Cada HU es una tarjeta en Trello y una rama en GitHub.
 
 ### 4.1 Por qué este stack (para defender en la presentación)
 
-- **Un solo lenguaje en la app** (Kotlin) y una función pequeña en TypeScript.
+- **Un solo lenguaje en la app** (Kotlin), incluido el motor de IA; en el servidor solo SQL.
 - **Supabase** nos da PostgreSQL real (relacional, el mismo SQL del curso), login con Google y recuperación de contraseña ya resueltos. Eso elimina un backend completo con JWT, BCrypt, sesiones y servidor de correo.
 - **RLS** (Row Level Security) hace que la propia base de datos impida ver datos ajenos, aunque la app tuviera un error.
-- **La clave de la IA nunca va en el celular:** vive como secreto en la Edge Function.
+- **IA propia sin APIs externas:** el motor corre en el celular, no tiene costo, no necesita claves secretas y los datos no salen del dispositivo (ver §8).
 
 ---
 
@@ -152,14 +152,11 @@ Formato de ID: `HU-XX`. Cada HU es una tarjeta en Trello y una rama en GitHub.
                                 │ HTTPS + token del usuario (automático)
 ┌───────────────────────────────▼──────────────────────────────────────┐
 │                              SUPABASE                                 │
-│  Auth (correo, Google)   PostgreSQL + RLS + vistas   Edge Function    │
-│                                                      "ia-asistente"   │
-└──────────────────────────────────────────────────────┬───────────────┘
-                                                       │ HTTPS (clave secreta)
-                                                  ┌────▼────┐
-                                                  │ Gemini  │
-                                                  └─────────┘
+│  Auth (correo, Google)   PostgreSQL + RLS + vistas + funciones SQL    │
+└───────────────────────────────────────────────────────────────────────┘
 ```
+
+La IA no tiene servidor propio ni APIs externas: el motor `prediccion/` corre dentro de la app.
 
 **Flujo de un registro ("gasté 20 Bs en almuerzo con QR"):**
 1. La pantalla valida monto > 0 y categoría.
@@ -168,12 +165,11 @@ Formato de ID: `HU-XX`. Cada HU es una tarjeta en Trello y una rama en GitHub.
 4. PostgreSQL verifica RLS, los CHECK y las claves foráneas, y un trigger suma XP y actualiza la racha.
 5. La app actualiza el historial y el resumen.
 
-**Flujo de la IA:**
-1. La app llama `supabase.functions.invoke("ia-asistente", { accion, ... })`.
-2. La función lee los datos **del usuario que la llamó** (con su token, así que RLS sigue aplicando).
-3. La función **calcula** los números con código.
-4. La función envía a Gemini solo un **resumen** (nunca correo ni nombre real) y pide respuesta en JSON.
-5. Valida el JSON y lo devuelve a la app.
+**Flujo de la IA predictiva:**
+1. El ViewModel pide al `ResumenRepository` las vistas `v_totales_mes` y `v_gasto_categoria_mes` (y `v_avance_meta` para metas). RLS asegura que solo llegan los datos del usuario.
+2. El **motor** (`prediccion/`, Kotlin puro) calcula en el celular: arma la serie mensual, pronostica, proyecta el mes y estima metas o desafíos.
+3. El motor devuelve un `MensajeAvatar` (plantilla + ánimo + datos); la UI lo convierte en texto de `strings.xml` y en la pose de Cashi.
+4. Si el usuario acepta un desafío, la app lo guarda con la función SQL `aceptar_desafio(...)` (§7.2).
 
 ---
 
@@ -223,8 +219,8 @@ Taller-Cashin/
 │       └── test/java/org/ucb/cashin/    # pruebas unitarias (JUnit)
 ├── supabase/
 │   ├── migrations/                      # 001_esquema.sql, 002_rls.sql, 003_…
-│   ├── tests/                           # pruebas de RLS en PostgreSQL local
-│   └── functions/ia-asistente/          # Edge Function (Sprint 3)
+│   ├── tests/                           # pruebas de RLS y gamificación en PostgreSQL local
+│   └── seed/demo_historial.sql          # datos de demostración (no es migración)
 ├── docs/                                # este documento, SUPABASE.md
 ├── .github/pull_request_template.md     # checklist de "Hecho" en cada PR
 ├── local.properties.example
@@ -325,7 +321,6 @@ La sesión se guarda sola en el celular (supabase-kt) y se renueva automáticame
 |---|---|---|
 | `SUPABASE_URL`, `SUPABASE_KEY` (clave pública anon/publishable) | `local.properties` → `BuildConfig` | **No** |
 | `GOOGLE_WEB_CLIENT_ID` | `local.properties` → `BuildConfig` | No |
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | Secretos de Supabase (`supabase secrets set`) | **Nunca** |
 
 Plantilla: `local.properties.example`. Andy comparte los valores por mensaje privado. La clave pública puede ir en la app porque **RLS** protege los datos; la `service_role` nunca se usa en la app.
 
@@ -339,7 +334,9 @@ Plantilla: `local.properties.example`. Andy comparte los valores por mensaje pri
 |---|---|---|
 | `001_esquema.sql` | 9 tablas, índices, validaciones, XP/racha automáticos, 4 vistas, categorías del sistema | ✅ probado |
 | `002_rls.sql` | Políticas RLS: cada usuario solo ve y cambia lo suyo | ✅ probado |
-| `003_gamificacion.sql` | Funciones de desafíos y metas (§7.2) | Sprint 4 |
+| `003_gamificacion.sql` | Funciones de desafíos y XP por completar metas (§7.2) | 🔨 Sprint 4 (pruebas en `tests/pruebas_gamificacion.sql`) |
+
+Datos de demostración (no es migración): `supabase/seed/demo_historial.sql` llena 4 meses de historia y una meta para una cuenta existente, para mostrar el motor de predicción. Se ejecuta **una sola vez** por cuenta.
 
 Cómo ejecutarlos y probarlos: `docs/SUPABASE.md`.
 
@@ -390,16 +387,19 @@ Cómo ejecutarlos y probarlos: `docs/SUPABASE.md`.
 
 ### 7.2 Funciones SQL de gamificación (Sprint 4) — `003_gamificacion.sql`
 
-Contratos a implementar en el Sprint 4 (responsable por definir); la app los llama con `supabase.postgrest.rpc(...)`:
+La tabla `desafio` es de **solo lectura** para la app (RLS): se crea y se cambia únicamente con estas funciones. La app las llama con `supabase.postgrest.rpc(...)`, usando **exactamente** los nombres de parámetro (`p_…`).
 
-| Función | Qué hace |
-|---|---|
-| `aceptar_desafio(p_titulo, p_descripcion, p_periodo, p_regla, p_categoria_id, p_monto_limite, p_dias_objetivo)` | Inserta el desafío para `auth.uid()` con fechas del periodo actual (semana lunes–domingo o mes calendario, hora Bolivia). Rechaza si ya hay un desafío ACTIVO del mismo periodo. XP: 50 semanal, 150 mensual. |
-| `descartar_desafio(p_id)` | Cambia a `DESCARTADO` solo si es del usuario y está ACTIVO. |
-| `evaluar_desafios()` | Para cada desafío ACTIVO de `auth.uid()`: **LIMITE_CATEGORIA / LIMITE_TOTAL** → si el gasto del periodo ya supera `monto_limite`, pasa a FALLIDO; si `fecha_fin` ya pasó y no lo superó, pasa a CUMPLIDO. **DIAS_REGISTRO** → si llegó a `dias_objetivo` días distintos con registro, pasa a CUMPLIDO; si `fecha_fin` pasó sin lograrlo, FALLIDO. Al pasar a CUMPLIDO suma `xp_recompensa` al perfil. Devuelve los desafíos que cambiaron. La app la llama al abrir Inicio. |
-| `completar_meta(p_meta_id)` | Si el total ahorrado ≥ objetivo, marca COMPLETADA y suma 100 XP (una sola vez). |
+| Función | Devuelve | Qué hace |
+|---|---|---|
+| `aceptar_desafio(p_titulo, p_descripcion, p_periodo, p_regla, p_categoria_id, p_monto_limite, p_dias_objetivo)` | `desafio` | HU-22. Inserta el desafío para `auth.uid()`. **El servidor** pone las fechas (semana lunes–domingo o mes calendario, hora Bolivia) y el XP (50 semanal, 150 mensual). Rechaza si ya hay un ACTIVO del mismo periodo ("Ya tienes un desafío … activo") o si la categoría no es de gasto del sistema o propia. Guarda solo los campos que aplican a la regla. |
+| `descartar_desafio(p_id)` | `boolean` | Pasa a `DESCARTADO` solo si es del usuario y está ACTIVO. |
+| `progreso_desafios()` | `{desafio_id, gastado, dias_con_registro}` | Medición de cada desafío ACTIVO (para las barras de progreso). |
+| `evaluar_desafios()` | `setof desafio` | HU-23. Para cada ACTIVO: **LIMITE_CATEGORIA / LIMITE_TOTAL** → si el gasto del periodo supera `monto_limite`, FALLIDO; si `fecha_fin` pasó sin superarlo, CUMPLIDO. **DIAS_REGISTRO** → si llegó a `dias_objetivo` días distintos con registro, CUMPLIDO; si `fecha_fin` pasó sin lograrlo, FALLIDO. Al pasar a CUMPLIDO suma `xp_recompensa` (una sola vez). Devuelve **solo los que cambiaron**. La app la llama al abrir Inicio y Desafíos. |
+| `completar_meta(p_meta_id)` | `boolean` | Si la meta está ACTIVA y lo ahorrado (ahorros − retiros) ≥ objetivo: la marca COMPLETADA y suma **+100 XP**. Si no, `false` (no da XP dos veces). |
 
-Todas `security definer set search_path = public` y siempre filtran por `auth.uid()`.
+Funciones internas (no expuestas a la app): `fn_rango_periodo(periodo)` (fechas del periodo actual) y `fn_medir_desafio(desafio)` (gasto y días con registro del periodo).
+
+Todas son `security definer set search_path = public`, filtran siempre por `auth.uid()` y solo las puede ejecutar el rol `authenticated` (no `anon`).
 
 ### 7.3 Reglas de XP y nivel
 
@@ -414,82 +414,39 @@ Todas `security definer set search_path = public` y siempre filtran por `auth.ui
 
 ---
 
-## 8. Asistente de IA — Edge Function `ia-asistente`
+## 8. IA predictiva
 
-Archivo: `supabase/functions/ia-asistente/index.ts`. Una sola función con un campo `accion`.
+Cashin usa un **motor de predicción propio**, escrito en Kotlin puro en el paquete `prediccion/` (sin `android.*`, `androidx.*` ni Supabase). Recibe los datos de las vistas, calcula en el celular y devuelve números y mensajes de plantilla. **No es IA generativa:** no se llama a Gemini, OpenAI ni ninguna API externa.
 
-### 8.1 Seguridad
+### 8.1 Modelos
 
-- Crea el cliente de Supabase **con el header `Authorization` de la petición**, para leer como el usuario (RLS aplica).
-- A Gemini se le envía **solo** el resumen numérico: nunca correo, nombre, contrapartes de deudas ni notas libres.
-- Límite: máximo **10 llamadas por usuario por día** (contar en memoria o en una tabla simple `uso_ia`, opcional).
-- Si Gemini falla o devuelve JSON inválido, la función responde un **mensaje de respaldo** fijo (la app nunca se rompe por la IA).
+| Pieza | Archivo | Modelo |
+|---|---|---|
+| Serie mensual | `SerieMensual.kt` (`construirSerie`) | Convierte `v_totales_mes` en una serie de meses **completos** (sin el actual), rellenando con 0 los meses sin registros. |
+| Pronóstico del siguiente mes | `Pronostico.kt` (`pronosticarSiguienteMes`) | 1 mes → ese valor (margen 25 %). 2 meses → promedio. 3 o más → **regresión lineal por mínimos cuadrados** (últimos hasta 6 meses) combinada **50/50 con un promedio móvil ponderado** (el mes reciente pesa más). Margen = **desviación estándar de los residuos** (mínimo 10 %). Confianza: BAJA (1–2 meses), MEDIA (3–5), ALTA (6+). |
+| Proyección del mes actual | `Pronostico.kt` (`proyectarMesActual`, `pronosticarProximoMes`) | Ritmo = gastado ÷ día del mes × días del mes, **mezclado** con el pronóstico según el avance del mes (al inicio manda la historia, al final manda el ritmo real). |
+| Estimación de metas (HU-20) | `EstimadorMeta.kt` (`estimarMeta`) | Ritmo de ahorro = promedio de **aportes netos** de los últimos 3 meses con aportes (si hay 2+ meses); si no, **capacidad de ahorro** = ingresos esperados − gastos esperados. Meses = ⌈faltante ÷ ritmo⌉; se compara con la fecha límite. |
+| Mensajes del avatar | `MensajesAvatar.kt` | Decide la **plantilla** (`TipoMensaje`), el ánimo y los datos; la UI la traduce con `MensajePrediccion.kt` a `strings.xml` y a la pose de Cashi. |
+| Desafíos y consejo del día (Sprint 4) | `GeneradorDesafios.kt`, `Consejos.kt` | Propuestas de desafío por reglas (límite por categoría = 85 % del promedio, límite total = 90 % del pronóstico, días de registro) y consejo del día por prioridad (racha en riesgo, desafío en riesgo, categoría que sube, gasto más rápido, meta cerca, racha buena). |
 
-### 8.2 Resumen que se calcula antes de llamar a la IA
+### 8.2 Por qué predictiva y no generativa
 
-```json
-{
-  "moneda": "BOB",
-  "ingreso_promedio_mensual": 3200.00,
-  "gasto_promedio_mensual": 2850.00,
-  "ahorro_promedio_mensual": 350.00,
-  "meses_con_datos": 3,
-  "top_categorias_gasto": [
-    {"categoria_id": "…", "nombre": "Alimentación", "promedio_mensual": 900.00, "porcentaje": 31.6}
-  ],
-  "gasto_fin_de_semana_pct": 42.0,
-  "racha_actual": 4,
-  "desafios_ultimo_mes": {"cumplidos": 1, "fallidos": 2}
-}
-```
+- **Números exactos y explicables:** cada cifra sale de una fórmula que se puede mostrar y defender; un modelo generativo puede inventar cifras.
+- **Sin costo ni límites:** no hay cuotas de API, claves secretas ni dependencia de un servicio externo.
+- **Privacidad:** los datos no salen del celular más allá de Supabase (protegido con RLS).
+- **Funciona siempre:** si no hay datos, el motor responde un mensaje de "sin datos" en vez de fallar.
 
-Ventana de cálculo: últimos 3 meses completos + mes actual. Si hay menos de 2 semanas de datos, no se llama a la IA y se responde "Anota unos días más para que pueda conocerte".
+### 8.3 Evaluación
 
-### 8.3 Acciones
+- **Error medio absoluto walk-forward** (`errorMedioAbsoluto`): para cada mes desde el 3.º se pronostica solo con los meses anteriores y se compara con lo real (necesita 4+ meses).
+- **Pruebas unitarias** en `app/src/test/java/org/ucb/cashin/prediccion/` (serie, pronóstico, estimación de metas, mensajes; y en el Sprint 4, generador de desafíos y consejos).
+- Para la demo: `supabase/seed/demo_historial.sql` carga 4 meses con tendencia creciente.
 
-**`accion: "estimar_meta"`** — entrada `{ meta_id }`
+### 8.4 Límites
 
-1. Código: `faltante = monto_objetivo − total_ahorrado`; `ahorro_mensual = max(ahorro_promedio_mensual, promedio mensual de aportes a metas)`.
-2. Si `ahorro_mensual ≤ 0` → `alcanzable = false`.
-3. Si no → `meses = ceil(faltante / ahorro_mensual)`; si hay `fecha_limite`, comparar.
-4. IA: recibe `{faltante, ahorro_mensual, meses, fecha_limite, top_categorias_gasto}` y devuelve:
-
-```json
-{ "mensaje": "≤ 220 caracteres, tono del avatar",
-  "sugerencia": "≤ 160 caracteres: dónde recortar",
-  "ahorro_extra_sugerido": 150.00 }
-```
-
-Respuesta final a la app: `{ meses, alcanzable, ahorro_mensual, mensaje, sugerencia, ahorro_extra_sugerido }`. **`meses` siempre sale del código, nunca de la IA.**
-
-**`accion: "consejo"`** — sin entrada. IA devuelve `{ "consejo": "≤ 200 caracteres", "emocion": "feliz|neutral|preocupado|celebrando" }`. La `emocion` decide la animación del avatar. Cachear 1 consejo por día en la app.
-
-**`accion: "proponer_desafios"`** — entrada `{ periodo: "SEMANAL" | "MENSUAL" }`. IA devuelve exactamente 3:
-
-```json
-{ "desafios": [
-  { "titulo": "≤ 60 caracteres",
-    "descripcion": "≤ 200 caracteres",
-    "regla": "LIMITE_CATEGORIA | LIMITE_TOTAL | DIAS_REGISTRO",
-    "categoria_id": "uuid o null",
-    "monto_limite": 600.00,
-    "dias_objetivo": null }
-]}
-```
-
-La función **valida** cada desafío: `regla` permitida; `categoria_id` debe ser de `top_categorias_gasto`; `monto_limite` entre 60 % y 95 % del promedio de esa categoría (o del total) para el periodo; `dias_objetivo` entre 3 y 7 (semanal) o 10 y 25 (mensual). Lo que no cumple se corrige o se descarta. La app muestra las 3 opciones y el usuario acepta una con `aceptar_desafio(...)`.
-
-### 8.4 Prompt base (system)
-
-```
-Eres "Salchi", el avatar de Cashin, una app boliviana de anotaciones de finanzas personales.
-Hablas en español de Bolivia, cercano, positivo y breve, como un amigo que anima (estilo Duolingo).
-Cashin NO maneja dinero: nunca sugieras transferir, invertir, pedir préstamos ni productos financieros.
-Usa solo los números que te doy; no inventes cifras. Montos en Bs.
-Responde ÚNICAMENTE con JSON válido que siga el esquema indicado, sin texto adicional.
-```
-
-Se usa el modo de respuesta JSON de Gemini (`responseMimeType: "application/json"` con esquema) para reducir errores.
+- Necesita **1 a 3 meses de historia** para pronósticos útiles; con menos, la confianza es BAJA o SIN_DATOS y el avatar pide anotar más.
+- Supone que el comportamiento reciente se mantiene: no anticipa gastos extraordinarios (un viaje, una emergencia).
+- Solo ve lo que el usuario anota: si no anota, el modelo no lo sabe.
 
 ---
 
@@ -531,9 +488,9 @@ Cada sprint dura una semana y se **entrega el martes a las 17:30** (hora Bolivia
 | Sprint | Entrega | Responsable | Objetivo | Estado |
 |---|---|---|---|---|
 | S1 | sáb 24/10 | Andy | Base: repo, Supabase, esquema + RLS, login, tema, componentes, navegación | ✅ Hecho |
-| S2 | **mar 27/10 · 17:30** | **Carlos** (revisa Andy) | Anotar (HU-06/07), historial (HU-09), editar/eliminar (HU-08), Inicio con totales (HU-13), perfil (HU-05) | 🔨 En curso |
-| S3 | mar 03/11 · 17:30 | por definir | Google (HU-02), filtros (HU-10), categorías (HU-11/12), planificados (HU-15/16), metas (HU-17–19), Edge Function base (T-11) | Backlog |
-| S4 | mar 10/11 · 17:30 | por definir | IA: estimación (HU-20) y consejos (HU-21); desafíos (HU-22/23); XP y racha (HU-24); `003_gamificacion.sql` | Backlog |
+| S2 | **mar 27/10 · 17:30** | **Carlos** (revisa Andy) | Anotar (HU-06/07), historial (HU-09), editar/eliminar (HU-08), Inicio con totales (HU-13), perfil (HU-05) | ✅ Hecho |
+| S3 | mar 03/11 · 17:30 | por definir | Filtros (HU-10), categorías (HU-11/12), planificados (HU-15/16), metas (HU-17–19), motor de predicción y estimación de metas (HU-20) | ✅ Hecho (Google HU-02 pasa a S4 opcional / S5) |
+| S4 | mar 10/11 · 17:30 | por definir | Consejo del día (HU-21); desafíos (HU-22/23); XP, racha y nivel (HU-24); `003_gamificacion.sql`; Google (HU-02) si sobra tiempo | 🔨 En curso |
 | S5 | mar 17/11 · 17:30 | por definir | Deudas (HU-25/26), gasto por categoría (HU-14), avatar animado, pruebas, APK y presentación | Backlog |
 
 El responsable de cada sprint se decide en su planificación. Las fechas de S3 a S5 son tentativas.
@@ -622,8 +579,7 @@ Toda salida de la IA **se revisa y se entiende** antes de subirla. En la defensa
 | Riesgo | Plan |
 |---|---|
 | Login con Google no funciona a tiempo (SHA-1, client ID) | El correo y la contraseña son el camino principal; Google se terminó de mover al S3 para no frenar el S2 |
-| La IA responde mal o se cae | Mensajes de respaldo fijos + validación de JSON; los números nunca dependen de la IA |
-| Se agota el nivel gratuito de Gemini | Límite de 10 llamadas por usuario por día; cachear consejo diario |
+| El motor de predicción tiene poca historia y pronostica mal | Confianza BAJA / SIN_DATOS con mensajes que piden anotar más; para la demo, `seed/demo_historial.sql` |
 | El proyecto gratuito de Supabase se pausa por inactividad | Entrar al panel al menos una vez por semana; antes de la presentación, abrir la app el día anterior |
 | Atraso en un sprint | Deudas (M9) y gráfico de categorías (HU-14) son lo primero que se recorta |
 | Alguien no puede trabajar una semana | Sus tarjetas vuelven a `Por hacer` el miércoles y las toma quien tenga menos carga |
@@ -637,12 +593,13 @@ Toda salida de la IA **se revisa y se entiende** antes de subirla. En la defensa
 - **Meta:** objetivo de ahorro que la persona controla anotando aportes.
 - **Desafío:** reto semanal o mensual con una regla verificable que otorga XP.
 - **RLS:** Row Level Security, regla de PostgreSQL que filtra filas por usuario.
-- **Edge Function:** pequeña función en la nube de Supabase; la usamos para hablar con la IA.
+- **Función SQL (rpc):** función de PostgreSQL que la app llama por nombre; la usamos para desafíos y XP, que la app no puede escribir directo.
+- **IA predictiva:** modelos estadísticos que pronostican a partir del historial (no redactan texto como la IA generativa).
 - **XP / racha:** puntos de experiencia y días seguidos anotando.
 
 ---
 
-## 14. Estado actual (24/10/2026)
+## 14. Estado actual (04/11/2026)
 
 ### Sprint 1 — ✅ cerrado (Andy)
 - Repositorio `Andres004/Taller-Cashin`: proyecto Android de un solo módulo (`app`), sin KMP ni iOS.
@@ -652,20 +609,36 @@ Toda salida de la IA **se revisa y se entiende** antes de subirla. En la defensa
 - Tema, componentes, avatar (4 poses), modelos de todas las tablas y vistas, `Formato`, `Validaciones`, pruebas unitarias.
 - Trello creado con backlog completo y el Sprint 2 planificado.
 
-### Sprint 2 — 🔨 en curso (Carlos, entrega mar 27/10 · 17:30)
-Guía paso a paso: `docs/sprints/PROMPT_SPRINT2_CARLOS.md`. Rama: `feature/sprint-2-registros`.
+### Sprint 2 — ✅ cerrado (Carlos)
+- Repositorios `Categoria`, `Registro`, `Perfil` y `Resumen`.
+- Anotar gasto o ingreso (HU-06/07), historial agrupado por día (HU-09), editar y eliminar (HU-08).
+- Inicio con totales del mes (HU-13) y perfil con nombre, moneda, nivel, XP y racha (HU-05).
 
-| Paso | Historia | Límite |
+### Sprint 3 — ✅ cerrado
+- Filtros del historial por tipo, categoría y fechas (HU-10).
+- Mis categorías: crear y archivar (HU-11/12).
+- Pagos planificados: crear y marcar como pagado, una vez por fecha (HU-15/16).
+- Metas: crear, editar, ahorros y retiros, detalle con movimientos, completadas en su propia sección (HU-17–19).
+- **Motor de predicción** `prediccion/` con pruebas: serie mensual, pronóstico (regresión + promedio ponderado), proyección del mes, estimación de metas (HU-20) y mensajes del avatar. Inicio muestra la proyección del mes y el pronóstico del próximo.
+- Se descartó la IA generativa (Gemini + Edge Function `ia-asistente`); ver §8.
+- Marcadores "próximamente" para Desafíos (S4) y Deudas (S5), abiertos desde el Perfil.
+- Datos de demostración: `supabase/seed/demo_historial.sql`.
+- Pendiente que pasa al S4 (opcional) / S5: ingreso con Google (HU-02).
+
+### Sprint 4 — 🔨 en curso (entrega mar 10/11 · 17:30)
+| Fase | Tarea | Límite |
 |---|---|---|
-| 1 | Repositorios (`Categoria`, `Registro`, `Perfil`, `Resumen`) | dom 25 · 18:00 |
-| 2 | HU-06/07 Anotar gasto o ingreso | dom 25 · 22:00 |
-| 3 | HU-09 Historial agrupado por día | lun 26 · 13:00 |
-| 4 | HU-08 Editar o eliminar | lun 26 · 20:00 |
-| 5 | HU-13 Inicio con totales del mes | mar 27 · 11:00 |
-| 6 | HU-05 Perfil con nivel, XP y racha | mar 27 · 14:00 |
-| 7 | Prueba final y PR · revisión de Andy 17:00 | mar 27 · 15:30 |
+| 1 | Cierre del Sprint 3: Maestro, datos de demo | jue 05/11 · 22:00 |
+| 2 | `003_gamificacion.sql` + pruebas (§7.2) | vie 06/11 · 13:00 |
+| 3 | Capa de datos: `DesafioRepository`, `completar_meta`, gasto por categoría | vie 06/11 · 22:00 |
+| 4 | Motor: generador de desafíos y consejo del día, con pruebas | sáb 07/11 · 22:00 |
+| 5 | Pantalla de Desafíos (HU-22/23) | dom 08/11 · 22:00 |
+| 6 | Inicio: consejo del día, desafío activo, racha en riesgo, subida de nivel (HU-21/24) | lun 09/11 · 13:00 |
+| 7 | Metas: +100 XP al completar | lun 09/11 · 20:00 |
+| 8 | Verificación final y PR | mar 10/11 · 15:00 |
 
 ### Pendientes generales
 - Proteger `main` en GitHub (exigir PR y 1 aprobación) e invitar a Carlos y Dabner al repo y al tablero.
-- Asignar responsables de los sprints 3 a 5 en sus planificaciones.
+- Asignar responsables de los sprints 4 y 5 en sus planificaciones.
+- Quitar la dependencia `functions-kt` y `install(Functions)` cuando se confirme que no se usará (ya no hay Edge Functions).
 - iOS queda fuera de alcance; se evaluará al final solo si sobra tiempo y hay una Mac disponible.
