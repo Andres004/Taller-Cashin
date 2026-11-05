@@ -29,11 +29,23 @@ enum class TipoMensaje {
     GASTO_MAS_RAPIDO,
     /** El gasto del mes va dentro de lo normal. */
     GASTO_NORMAL,
+
+    // Consejo del día (HU-21, Sprint 4)
+    /** Hoy todavía no anotó y tiene una racha que puede perder. */
+    RACHA_EN_RIESGO,
+    /** Un desafío con límite ya va en 80 % o más. */
+    DESAFIO_EN_RIESGO,
+    /** Una categoría va a cerrar el mes 30 % o más arriba de su promedio. */
+    CATEGORIA_SUBE,
+    /** Una meta está entre 90 % y 100 %. */
+    META_CERCA,
+    /** Lleva 3 o más días seguidos anotando. */
+    RACHA_BUENA,
 }
 
 /**
  * Un mensaje listo para mostrarse: la plantilla, el ánimo y los datos que van en el texto.
- * [monto] y [meses]/[fecha] se usan según la plantilla.
+ * [monto], [meses]/[fecha], [nombre] y [dias] se usan según la plantilla.
  */
 data class MensajeAvatar(
     val tipo: TipoMensaje,
@@ -41,6 +53,10 @@ data class MensajeAvatar(
     val monto: BigDecimal? = null,
     val meses: Int? = null,
     val fecha: LocalDate? = null,
+    /** Nombre de la categoría, la meta o el desafío del que habla el mensaje. */
+    val nombre: String? = null,
+    /** Días de racha. */
+    val dias: Int? = null,
 )
 
 /**

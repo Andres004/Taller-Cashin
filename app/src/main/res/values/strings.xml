@@ -306,6 +306,19 @@
     <string name="ia_gasto_mas_rapido">Vas gastando más rápido que de costumbre. ¡Ojo con los gastos de estos días!</string>
     <string name="ia_gasto_normal">Tus gastos van dentro de lo normal este mes. ¡Sigue así!</string>
 
+    <!-- Consejo del día (HU-21) -->
+    <plurals name="ia_racha_en_riesgo">
+        <item quantity="one">¡Tu racha de %1$d día está en riesgo! Anota algo hoy.</item>
+        <item quantity="other">¡Tu racha de %1$d días está en riesgo! Anota algo hoy.</item>
+    </plurals>
+    <string name="ia_desafio_en_riesgo">Tu desafío «%1$s» está en riesgo: solo te quedan %2$s. ¡Aguanta!</string>
+    <string name="ia_categoria_sube">A este ritmo gastarás %2$s en %1$s este mes, bastante más que de costumbre.</string>
+    <string name="ia_meta_cerca">¡Ya casi! Te faltan solo %2$s para tu meta «%1$s».</string>
+    <plurals name="ia_racha_buena">
+        <item quantity="one">¡Llevas %1$d día seguido anotando! Sigue así.</item>
+        <item quantity="other">¡Llevas %1$d días seguidos anotando! Sigue así.</item>
+    </plurals>
+
     <!-- Placeholders del resto de pestañas -->
     <string name="categorias_construccion">Aquí crearás tus propias categorías y archivarás las que ya no uses.</string>
     <string name="deudas_construccion">Aquí anotarás lo que debes y lo que te deben, y los abonos de cada deuda.</string>
