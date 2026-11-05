@@ -274,6 +274,8 @@
     <string name="metas_marcar_completada">Marcar como completada</string>
     <string name="metas_estado_completada">✓ Completada</string>
     <string name="metas_completada_mensaje">¡Meta cumplida! Ya está guardada en tus metas completadas.</string>
+    <string name="metas_completada_xp">¡Meta lograda! +100 XP</string>
+    <string name="metas_todavia_no_llega">Todavía no llegas al objetivo.</string>
     <string name="metas_sin_activas">No tienes metas activas. ¡Crea una nueva!</string>
     <string name="metas_completadas">Completadas (%1$d)</string>
     <string name="metas_ver_completadas">Ver metas completadas</string>

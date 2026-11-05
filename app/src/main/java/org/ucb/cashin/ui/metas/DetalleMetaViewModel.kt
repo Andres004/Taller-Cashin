@@ -54,6 +54,10 @@ data class DetalleMetaUiState(
     /** Completar o cancelar la meta en curso. */
     val cambiandoEstado: Boolean = false,
     val errorEstado: ErrorApp? = null,
+    /** Se acaba de completar en esta pantalla: celebra "+100 XP". */
+    val recienCompletada: Boolean = false,
+    /** El servidor dijo que todavía no llega al objetivo. */
+    val avisoNoLlega: Boolean = false,
     /** La meta se canceló: la pantalla vuelve atrás. */
     val cancelada: Boolean = false,
 ) {
@@ -185,15 +189,21 @@ class DetalleMetaViewModel(
         }
     }
 
-    /** "Marcar como completada": solo cuando ya llegó al objetivo. (El XP llega en el Sprint 4.) */
+    /**
+     * "Marcar como completada": solo cuando ya llegó al objetivo.
+     * El servidor (completar_meta) la marca COMPLETADA y suma +100 XP una sola vez.
+     * Si responde false, todavía no llega al objetivo (o ya no estaba activa): se avisa y se recarga.
+     */
     fun completarMeta() {
         val avance = _uiState.value.avance ?: return
         if (!avance.alcanzada || _uiState.value.cambiandoEstado) return
         viewModelScope.launch {
-            _uiState.update { it.copy(cambiandoEstado = true, errorEstado = null) }
-            metaRepository.cambiarEstado(metaId, EstadoMeta.COMPLETADA)
-                .onSuccess {
-                    _uiState.update { it.copy(cambiandoEstado = false) }
+            _uiState.update { it.copy(cambiandoEstado = true, errorEstado = null, avisoNoLlega = false) }
+            metaRepository.completar(metaId)
+                .onSuccess { completada ->
+                    _uiState.update {
+                        it.copy(cambiandoEstado = false, recienCompletada = completada, avisoNoLlega = !completada)
+                    }
                     cargar()
                 }
                 .onFailure { e -> _uiState.update { it.copy(cambiandoEstado = false, errorEstado = e.comoErrorApp()) } }

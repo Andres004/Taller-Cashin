@@ -72,7 +72,7 @@ import java.math.BigDecimal
 /**
  * HU-18 / HU-19: detalle de una meta. Avance con barra, monto y porcentaje;
  * botones para anotar un ahorro o un retiro; y la lista de lo anotado.
- * Deja el espacio "¿Cuándo lo logro?" para la IA del Sprint 4 (HU-20).
+ * HU-20: "¿Cuándo lo logro?" con el motor de predicción. Al completarla suma +100 XP.
  */
 @Composable
 fun DetalleMetaScreen(
@@ -180,7 +180,11 @@ fun DetalleMetaContenido(
                         Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
                             AvatarBurbuja(
                                 mensaje = stringResource(
-                                    if (estado.completada) R.string.metas_completada_mensaje else R.string.metas_lograste,
+                                    when {
+                                        estado.recienCompletada -> R.string.metas_completada_xp
+                                        estado.completada -> R.string.metas_completada_mensaje
+                                        else -> R.string.metas_lograste
+                                    },
                                 ),
                                 emocion = Emocion.CELEBRANDO,
                             )
@@ -218,6 +222,10 @@ fun DetalleMetaContenido(
 
                 estado.errorEstado?.let { error ->
                     item(key = "error-estado") { MensajeError(error.mensaje()) }
+                }
+
+                if (estado.avisoNoLlega) {
+                    item(key = "aviso-no-llega") { MensajeError(stringResource(R.string.metas_todavia_no_llega)) }
                 }
 
                 item(key = "titulo-movimientos") {
