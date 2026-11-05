@@ -2,14 +2,19 @@ package org.ucb.cashin.data
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.ucb.cashin.model.AporteMeta
 import org.ucb.cashin.model.AvanceMeta
 import org.ucb.cashin.model.EstadoMeta
 import org.ucb.cashin.model.Meta
 import org.ucb.cashin.model.NuevaMeta
 import org.ucb.cashin.model.NuevoAporteMeta
+import org.ucb.cashin.model.TipoAporte
+import java.time.LocalDate
 
 /** Para completar o cancelar una meta sin borrar sus ahorros anotados. */
 @Serializable
@@ -44,6 +49,16 @@ class MetaRepository(private val supabase: SupabaseClient) {
         supabase.from("aporte_meta").select {
             filter { eq("meta_id", metaId) }
             order("fecha", Order.DESCENDING)
+        }.decodeList<AporteMeta>()
+    }
+
+    /** Ahorros (no retiros) anotados en cualquier meta desde [desde]. Los usan los desafíos de ahorro. */
+    suspend fun listarAhorrosDesde(desde: LocalDate): Result<List<AporteMeta>> = llamada {
+        supabase.from("aporte_meta").select {
+            filter {
+                eq("tipo", TipoAporte.AHORRO.name)
+                gte("fecha", desde.toString())
+            }
         }.decodeList<AporteMeta>()
     }
 
@@ -89,5 +104,14 @@ class MetaRepository(private val supabase: SupabaseClient) {
             filter { eq("id", metaId) }
         }
         Unit
+    }
+
+    /**
+     * Marca la meta como COMPLETADA y suma +100 XP (función completar_meta del servidor).
+     * Devuelve false si todavía no llegó al objetivo o ya no estaba activa (no da XP dos veces).
+     */
+    suspend fun completar(metaId: String): Result<Boolean> = llamada {
+        supabase.postgrest.rpc("completar_meta", buildJsonObject { put("p_meta_id", metaId) })
+            .decodeAs<Boolean>()
     }
 }

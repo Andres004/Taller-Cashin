@@ -33,6 +33,11 @@ fun MensajeAvatar.texto(): String {
         TipoMensaje.SIN_DATOS -> stringResource(R.string.ia_sin_datos)
         TipoMensaje.GASTO_MAS_RAPIDO -> stringResource(R.string.ia_gasto_mas_rapido)
         TipoMensaje.GASTO_NORMAL -> stringResource(R.string.ia_gasto_normal)
+        TipoMensaje.RACHA_EN_RIESGO -> (dias ?: 0).let { pluralStringResource(R.plurals.ia_racha_en_riesgo, it, it) }
+        TipoMensaje.DESAFIO_EN_RIESGO -> stringResource(R.string.ia_desafio_en_riesgo, nombre.orEmpty(), montoTexto)
+        TipoMensaje.CATEGORIA_SUBE -> stringResource(R.string.ia_categoria_sube, nombre.orEmpty(), montoTexto)
+        TipoMensaje.META_CERCA -> stringResource(R.string.ia_meta_cerca, nombre.orEmpty(), montoTexto)
+        TipoMensaje.RACHA_BUENA -> (dias ?: 0).let { pluralStringResource(R.plurals.ia_racha_buena, it, it) }
     }
 }
 

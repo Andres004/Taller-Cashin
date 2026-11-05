@@ -8,14 +8,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.ucb.cashin.ui.theme.CashinColores
 
-/** Barra de avance (metas, desafíos, XP del nivel). [progreso] va de 0 a 1. */
+/**
+ * Barra de avance (metas, desafíos, XP del nivel). [progreso] va de 0 a 1.
+ * [color] permite marcar un avance en riesgo (por ejemplo CashinColores.gasto).
+ */
 @Composable
 fun BarraProgreso(
     progreso: Float,
     modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary,
 ) {
     LinearProgressIndicator(
         progress = { progreso.coerceIn(0f, 1f) },
@@ -23,7 +28,7 @@ fun BarraProgreso(
             .fillMaxWidth()
             .height(12.dp)
             .clip(RoundedCornerShape(50)),
-        color = MaterialTheme.colorScheme.primary,
+        color = color,
         trackColor = CashinColores.progreso,
         gapSize = 0.dp,
         drawStopIndicator = {},

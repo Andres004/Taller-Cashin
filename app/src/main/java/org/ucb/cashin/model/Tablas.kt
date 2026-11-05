@@ -238,4 +238,8 @@ data class Desafio(
     @SerialName("xp_recompensa") val xpRecompensa: Int = 50,
     val estado: EstadoDesafio = EstadoDesafio.ACTIVO,
     @SerialName("creado_en") val creadoEn: Instant? = null,
+    /** Lo asignó el sistema al empezar la semana o el mes (004_desafios_automaticos.sql). */
+    val automatico: Boolean = false,
+    /** Qué reto del catálogo es (PlantillaDesafio.name), si lo asignó el sistema. */
+    val plantilla: String? = null,
 )

@@ -15,9 +15,9 @@ Proyecto del Taller de Sistemas de Información · Equipo: Dabner · Andy · Car
 | Capa | Tecnología |
 |---|---|
 | App | Kotlin · Jetpack Compose (Material 3) · MVVM con ViewModel + StateFlow · Navigation Compose |
-| Backend | Supabase: PostgreSQL + RLS, Auth y Edge Functions (no hay servidor propio) |
+| Backend | Supabase: PostgreSQL + RLS, Auth y funciones SQL (no hay servidor propio) |
 | Cliente | supabase-kt (auth, postgrest, functions) + Ktor OkHttp · kotlinx.serialization |
-| IA (Sprint 3+) | Edge Function `ia-asistente` + API de Gemini |
+| IA | Motor de predicción propio en Kotlin (`prediccion/`), sin APIs externas |
 
 ## Requisitos
 
@@ -70,7 +70,7 @@ app/src/main/java/org/ucb/cashin/
 supabase/
 ├── migrations/    001_esquema.sql · 002_rls.sql  (fuente de verdad de la BD)
 ├── tests/         Pruebas de RLS para PostgreSQL local
-└── functions/     ia-asistente (Sprint 3)
+└── seed/          demo_historial.sql (datos de demostración)
 docs/              CASHIN_MAESTRO.md · SUPABASE.md
 ```
 

@@ -12,7 +12,7 @@ class CashinApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        if (AppContainer.estaConfigurado) container = AppContainer()
+        if (AppContainer.estaConfigurado) container = AppContainer(resources)
     }
 
     /** Para ViewModels: falla con un mensaje claro si se usa sin configurar. */
