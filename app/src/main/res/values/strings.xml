@@ -103,11 +103,6 @@
 
     <!-- Inicio (HU-13) -->
     <string name="inicio_saludo">¡Hola, %1$s!</string>
-    <string name="inicio_avatar_sin_registro_hoy">¡Anota tu primer gasto del día!</string>
-    <plurals name="inicio_avatar_racha">
-        <item quantity="one">¡Bien! Llevas %1$d día seguido</item>
-        <item quantity="other">¡Bien! Llevas %1$d días seguidos</item>
-    </plurals>
     <string name="inicio_diferencia">Diferencia del mes</string>
     <string name="inicio_gastos">Gastos</string>
     <string name="inicio_ingresos">Ingresos</string>
@@ -365,9 +360,7 @@
     <string name="desafio_explica_dias">Anotar seguido te ayuda a conocer tus gastos y cuida tu racha.</string>
 
     <!-- Placeholders del resto de pestañas -->
-    <string name="categorias_construccion">Aquí crearás tus propias categorías y archivarás las que ya no uses.</string>
     <string name="deudas_construccion">Aquí anotarás lo que debes y lo que te deben, y los abonos de cada deuda.</string>
-    <string name="desafios_construccion">Aquí elegirás desafíos semanales y mensuales para ganar XP.</string>
 
     <!-- Perfil (HU-04, HU-05) -->
     <string name="perfil_editar_nombre">Editar nombre</string>
