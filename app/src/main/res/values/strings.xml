@@ -319,6 +319,46 @@
         <item quantity="other">¡Llevas %1$d días seguidos anotando! Sigue así.</item>
     </plurals>
 
+    <!-- Desafíos (HU-22, HU-23) -->
+    <string name="desafios_vacio">Acepta tu primer desafío: elige uno de abajo y gana XP si lo cumples.</string>
+    <string name="desafios_activos">Activos</string>
+    <string name="desafios_nuevo_semanal">Nuevo desafío semanal</string>
+    <string name="desafios_nuevo_mensual">Nuevo desafío mensual</string>
+    <string name="desafios_historial">Historial</string>
+    <string name="desafios_aceptar">Aceptar</string>
+    <string name="desafios_descartar">Descartar</string>
+    <string name="desafios_descartar_titulo">¿Descartar el desafío?</string>
+    <string name="desafios_descartar_mensaje">«%1$s» dejará de contar y no ganarás su XP.</string>
+    <string name="desafios_xp">+%1$d XP</string>
+    <plurals name="desafios_quedan_dias">
+        <item quantity="one">Queda %1$d día</item>
+        <item quantity="other">Quedan %1$d días</item>
+    </plurals>
+    <string name="desafios_termina_hoy">Termina hoy</string>
+    <string name="desafios_progreso_monto">%1$s de %2$s</string>
+    <string name="desafios_progreso_dias">%1$d de %2$d días anotando</string>
+    <string name="desafios_cumplido">✅ %1$s</string>
+    <string name="desafios_fallido">❌ %1$s</string>
+    <string name="desafios_hasta">Terminó el %1$s</string>
+    <string name="desafios_celebrar">¡Cumpliste «%1$s»! +%2$d XP</string>
+    <string name="desafios_animo">«%1$s» no salió esta vez. ¡El próximo reto es tuyo!</string>
+    <string name="desafios_error_ya_activo">Ya tienes un desafío activo de ese tipo. Termínalo o descártalo para aceptar otro.</string>
+    <string name="desafios_esta_semana">esta semana</string>
+    <string name="desafios_este_mes">este mes</string>
+    <!-- Plantillas de las propuestas del motor (no es IA generativa) -->
+    <string name="desafio_titulo_categoria">%1$s bajo control</string>
+    <string name="desafio_titulo_total">Gasto total bajo control</string>
+    <plurals name="desafio_titulo_dias">
+        <item quantity="one">Anota %1$d día</item>
+        <item quantity="other">Anota %1$d días</item>
+    </plurals>
+    <string name="desafio_desc_categoria">Gasta como máximo %1$s en %2$s %3$s.</string>
+    <string name="desafio_desc_total">Gasta como máximo %1$s en total %2$s.</string>
+    <string name="desafio_desc_dias">Anota algo al menos %1$d días distintos %2$s.</string>
+    <string name="desafio_explica_categoria">Tu promedio en %1$s es %2$s/mes; el reto es gastar como máximo %3$s %4$s.</string>
+    <string name="desafio_explica_total">Cashi calcula que gastarás unos %1$s este mes; el reto es gastar como máximo %2$s %3$s.</string>
+    <string name="desafio_explica_dias">Anotar seguido te ayuda a conocer tus gastos y cuida tu racha.</string>
+
     <!-- Placeholders del resto de pestañas -->
     <string name="categorias_construccion">Aquí crearás tus propias categorías y archivarás las que ya no uses.</string>
     <string name="deudas_construccion">Aquí anotarás lo que debes y lo que te deben, y los abonos de cada deuda.</string>
