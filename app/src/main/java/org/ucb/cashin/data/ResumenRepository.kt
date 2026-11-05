@@ -3,6 +3,7 @@ package org.ucb.cashin.data
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Order
+import org.ucb.cashin.model.GastoCategoriaMes
 import org.ucb.cashin.model.TotalesMes
 import org.ucb.cashin.util.Formato
 
@@ -28,5 +29,15 @@ class ResumenRepository(private val supabase: SupabaseClient) {
         supabase.from("v_totales_mes").select {
             order("mes", Order.ASCENDING)
         }.decodeList<TotalesMes>()
+    }
+
+    /**
+     * Gasto por categoría de todos los meses (vista v_gasto_categoria_mes), del mes más antiguo
+     * al más reciente. Lo usan el generador de desafíos y el consejo del día.
+     */
+    suspend fun gastoPorCategoria(): Result<List<GastoCategoriaMes>> = llamada {
+        supabase.from("v_gasto_categoria_mes").select {
+            order("mes", Order.ASCENDING)
+        }.decodeList<GastoCategoriaMes>()
     }
 }
