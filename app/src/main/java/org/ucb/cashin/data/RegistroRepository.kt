@@ -7,6 +7,7 @@ import org.ucb.cashin.model.NuevoRegistro
 import org.ucb.cashin.model.Registro
 import org.ucb.cashin.util.Formato
 import org.ucb.cashin.util.ZONA_BOLIVIA
+import java.time.LocalDate
 
 /**
  * Guarda, lee, edita y borra los gastos e ingresos del usuario.
@@ -26,6 +27,22 @@ class RegistroRepository(private val supabase: SupabaseClient) {
         supabase.from("registro").select {
             order("fecha_hora", Order.DESCENDING)
             if (limite != null) limit(limite)
+        }.decodeList<Registro>()
+    }
+
+    /**
+     * Gastos e ingresos del día [desde] en adelante (hora de Bolivia), por fecha del movimiento
+     * o por cuándo se anotó. Los usan los desafíos para medir lo que ya se hizo en la semana o el mes.
+     */
+    suspend fun listarDesde(desde: LocalDate): Result<List<Registro>> = llamada {
+        val inicio = desde.atStartOfDay(ZONA_BOLIVIA).toInstant().toString()
+        supabase.from("registro").select {
+            filter {
+                or {
+                    gte("fecha_hora", inicio)
+                    gte("creado_en", inicio)
+                }
+            }
         }.decodeList<Registro>()
     }
 

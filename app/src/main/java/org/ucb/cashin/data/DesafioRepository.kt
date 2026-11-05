@@ -4,21 +4,25 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.postgrest.rpc
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.ucb.cashin.model.Desafio
+import org.ucb.cashin.model.DesafioAsignado
 import org.ucb.cashin.model.EstadoDesafio
+import org.ucb.cashin.model.ParametrosAsignarDesafios
+import org.ucb.cashin.model.PeriodoDesafio
 import org.ucb.cashin.model.ProgresoDesafio
-import org.ucb.cashin.prediccion.PropuestaDesafio
+import java.time.LocalDate
 
 /**
  * Módulo M8 · Desafíos (HU-22, HU-23). La app solo LEE la tabla `desafio`;
- * crearlos, descartarlos y evaluarlos lo hacen funciones del servidor (003_gamificacion.sql),
- * que también ponen las fechas y el XP.
+ * asignarlos, descartarlos y evaluarlos lo hacen funciones del servidor
+ * (003_gamificacion.sql y 004_desafios_automaticos.sql), que también ponen las fechas y el XP.
  */
 class DesafioRepository(private val supabase: SupabaseClient) {
 
-    /** Desafíos en curso (como máximo uno semanal y uno mensual). */
+    /** Desafíos en curso (hasta 3 semanales y 1 mensual). */
     suspend fun listarActivos(): Result<List<Desafio>> = llamada {
         supabase.from("desafio").select {
             filter { eq("estado", EstadoDesafio.ACTIVO.name) }
@@ -35,28 +39,29 @@ class DesafioRepository(private val supabase: SupabaseClient) {
         }.decodeList<Desafio>()
     }
 
-    /** Cuánto se gastó y cuántos días se anotó en cada desafío activo (para las barras). */
+    /** Cuánto se gastó, anotó, ahorró… en cada desafío activo (para las barras). */
     suspend fun progreso(): Result<List<ProgresoDesafio>> = llamada {
         supabase.postgrest.rpc("progreso_desafios").decodeList<ProgresoDesafio>()
     }
 
     /**
-     * HU-22: acepta una propuesta del motor. [titulo] y [descripcion] los arma la pantalla
-     * con plantillas de strings.xml. Los parámetros que no aplican a la regla van como null.
-     * El servidor rechaza si ya hay un desafío activo del mismo periodo.
+     * HU-22: guarda los desafíos sorteados para el periodo en curso (rpc asignar_desafios).
+     * El servidor pone fechas y XP y solo los guarda si en este periodo todavía no hubo asignación,
+     * así que llamarla dos veces no duplica nada. Devuelve los desafíos nuevos (vacío si ya estaban).
      */
-    suspend fun aceptar(propuesta: PropuestaDesafio, titulo: String, descripcion: String): Result<Desafio> = llamada {
-        val parametros = buildJsonObject {
-            put("p_titulo", titulo)
-            put("p_descripcion", descripcion)
-            put("p_periodo", propuesta.periodo.name)
-            put("p_regla", propuesta.regla.name)
-            // put(clave, null) envía un null explícito en el JSON
-            put("p_categoria_id", propuesta.categoriaId)
-            put("p_monto_limite", propuesta.montoLimite)
-            put("p_dias_objetivo", propuesta.diasObjetivo)
-        }
-        supabase.postgrest.rpc("aceptar_desafio", parametros).decodeAs<Desafio>()
+    suspend fun asignar(periodo: PeriodoDesafio, desafios: List<DesafioAsignado>): Result<List<Desafio>> = llamada {
+        supabase.postgrest.rpc("asignar_desafios", ParametrosAsignarDesafios(periodo, desafios))
+            .decodeList<Desafio>()
+    }
+
+    /** Desafíos asignados por el sistema desde [desde] (cualquier estado): para saber si ya llegaron los del periodo. */
+    suspend fun listarAutomaticosDesde(desde: LocalDate): Result<List<Desafio>> = llamada {
+        supabase.from("desafio").select {
+            filter {
+                eq("automatico", true)
+                gte("fecha_inicio", desde.toString())
+            }
+        }.decodeList<Desafio>()
     }
 
     /** Descarta un desafío activo. Devuelve false si ya no estaba activo. */

@@ -12,6 +12,7 @@ import org.ucb.cashin.data.DesafioRepository
 import org.ucb.cashin.data.MetaRepository
 import org.ucb.cashin.data.PerfilRepository
 import org.ucb.cashin.data.RegistroRepository
+import org.ucb.cashin.data.RenovadorDesafios
 import org.ucb.cashin.data.ResumenRepository
 import org.ucb.cashin.di.fabricaDe
 import org.ucb.cashin.model.Desafio
@@ -58,8 +59,10 @@ data class InicioUiState(
     /** Desafíos en curso, con su progreso (tarjeta "Desafío activo"). */
     val desafiosActivos: List<Desafio> = emptyList(),
     val progresoDesafios: Map<String, ProgresoDesafio> = emptyMap(),
-    /** HU-23: desafíos que la evaluación de esta carga dio por cumplidos (celebración +XP). */
-    val desafiosCumplidos: List<Desafio> = emptyList(),
+    /** HU-23: desafíos que la evaluación cerró (cumplidos o fallidos) y todavía no se mostraron (animación). */
+    val resultadosDesafios: List<Desafio> = emptyList(),
+    /** HU-22: acaban de llegar los desafíos de la semana o del mes (aviso "¡Nuevos desafíos disponibles!"). */
+    val hayDesafiosNuevos: Boolean = false,
     /** HU-24: nivel al que se acaba de subir (celebración); null si no subió. */
     val subioANivel: Int? = null,
     val cargando: Boolean = true,
@@ -78,7 +81,8 @@ data class InicioUiState(
 /**
  * HU-13: resumen del mes, racha, XP y últimas anotaciones.
  * IA predictiva: proyección del gasto de este mes y pronóstico del próximo (paquete prediccion/).
- * HU-21: consejo del día. HU-23: evalúa los desafíos al abrir. HU-24: racha en riesgo y subida de nivel.
+ * HU-21: consejo del día. HU-22/23: asigna los desafíos nuevos y evalúa los activos al abrir.
+ * HU-24: racha en riesgo y subida de nivel.
  */
 class InicioViewModel(
     private val perfilRepository: PerfilRepository,
@@ -86,6 +90,7 @@ class InicioViewModel(
     private val registroRepository: RegistroRepository,
     private val categoriaRepository: CategoriaRepository,
     private val desafioRepository: DesafioRepository,
+    private val renovadorDesafios: RenovadorDesafios,
     private val metaRepository: MetaRepository,
     /** Último nivel mostrado por usuario en esta sesión de la app (vive en AppContainer). */
     private val ultimoNivelVisto: MutableMap<String, Int>,
@@ -107,6 +112,8 @@ class InicioViewModel(
             // Antes del perfil: un desafío cumplido suma XP y el perfil ya debe traerlo.
             // Si la evaluación falla, Inicio igual se muestra (se reintenta en la próxima carga).
             val evaluados = desafioRepository.evaluar().getOrDefault(emptyList())
+            // Si empezó la semana o el mes, llegan los desafíos nuevos (una sola vez por periodo).
+            val llegaron = renovadorDesafios.renovar()
 
             val perfil = perfilRepository.obtener().getOrElse { e ->
                 mostrarError(e)
@@ -188,7 +195,10 @@ class InicioViewModel(
                     mensajeIa = consejo,
                     desafiosActivos = activos,
                     progresoDesafios = progreso,
-                    desafiosCumplidos = evaluados.filter { d -> d.estado == EstadoDesafio.CUMPLIDO },
+                    hayDesafiosNuevos = it.hayDesafiosNuevos || llegaron.isNotEmpty(),
+                    resultadosDesafios = it.resultadosDesafios + evaluados.filter { d ->
+                        d.estado == EstadoDesafio.CUMPLIDO || d.estado == EstadoDesafio.FALLIDO
+                    },
                     subioANivel = subioANivel,
                     cargando = false,
                     error = null,
@@ -196,6 +206,12 @@ class InicioViewModel(
             }
         }
     }
+
+    /** La animación del primer desafío cerrado ya se vio: pasa al siguiente (si hay). */
+    fun resultadoVisto() = _uiState.update { it.copy(resultadosDesafios = it.resultadosDesafios.drop(1)) }
+
+    /** El aviso de desafíos nuevos ya se vio (se cerró o se abrió Desafíos). */
+    fun avisoNuevosVisto() = _uiState.update { it.copy(hayDesafiosNuevos = false) }
 
     private fun mostrarError(e: Throwable) =
         _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) }
@@ -206,7 +222,7 @@ class InicioViewModel(
         val Factory = fabricaDe {
             InicioViewModel(
                 it.perfilRepository, it.resumenRepository, it.registroRepository, it.categoriaRepository,
-                it.desafioRepository, it.metaRepository, it.ultimoNivelVisto,
+                it.desafioRepository, it.renovadorDesafios, it.metaRepository, it.ultimoNivelVisto,
             )
         }
     }

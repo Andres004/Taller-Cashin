@@ -1,5 +1,6 @@
 package org.ucb.cashin.di
 
+import android.content.res.Resources
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
@@ -15,13 +16,15 @@ import org.ucb.cashin.data.MetaRepository
 import org.ucb.cashin.data.PerfilRepository
 import org.ucb.cashin.data.PlanificadoRepository
 import org.ucb.cashin.data.RegistroRepository
+import org.ucb.cashin.data.RenovadorDesafios
 import org.ucb.cashin.data.ResumenRepository
 
 /**
  * Crea una sola vez la conexión con Supabase y los repositorios que usa toda la app.
  * Cada repositorio se crea recién cuando alguien lo necesita por primera vez.
+ * [recursos] (de la Application) solo lo usa el renovador de desafíos para escribir sus títulos.
  */
-class AppContainer {
+class AppContainer(private val recursos: Resources) {
 
     val supabase: SupabaseClient = createSupabaseClient(
         supabaseUrl = BuildConfig.SUPABASE_URL,
@@ -53,6 +56,11 @@ class AppContainer {
 
     // Sprint 4
     val desafioRepository: DesafioRepository by lazy { DesafioRepository(supabase) }
+
+    /** HU-22: asigna solos los desafíos de la semana y del mes (una vez por periodo). */
+    val renovadorDesafios: RenovadorDesafios by lazy {
+        RenovadorDesafios(authRepository, desafioRepository, resumenRepository, registroRepository, metaRepository, recursos)
+    }
 
     /**
      * HU-24: último nivel que Inicio mostró en esta sesión de la app (solo en memoria), por usuario

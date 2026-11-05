@@ -56,6 +56,8 @@ import java.math.BigDecimal
 fun MetasScreen(
     onNueva: () -> Unit,
     onMetaClick: (metaId: String) -> Unit,
+    /** false cuando va dentro de la pestaña "Metas | Desafíos", que ya tiene su propio título. */
+    mostrarTitulo: Boolean = true,
     viewModel: MetasViewModel = viewModel(factory = MetasViewModel.Factory),
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
@@ -69,6 +71,7 @@ fun MetasScreen(
         onNueva = onNueva,
         onMetaClick = onMetaClick,
         onVerCompletadasCambio = viewModel::onVerCompletadasCambio,
+        mostrarTitulo = mostrarTitulo,
     )
 }
 
@@ -80,9 +83,10 @@ fun MetasContenido(
     onNueva: () -> Unit,
     onMetaClick: (metaId: String) -> Unit,
     onVerCompletadasCambio: () -> Unit,
+    mostrarTitulo: Boolean = true,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        CashinTopBar(titulo = stringResource(R.string.nav_metas))
+        if (mostrarTitulo) CashinTopBar(titulo = stringResource(R.string.nav_metas))
 
         when {
             estado.cargando -> EstadoCargando()

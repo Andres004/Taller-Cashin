@@ -51,7 +51,7 @@ import org.ucb.cashin.ui.desafios.DesafiosScreen
 import org.ucb.cashin.ui.deudas.DeudasScreen
 import org.ucb.cashin.ui.inicio.InicioScreen
 import org.ucb.cashin.ui.metas.DetalleMetaScreen
-import org.ucb.cashin.ui.metas.MetasScreen
+import org.ucb.cashin.ui.metas.MetasYDesafiosScreen
 import org.ucb.cashin.ui.metas.NuevaMetaScreen
 import org.ucb.cashin.ui.perfil.OpcionPerfil
 import org.ucb.cashin.ui.perfil.PerfilScreen
@@ -194,7 +194,7 @@ fun PrincipalNavHost() {
             }
 
             composable<Rutas.Metas> {
-                MetasScreen(
+                MetasYDesafiosScreen(
                     onNueva = { nav.navigate(Rutas.NuevaMeta) },
                     onMetaClick = { metaId -> nav.navigate(Rutas.DetalleMeta(metaId)) },
                 )

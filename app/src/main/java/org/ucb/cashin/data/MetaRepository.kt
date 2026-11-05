@@ -13,6 +13,8 @@ import org.ucb.cashin.model.EstadoMeta
 import org.ucb.cashin.model.Meta
 import org.ucb.cashin.model.NuevaMeta
 import org.ucb.cashin.model.NuevoAporteMeta
+import org.ucb.cashin.model.TipoAporte
+import java.time.LocalDate
 
 /** Para completar o cancelar una meta sin borrar sus ahorros anotados. */
 @Serializable
@@ -47,6 +49,16 @@ class MetaRepository(private val supabase: SupabaseClient) {
         supabase.from("aporte_meta").select {
             filter { eq("meta_id", metaId) }
             order("fecha", Order.DESCENDING)
+        }.decodeList<AporteMeta>()
+    }
+
+    /** Ahorros (no retiros) anotados en cualquier meta desde [desde]. Los usan los desafíos de ahorro. */
+    suspend fun listarAhorrosDesde(desde: LocalDate): Result<List<AporteMeta>> = llamada {
+        supabase.from("aporte_meta").select {
+            filter {
+                eq("tipo", TipoAporte.AHORRO.name)
+                gte("fecha", desde.toString())
+            }
         }.decodeList<AporteMeta>()
     }
 

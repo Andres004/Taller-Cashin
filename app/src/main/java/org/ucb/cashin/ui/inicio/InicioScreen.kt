@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NorthEast
 import androidx.compose.material.icons.filled.SouthWest
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -64,7 +65,9 @@ import org.ucb.cashin.ui.components.emocion
 import org.ucb.cashin.ui.components.texto
 import org.ucb.cashin.ui.components.textoConfianza
 import org.ucb.cashin.ui.components.mensaje
+import org.ucb.cashin.ui.desafios.AvisoNuevosDesafios
 import org.ucb.cashin.ui.desafios.ProgresoDeDesafio
+import org.ucb.cashin.ui.desafios.ResultadoDesafioDialogo
 import org.ucb.cashin.ui.registros.RegistroConCategoria
 import org.ucb.cashin.ui.theme.CashinColores
 import org.ucb.cashin.ui.theme.CashinTheme
@@ -94,8 +97,24 @@ fun InicioScreen(
         onReintentar = viewModel::cargar,
         onVerTodo = onVerTodo,
         onRegistroClick = onRegistroClick,
-        onAbrirDesafios = onAbrirDesafios,
+        onAbrirDesafios = {
+            viewModel.avisoNuevosVisto()
+            onAbrirDesafios()
+        },
+        onCerrarAvisoNuevos = viewModel::avisoNuevosVisto,
     )
+
+    // HU-23: si al abrir Inicio se cerró un desafío, se muestra la animación (cumplido o fallido).
+    estado.resultadosDesafios.firstOrNull()?.let { desafio ->
+        ResultadoDesafioDialogo(
+            desafio = desafio,
+            onCerrar = viewModel::resultadoVisto,
+            onOtroReto = {
+                viewModel.resultadoVisto()
+                onAbrirDesafios()
+            },
+        )
+    }
 }
 
 /** Solo dibuja. Muestra la carga, el error con "Reintentar" o el resumen. */
@@ -106,6 +125,7 @@ fun InicioContenido(
     onVerTodo: () -> Unit,
     onRegistroClick: (registroId: String) -> Unit,
     onAbrirDesafios: () -> Unit,
+    onCerrarAvisoNuevos: () -> Unit = {},
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         when {
@@ -125,19 +145,22 @@ fun InicioContenido(
             ) {
                 Encabezado(nombre = estado.nombre)
 
+                // HU-22: "¡Nuevos desafíos disponibles!" cuando llegan los de la semana o del mes.
+                if (estado.hayDesafiosNuevos) {
+                    AvisoNuevosDesafios(onCerrar = onCerrarAvisoNuevos, onVer = onAbrirDesafios)
+                }
+
                 Celebraciones(estado = estado)
 
                 MensajeDelAvatar(estado = estado)
 
                 TarjetaDelMes(estado = estado)
 
-                estado.desafiosActivos.forEach { desafio ->
-                    TarjetaDesafioActivo(
-                        desafio = desafio,
-                        progreso = estado.progresoDesafios[desafio.id],
-                        onClick = onAbrirDesafios,
-                    )
-                }
+                TarjetaTusDesafios(
+                    desafios = estado.desafiosActivos,
+                    progreso = estado.progresoDesafios,
+                    onClick = onAbrirDesafios,
+                )
 
                 TarjetaPronostico(estado = estado)
 
@@ -186,20 +209,14 @@ private fun Encabezado(nombre: String) {
 }
 
 /**
- * HU-23 / HU-24: Cashi celebra lo que pasó desde la última vez que se abrió Inicio:
- * desafíos cumplidos ("+50 XP") y subida de nivel. Se muestra solo en esa carga.
+ * HU-24: Cashi celebra si subiste de nivel desde la última vez que se abrió Inicio.
+ * (Los desafíos cerrados se celebran con la animación de ResultadoDesafioDialogo.)
  */
 @Composable
 private fun Celebraciones(estado: InicioUiState) {
     estado.subioANivel?.let { nivel ->
         AvatarBurbuja(
             mensaje = stringResource(R.string.inicio_subiste_nivel, nivel),
-            emocion = Emocion.CELEBRANDO,
-        )
-    }
-    estado.desafiosCumplidos.forEach { desafio ->
-        AvatarBurbuja(
-            mensaje = stringResource(R.string.desafios_celebrar, desafio.titulo, desafio.xpRecompensa),
             emocion = Emocion.CELEBRANDO,
         )
     }
@@ -218,23 +235,53 @@ private fun MensajeDelAvatar(estado: InicioUiState) {
     )
 }
 
-/** "Desafío activo": título y progreso. Al tocarla abre la pantalla de Desafíos. */
+/**
+ * "Tus desafíos": los de la semana y el del mes, cada uno con su barra. Al tocarla abre Desafíos.
+ * Si todavía no llegaron, avisa que llegan cada lunes.
+ */
 @Composable
-private fun TarjetaDesafioActivo(desafio: Desafio, progreso: ProgresoDesafio?, onClick: () -> Unit) {
+private fun TarjetaTusDesafios(desafios: List<Desafio>, progreso: Map<String, ProgresoDesafio>, onClick: () -> Unit) {
     CashinTarjeta(onClick = onClick) {
-        Text(
-            text = stringResource(R.string.inicio_desafio_activo),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = desafio.titulo,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(top = Espacio.xs, bottom = Espacio.s),
-        )
-        ProgresoDeDesafio(desafio = desafio, progreso = progreso)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Outlined.EmojiEvents,
+                contentDescription = null,
+                tint = CashinColores.xp,
+                modifier = Modifier
+                    .padding(end = Espacio.s)
+                    .size(22.dp),
+            )
+            Text(
+                text = stringResource(R.string.inicio_tus_desafios),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = stringResource(R.string.inicio_ver_desafios),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+        }
+        if (desafios.isEmpty()) {
+            Text(
+                text = stringResource(R.string.inicio_sin_desafios),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(top = Espacio.s),
+            )
+        }
+        desafios.forEach { desafio ->
+            Text(
+                text = desafio.titulo,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(top = Espacio.m, bottom = Espacio.xs),
+            )
+            ProgresoDeDesafio(desafio = desafio, progreso = progreso[desafio.id])
+        }
     }
 }
 
@@ -495,6 +542,7 @@ private fun InicioPreview() = CashinTheme {
                 ),
             ),
             progresoDesafios = mapOf("d1" to ProgresoDesafio("d1", BigDecimal("90.00"), 3)),
+            hayDesafiosNuevos = true,
             ultimas = listOf(
                 RegistroConCategoria(
                     Registro(id = "1", usuarioId = "u", categoriaId = "c1", tipo = TipoRegistro.GASTO, monto = BigDecimal("20.00"), fechaHora = Instant.now(), nota = "Almuerzo"),
