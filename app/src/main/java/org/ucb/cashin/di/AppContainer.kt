@@ -54,6 +54,13 @@ class AppContainer {
     // Sprint 4
     val desafioRepository: DesafioRepository by lazy { DesafioRepository(supabase) }
 
+    /**
+     * HU-24: último nivel que Inicio mostró en esta sesión de la app (solo en memoria), por usuario
+     * para que cerrar sesión y entrar con otra cuenta no celebre de más.
+     * Si al volver a Inicio el nivel es mayor, se celebra "¡Subiste al nivel N!".
+     */
+    val ultimoNivelVisto: MutableMap<String, Int> = mutableMapOf()
+
     companion object {
         /** Indica si las claves de Supabase están configuradas en local.properties. */
         val estaConfigurado: Boolean

@@ -238,9 +238,40 @@ private fun TituloSeccion(texto: String) {
 }
 
 /**
- * Un desafío en curso: título, descripción, días restantes, barra y
- * "Bs 120,00 de Bs 175,00" (límites) o "3 de 5 días anotando" (días).
+ * Barra y "Bs 120,00 de Bs 175,00" (límites) o "3 de 5 días anotando" (días).
+ * En rojo desde el 80 % del límite. También la usa la tarjeta "Desafío activo" de Inicio.
  */
+@Composable
+fun ProgresoDeDesafio(desafio: Desafio, progreso: ProgresoDesafio?) {
+    val limite = desafio.montoLimite
+    val gastado = progreso?.gastado ?: BigDecimal.ZERO
+    val dias = progreso?.diasConRegistro ?: 0
+    val objetivo = desafio.diasObjetivo ?: 0
+
+    val avance = when {
+        limite != null && limite.signum() > 0 -> gastado.toFloat() / limite.toFloat()
+        objetivo > 0 -> dias.toFloat() / objetivo
+        else -> 0f
+    }
+    val enRiesgo = limite != null && avance >= UMBRAL_RIESGO
+
+    BarraProgreso(
+        progreso = avance,
+        color = if (enRiesgo) CashinColores.gasto else MaterialTheme.colorScheme.primary,
+    )
+    Text(
+        text = if (limite != null) {
+            stringResource(R.string.desafios_progreso_monto, Formato.monto(gastado), Formato.monto(limite))
+        } else {
+            stringResource(R.string.desafios_progreso_dias, dias, objetivo)
+        },
+        style = MaterialTheme.typography.labelLarge,
+        color = if (enRiesgo) CashinColores.gasto else MaterialTheme.colorScheme.secondary,
+        modifier = Modifier.padding(top = Espacio.s),
+    )
+}
+
+/** Un desafío en curso: título, descripción, días restantes, su progreso y "Descartar". */
 @Composable
 private fun TarjetaActivo(
     desafio: Desafio,
@@ -248,17 +279,6 @@ private fun TarjetaActivo(
     descartando: Boolean,
     onDescartar: () -> Unit,
 ) {
-    val limite = desafio.montoLimite
-    val gastado = progreso?.gastado ?: BigDecimal.ZERO
-    val dias = progreso?.diasConRegistro ?: 0
-    val objetivo = desafio.diasObjetivo ?: 0
-
-    val avance = when {
-        limite != null && limite.signum() > 0 -> (gastado.toFloat() / limite.toFloat())
-        objetivo > 0 -> dias.toFloat() / objetivo
-        else -> 0f
-    }
-    val enRiesgo = limite != null && avance >= UMBRAL_RIESGO
     val restantes = ChronoUnit.DAYS.between(Formato.hoy(), desafio.fechaFin).toInt().coerceAtLeast(0)
 
     CashinTarjeta {
@@ -295,20 +315,7 @@ private fun TarjetaActivo(
             modifier = Modifier.padding(top = Espacio.xs, bottom = Espacio.s),
         )
 
-        BarraProgreso(
-            progreso = avance,
-            color = if (enRiesgo) CashinColores.gasto else MaterialTheme.colorScheme.primary,
-        )
-        Text(
-            text = if (limite != null) {
-                stringResource(R.string.desafios_progreso_monto, Formato.monto(gastado), Formato.monto(limite))
-            } else {
-                stringResource(R.string.desafios_progreso_dias, dias, objetivo)
-            },
-            style = MaterialTheme.typography.labelLarge,
-            color = if (enRiesgo) CashinColores.gasto else MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.padding(top = Espacio.s),
-        )
+        ProgresoDeDesafio(desafio = desafio, progreso = progreso)
 
         CashinBoton(
             texto = stringResource(R.string.desafios_descartar),

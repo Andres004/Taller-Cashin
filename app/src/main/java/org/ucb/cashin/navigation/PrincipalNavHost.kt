@@ -157,6 +157,7 @@ fun PrincipalNavHost() {
                 InicioScreen(
                     onVerTodo = { irAPestana(Rutas.Historial) },
                     onRegistroClick = { registroId -> abrirRegistro(registroId) },
+                    onAbrirDesafios = { nav.navigate(Rutas.Desafios) },
                 )
             }
 

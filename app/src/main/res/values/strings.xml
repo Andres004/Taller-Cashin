@@ -125,6 +125,9 @@
     <string name="inicio_pronostico_sin_datos">Necesito al menos un mes completo de anotaciones para pronosticar.</string>
     <string name="inicio_pronostico_mes">Al ritmo actual terminarás %1$s con ~%2$s de gastos.</string>
     <string name="inicio_pronostico_proximo">Próximo mes: entre %1$s y %2$s.</string>
+    <string name="inicio_racha_en_riesgo">en riesgo · anota hoy</string>
+    <string name="inicio_desafio_activo">Desafío activo</string>
+    <string name="inicio_subiste_nivel">¡Subiste al nivel %1$d! Cashi está orgulloso de ti.</string>
 
     <!-- Anotar (HU-06, HU-07) y editar (HU-08) -->
     <string name="anotar_tipo_gasto">Gasto</string>
