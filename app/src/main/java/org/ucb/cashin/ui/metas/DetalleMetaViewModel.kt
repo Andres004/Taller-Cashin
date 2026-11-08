@@ -20,16 +20,12 @@ import org.ucb.cashin.model.ErrorApp
 import org.ucb.cashin.model.EstadoMeta
 import org.ucb.cashin.model.NuevoAporteMeta
 import org.ucb.cashin.model.TipoAporte
-import org.ucb.cashin.model.TipoRegistro
 import org.ucb.cashin.model.comoErrorApp
-import org.ucb.cashin.prediccion.EstimacionMeta
+import org.ucb.cashin.prediccion.EstadoPlan
 import org.ucb.cashin.prediccion.FuenteAhorro
-import org.ucb.cashin.prediccion.desglosarGastos
-import org.ucb.cashin.prediccion.MensajeAvatar
-import org.ucb.cashin.prediccion.construirSerie
+import org.ucb.cashin.prediccion.PlanAhorro
 import org.ucb.cashin.prediccion.estimarMeta
-import org.ucb.cashin.prediccion.mensajeParaMeta
-import org.ucb.cashin.prediccion.pronosticarSiguienteMes
+import org.ucb.cashin.ui.components.CelebracionAhorro
 import java.math.BigDecimal
 import java.time.YearMonth
 import org.ucb.cashin.util.Formato
@@ -42,9 +38,8 @@ data class DetalleMetaUiState(
     val cargando: Boolean = true,
     val error: ErrorApp? = null,
 
-    /** HU-20: "¿Cuándo lo logro?" calculado por el motor de predicción. */
-    val estimacion: EstimacionMeta? = null,
-    val mensajeIa: MensajeAvatar? = null,
+    /** HU-20: el camino hasta la meta y "¿Cuándo lo logro?", con una sola cuenta. */
+    val plan: PlanAhorro? = null,
     /** Cuántos meses de datos usó la estimación (para mostrar la confianza). */
     val mesesDeDatos: Int = 0,
     /** Dónde podría recortar más; null si no hay un recorte que valga la pena mencionar. */
@@ -57,6 +52,8 @@ data class DetalleMetaUiState(
     @StringRes val errorMontoAporte: Int? = null,
     val errorAporte: ErrorApp? = null,
     val guardandoAporte: Boolean = false,
+    /** Se acaba de anotar un ahorro: el camino lo festeja una vez. */
+    val celebracion: CelebracionAhorro? = null,
 
     /** Completar o cancelar la meta en curso. */
     val cambiandoEstado: Boolean = false,
@@ -101,57 +98,48 @@ class DetalleMetaViewModel(
      * después de anotar, así la estimación se recalcula sola.
      */
     fun cargar() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(cargando = it.avance == null, error = null) }
-            val avance = metaRepository.obtenerAvance(metaId).getOrElse { e ->
-                _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) }
-                return@launch
-            }
-            val aportes = metaRepository.listarAportes(metaId).getOrElse { e ->
-                _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) }
-                return@launch
-            }
-            // Si la historia no se puede leer, la meta igual se muestra: la estimación queda "sin datos".
-            val historial = resumenRepository.historialMensual().getOrDefault(emptyList())
+        viewModelScope.launch { recargar() }
+    }
 
-            val hoy = Formato.hoy()
-            val pronosticoIngresos = pronosticarSiguienteMes(construirSerie(historial, hoy) { it.totalIngresos })
-            val pronosticoGastos = pronosticarSiguienteMes(construirSerie(historial, hoy) { it.totalGastos })
-            // Si algo de esto falla, la capacidad se calcula solo con el pronóstico.
-            val categorias = categoriaRepository.listarConArchivadas(TipoRegistro.GASTO).getOrDefault(emptyList())
-            val desgloseGastos = desglosarGastos(
-                planificados = planificadoRepository.listar().getOrDefault(emptyList()),
-                gastoPorCategoria = resumenRepository.gastoPorCategoria().getOrDefault(emptyList()),
-                importancias = categorias.associate { it.id to it.importancia },
-                hoy = hoy,
+    private suspend fun recargar() {
+        _uiState.update { it.copy(cargando = it.avance == null, error = null) }
+        val avance = metaRepository.obtenerAvance(metaId).getOrElse { e ->
+            _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) }
+            return
+        }
+        val aportes = metaRepository.listarAportes(metaId).getOrElse { e ->
+            _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) }
+            return
+        }
+        val datos = cargarDatosPlan(resumenRepository, planificadoRepository, categoriaRepository)
+        val estimacion = estimarMeta(avance, aportes, datos.ingresos, datos.gastos, datos.hoy, datos.desglose)
+        val recorte = datos.desglose.porCategoria
+            .maxByOrNull { it.recortable }
+            ?.takeIf { it.recortable >= RECORTE_MINIMO_VISIBLE }
+            ?.let { mayor ->
+                datos.categorias.find { it.id == mayor.categoriaId }?.let { RecorteSugerido(it.nombre, mayor.recortable) }
+            }
+
+        val mesesDeDatos = when (estimacion.fuente) {
+            FuenteAhorro.APORTES -> aportes.map { YearMonth.from(it.fecha) }.distinct().size.coerceAtMost(3)
+            FuenteAhorro.CAPACIDAD -> minOf(datos.ingresos.mesesUsados, datos.gastos.mesesUsados)
+            FuenteAhorro.SIN_DATOS -> 0
+        }
+
+        _uiState.update {
+            it.copy(
+                avance = avance,
+                aportes = aportes,
+                plan = datos.planPara(avance, aportes),
+                mesesDeDatos = mesesDeDatos,
+                recorte = recorte,
+                cargando = false,
             )
-            val estimacion = estimarMeta(avance, aportes, pronosticoIngresos, pronosticoGastos, hoy, desgloseGastos)
-            val recorte = desgloseGastos.porCategoria
-                .maxByOrNull { it.recortable }
-                ?.takeIf { it.recortable >= RECORTE_MINIMO_VISIBLE }
-                ?.let { mayor ->
-                    categorias.find { it.id == mayor.categoriaId }?.let { RecorteSugerido(it.nombre, mayor.recortable) }
-                }
-
-            val mesesDeDatos = when (estimacion.fuente) {
-                FuenteAhorro.APORTES -> aportes.map { YearMonth.from(it.fecha) }.distinct().size.coerceAtMost(3)
-                FuenteAhorro.CAPACIDAD -> minOf(pronosticoIngresos.mesesUsados, pronosticoGastos.mesesUsados)
-                FuenteAhorro.SIN_DATOS -> 0
-            }
-
-            _uiState.update {
-                it.copy(
-                    avance = avance,
-                    aportes = aportes,
-                    estimacion = estimacion,
-                    mensajeIa = mensajeParaMeta(estimacion),
-                    mesesDeDatos = mesesDeDatos,
-                    recorte = recorte,
-                    cargando = false,
-                )
-            }
         }
     }
+
+    /** El camino ya festejó el último ahorro. */
+    fun celebracionVista() = _uiState.update { it.copy(celebracion = null) }
 
     fun abrirDialogo(tipo: TipoAporte) {
         if (_uiState.value.completada) return
@@ -203,8 +191,15 @@ class DetalleMetaViewModel(
                 ),
             )
                 .onSuccess {
+                    val pasoAntes = estado.plan?.pasoActual?.numero
                     _uiState.update { it.copy(guardandoAporte = false, dialogoTipo = null) }
-                    cargar()
+                    recargar()
+                    if (tipo == TipoAporte.AHORRO) {
+                        _uiState.update { nuevo ->
+                            val hayCamino = nuevo.plan != null && nuevo.plan.estado != EstadoPlan.SIN_DATOS
+                            if (hayCamino) nuevo.copy(celebracion = CelebracionAhorro(monto, pasoAntes)) else nuevo
+                        }
+                    }
                 }
                 .onFailure { e ->
                     _uiState.update {

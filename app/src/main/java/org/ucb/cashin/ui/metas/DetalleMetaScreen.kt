@@ -9,10 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Remove
@@ -26,16 +25,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -45,11 +48,12 @@ import org.ucb.cashin.model.AvanceMeta
 import org.ucb.cashin.model.ErrorApp
 import org.ucb.cashin.model.EstadoMeta
 import org.ucb.cashin.model.TipoAporte
-import org.ucb.cashin.prediccion.EstimacionMeta
-import org.ucb.cashin.prediccion.FuenteAhorro
-import org.ucb.cashin.prediccion.MensajeAvatar
+import org.ucb.cashin.prediccion.CadenciaPlan
+import org.ucb.cashin.prediccion.EstadoPlan
+import org.ucb.cashin.prediccion.PlanAhorro
 import org.ucb.cashin.ui.components.AvatarBurbuja
 import org.ucb.cashin.ui.components.BarraProgreso
+import org.ucb.cashin.ui.components.CaminoMeta
 import org.ucb.cashin.ui.components.CashinBoton
 import org.ucb.cashin.ui.components.CashinCampoMonto
 import org.ucb.cashin.ui.components.CashinCampoTexto
@@ -60,9 +64,9 @@ import org.ucb.cashin.ui.components.Emocion
 import org.ucb.cashin.ui.components.EstadoCargando
 import org.ucb.cashin.ui.components.EstadoError
 import org.ucb.cashin.ui.components.RecursoCashi
+import org.ucb.cashin.ui.components.TarjetaJuego
 import org.ucb.cashin.ui.components.VarianteBoton
-import org.ucb.cashin.ui.components.emocion
-import org.ucb.cashin.ui.components.texto
+import org.ucb.cashin.ui.components.focoCamino
 import org.ucb.cashin.ui.components.mensaje
 import org.ucb.cashin.ui.theme.CashinColores
 import org.ucb.cashin.ui.theme.CashinTheme
@@ -104,6 +108,7 @@ fun DetalleMetaScreen(
         onGuardarAporte = viewModel::guardarAporte,
         onCompletarMeta = viewModel::completarMeta,
         onCancelarMeta = viewModel::cancelarMeta,
+        onCelebracionVista = viewModel::celebracionVista,
     )
 }
 
@@ -121,9 +126,24 @@ fun DetalleMetaContenido(
     onGuardarAporte: () -> Unit,
     onCompletarMeta: () -> Unit,
     onCancelarMeta: () -> Unit,
+    onCelebracionVista: () -> Unit,
 ) {
     var confirmarCancelar by remember { mutableStateOf(false) }
+    var caminoVisto by rememberSaveable { mutableStateOf(false) }
     val avance = estado.avance
+    val lista = rememberLazyListState()
+    val densidad = LocalDensity.current
+
+    // Al anotar un ahorro baja hasta el paso, para que se vea la moneda.
+    LaunchedEffect(estado.celebracion) {
+        val plan = estado.plan
+        if (estado.celebracion != null && plan != null) {
+            val foco = with(densidad) { focoCamino(plan, densidad.fontScale).roundToPx() }
+            val alturaVisible = lista.layoutInfo.viewportSize.height
+            val indiceCamino = if (avance?.alcanzada == true) 1 else 2
+            lista.animateScrollToItem(indiceCamino, (foco - alturaVisible / 2).coerceAtLeast(0))
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         CashinTopBar(
@@ -157,103 +177,85 @@ fun DetalleMetaContenido(
                 onReintentar = onReintentar,
             )
 
-            else -> LazyColumn(
-                contentPadding = PaddingValues(horizontal = Espacio.pantalla, vertical = Espacio.s),
-                verticalArrangement = Arrangement.spacedBy(Espacio.m),
-            ) {
-                item(key = "avance") { TarjetaAvance(avance = avance, completada = estado.completada) }
+            else -> {
+                LazyColumn(
+                    state = lista,
+                    contentPadding = PaddingValues(horizontal = Espacio.pantalla, vertical = Espacio.s),
+                    verticalArrangement = Arrangement.spacedBy(Espacio.m),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    item(key = "avance") { TarjetaAvance(avance = avance, completada = estado.completada) }
 
-                // HU-20: justo debajo del encabezado. No se muestra si ya llegó al objetivo.
-                val estimacion = estado.estimacion
-                val mensajeIa = estado.mensajeIa
-                if (!avance.alcanzada && estimacion != null && mensajeIa != null) {
-                    item(key = "ia") {
-                        TarjetaCuandoLoLogro(
-                            estimacion = estimacion,
-                            mensaje = mensajeIa,
-                            mesesDeDatos = estado.mesesDeDatos,
-                            recorte = estado.recorte,
-                        )
+                    // HU-20: justo debajo del encabezado. No se muestra si ya llegó al objetivo.
+                    val plan = estado.plan
+                    if (!avance.alcanzada && plan != null) {
+                        item(key = "ia") {
+                            TarjetaCuandoLoLogro(
+                                plan = plan,
+                                tieneFechaLimite = avance.fechaLimite != null,
+                                mesesDeDatos = estado.mesesDeDatos,
+                                recorte = estado.recorte,
+                            )
+                        }
                     }
-                }
 
-                if (avance.alcanzada) {
-                    item(key = "celebracion") {
-                        Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                    if (plan != null && plan.estado != EstadoPlan.SIN_DATOS) {
+                        item(key = "camino") {
+                            CaminoMeta(
+                                plan = plan,
+                                nombreMeta = avance.nombre,
+                                animarEntrada = !caminoVisto,
+                                onEntradaVista = { caminoVisto = true },
+                                confetiAlEntrar = avance.alcanzada && !estado.completada && !caminoVisto,
+                                celebracion = estado.celebracion,
+                                onCelebracionVista = onCelebracionVista,
+                                modifier = Modifier.anchoCompleto(Espacio.pantalla),
+                            )
+                        }
+                    }
+
+                    if (estado.completada) {
+                        item(key = "celebracion") {
                             AvatarBurbuja(
                                 mensaje = stringResource(
-                                    when {
-                                        estado.recienCompletada -> R.string.metas_completada_xp
-                                        estado.completada -> R.string.metas_completada_mensaje
-                                        else -> R.string.metas_lograste
-                                    },
+                                    if (estado.recienCompletada) R.string.metas_completada_xp else R.string.metas_completada_mensaje,
                                 ),
                                 emocion = Emocion.CELEBRANDO,
-                                recurso = if (estado.recienCompletada || estado.completada) {
-                                    RecursoCashi.META_COMPLETADA
-                                } else {
-                                    RecursoCashi.META_LOGRADA
-                                },
+                                recurso = RecursoCashi.META_COMPLETADA,
                             )
-                            if (!estado.completada) {
-                                CashinBoton(
-                                    texto = stringResource(R.string.metas_marcar_completada),
-                                    onClick = onCompletarMeta,
-                                    icono = Icons.Outlined.CheckCircle,
-                                    cargando = estado.cambiandoEstado,
-                                )
-                            }
                         }
+                    }
+
+                    item(key = "titulo-movimientos") {
+                        Text(
+                            text = stringResource(R.string.metas_movimientos),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.padding(top = Espacio.s),
+                        )
+                    }
+
+                    if (estado.aportes.isEmpty()) {
+                        item(key = "sin-movimientos") {
+                            Text(
+                                text = stringResource(R.string.metas_sin_movimientos),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                        }
+                    } else {
+                        items(estado.aportes, key = { it.id }) { aporte -> FilaAporte(aporte) }
                     }
                 }
 
                 // Una meta completada ya no recibe ahorros ni retiros.
-                // Uno debajo del otro y de borde a borde: así el texto entra completo en una línea.
-                if (!estado.completada) item(key = "botones") {
-                    Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                        CashinBoton(
-                            texto = stringResource(R.string.metas_anotar_ahorro),
-                            onClick = { onAbrirDialogo(TipoAporte.AHORRO) },
-                            icono = Icons.Outlined.Add,
-                        )
-                        CashinBoton(
-                            texto = stringResource(R.string.metas_anotar_retiro),
-                            onClick = { onAbrirDialogo(TipoAporte.RETIRO) },
-                            variante = VarianteBoton.SECUNDARIO,
-                            icono = Icons.Outlined.Remove,
-                            // Sin nada ahorrado no hay qué retirar.
-                            habilitado = avance.totalAhorrado.signum() > 0,
-                        )
-                    }
-                }
-
-                estado.errorEstado?.let { error ->
-                    item(key = "error-estado") { MensajeError(error.mensaje()) }
-                }
-
-                if (estado.avisoNoLlega) {
-                    item(key = "aviso-no-llega") { MensajeError(stringResource(R.string.metas_todavia_no_llega)) }
-                }
-
-                item(key = "titulo-movimientos") {
-                    Text(
-                        text = stringResource(R.string.metas_movimientos),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.padding(top = Espacio.s),
+                if (!estado.completada) {
+                    BotonesMeta(
+                        avance = avance,
+                        estado = estado,
+                        onAbrirDialogo = onAbrirDialogo,
+                        onCompletarMeta = onCompletarMeta,
                     )
-                }
-
-                if (estado.aportes.isEmpty()) {
-                    item(key = "sin-movimientos") {
-                        Text(
-                            text = stringResource(R.string.metas_sin_movimientos),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onBackground,
-                        )
-                    }
-                } else {
-                    items(estado.aportes, key = { it.id }) { aporte -> FilaAporte(aporte) }
                 }
             }
         }
@@ -296,13 +298,61 @@ fun DetalleMetaContenido(
     }
 }
 
+/** Fijos abajo: uno debajo del otro y de borde a borde. Al llegar al objetivo, lo principal es completarla. */
+@Composable
+private fun BotonesMeta(
+    avance: AvanceMeta,
+    estado: DetalleMetaUiState,
+    onAbrirDialogo: (TipoAporte) -> Unit,
+    onCompletarMeta: () -> Unit,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(Espacio.s),
+        modifier = Modifier.padding(horizontal = Espacio.pantalla, vertical = Espacio.s),
+    ) {
+        estado.errorEstado?.let { error -> MensajeError(error.mensaje()) }
+        if (estado.avisoNoLlega) MensajeError(stringResource(R.string.metas_todavia_no_llega))
+
+        if (avance.alcanzada) {
+            CashinBoton(
+                texto = stringResource(R.string.metas_marcar_completada),
+                onClick = onCompletarMeta,
+                cargando = estado.cambiandoEstado,
+            )
+        } else {
+            CashinBoton(
+                texto = stringResource(R.string.metas_anotar_ahorro),
+                onClick = { onAbrirDialogo(TipoAporte.AHORRO) },
+                icono = Icons.Outlined.Add,
+            )
+        }
+        CashinBoton(
+            texto = stringResource(R.string.metas_anotar_retiro),
+            onClick = { onAbrirDialogo(TipoAporte.RETIRO) },
+            variante = VarianteBoton.SECUNDARIO,
+            icono = Icons.Outlined.Remove,
+            grosorBorde = 2.5.dp,
+            // Sin nada ahorrado no hay qué retirar.
+            habilitado = avance.totalAhorrado.signum() > 0,
+        )
+    }
+}
+
+/** El camino va de borde a borde aunque la lista tenga margen a los lados. */
+private fun Modifier.anchoCompleto(margen: Dp): Modifier = layout { medible, restricciones ->
+    val lados = margen.roundToPx()
+    val ancho = restricciones.maxWidth + lados * 2
+    val colocable = medible.measure(restricciones.copy(minWidth = ancho, maxWidth = ancho))
+    layout(restricciones.maxWidth, colocable.height) { colocable.place(-lados, 0) }
+}
+
 /**
  * HU-19: "Bs 350,00" grande, "de Bs 2.500,00", la barra y "14 % · Te faltan Bs 2.150,00".
  * Si ya está completada, lo dice arriba.
  */
 @Composable
 private fun TarjetaAvance(avance: AvanceMeta, completada: Boolean) {
-    CashinTarjeta {
+    TarjetaJuego {
         if (completada) {
             Text(
                 text = stringResource(R.string.metas_estado_completada),
@@ -338,124 +388,107 @@ private fun TarjetaAvance(avance: AvanceMeta, completada: Boolean) {
             color = if (avance.alcanzada) CashinColores.ingreso else MaterialTheme.colorScheme.secondary,
             modifier = Modifier.padding(top = Espacio.s),
         )
-        Text(
-            text = avance.fechaLimite?.let { stringResource(R.string.metas_hasta, Formato.fechaCorta(it)) }
-                ?: stringResource(R.string.metas_sin_fecha),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
     }
 }
 
 /**
- * HU-20: "¿Cuándo lo logro?" con el motor de predicción.
- * - Meses y fecha aproximada, o "al ritmo actual no se alcanza".
- * - Ahorro mensual usado y de dónde salió (aportes o ingresos − gastos).
- * - Con fecha límite: si llega a tiempo o cuánto haría falta por mes.
- * - Confianza y el mensaje de Cashi.
+ * HU-20: "¿Cuándo lo logro?" en lenguaje simple: un solo monto y una sola fecha, los mismos del camino.
+ * Debajo, dónde se podría recortar y, plegado, con cuántos datos se calculó.
  */
 @Composable
 private fun TarjetaCuandoLoLogro(
-    estimacion: EstimacionMeta,
-    mensaje: MensajeAvatar,
+    plan: PlanAhorro,
+    tieneFechaLimite: Boolean,
     mesesDeDatos: Int,
     recorte: RecorteSugerido?,
 ) {
     val color = MaterialTheme.colorScheme.onTertiaryContainer
+    val monto = Formato.montoEntero(plan.ahorroPorPaso)
+    val periodo = plan.periodo()
+    val fecha = plan.fechaEstimada
+    val (titulo, detalle) = when (plan.estado) {
+        EstadoPlan.ALCANZA -> Pair(
+            if (tieneFechaLimite || fecha == null) {
+                stringResource(R.string.plan_llegas)
+            } else {
+                stringResource(R.string.ia_lo_lograrias, Formato.mesEnFrase(fecha))
+            },
+            stringResource(R.string.plan_ritmo, monto, periodo),
+        )
+        EstadoPlan.CON_RECORTE -> Pair(
+            stringResource(R.string.plan_con_recorte),
+            if (tieneFechaLimite || fecha == null) {
+                stringResource(R.string.plan_recorte_fecha, monto, periodo)
+            } else {
+                stringResource(R.string.plan_recorte_sin_fecha, monto, periodo, Formato.mesEnFrase(fecha))
+            },
+        )
+        EstadoPlan.NO_LLEGA_A_FECHA -> Pair(
+            stringResource(R.string.plan_llegarias, fecha?.let(Formato::fechaEnFrase).orEmpty()),
+            stringResource(R.string.plan_no_llega, monto, periodo),
+        )
+        EstadoPlan.SIN_MARGEN -> Pair(
+            stringResource(R.string.plan_sin_margen_titulo),
+            stringResource(R.string.plan_sin_margen, monto),
+        )
+        EstadoPlan.SIN_DATOS, EstadoPlan.LOGRADA -> Pair(
+            stringResource(R.string.plan_sin_datos_titulo),
+            stringResource(R.string.plan_sin_datos),
+        )
+    }
 
     CashinTarjeta(color = MaterialTheme.colorScheme.tertiaryContainer) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Outlined.AutoAwesome,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.padding(end = Espacio.s),
-            )
-            Text(
-                text = stringResource(R.string.metas_cuando_titulo),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = color,
-            )
-        }
+        Text(
+            text = stringResource(R.string.metas_cuando_titulo),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = color,
+        )
+        Text(
+            text = titulo,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = color,
+            modifier = Modifier.padding(top = Espacio.xs),
+        )
+        Text(
+            text = detalle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = color,
+            modifier = Modifier.padding(top = Espacio.xs),
+        )
 
-        if (estimacion.fuente != FuenteAhorro.SIN_DATOS) {
-            // "Lo lograrías en marzo de 2027" o "A este paso todavía no llegas"
-            val meses = estimacion.meses
-            val fecha = estimacion.fechaEstimada
+        if (recorte != null && plan.estado != EstadoPlan.SIN_DATOS) {
             Text(
-                text = if (meses != null && fecha != null) {
-                    stringResource(R.string.ia_lo_lograrias, Formato.mesEnFrase(fecha))
-                } else {
-                    stringResource(R.string.ia_no_se_alcanza)
-                },
-                style = MaterialTheme.typography.headlineSmall,
+                text = stringResource(R.string.ia_que_recortar),
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
                 color = color,
                 modifier = Modifier.padding(top = Espacio.s),
             )
-
-            // "Si sigues guardando unos Bs 350 al mes."
             Text(
-                text = stringResource(
-                    if (estimacion.fuente == FuenteAhorro.APORTES) R.string.ia_ritmo_aportes else R.string.ia_ritmo_capacidad,
-                    Formato.montoAproximado(estimacion.ahorroMensual),
-                ),
+                text = stringResource(R.string.ia_recorte, recorte.categoria, Formato.montoAproximado(recorte.monto)),
                 style = MaterialTheme.typography.bodyMedium,
                 color = color,
-                modifier = Modifier.padding(top = Espacio.xs),
             )
-
-            // Con fecha límite: ✅ llega a tiempo o ⚠️ cuánto hace falta.
-            when (estimacion.llegaAntesDeLaFecha) {
-                true -> Text(
-                    text = stringResource(R.string.ia_a_tiempo),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = CashinColores.ingreso,
-                    modifier = Modifier.padding(top = Espacio.xs),
-                )
-                false -> Text(
-                    text = stringResource(
-                        R.string.ia_necesitas,
-                        Formato.montoAproximado(estimacion.ahorroNecesarioPorMes ?: BigDecimal.ZERO),
-                    ),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = CashinColores.gasto,
-                    modifier = Modifier.padding(top = Espacio.xs),
-                )
-                null -> Unit
-            }
-
-            if (recorte != null) {
-                Text(
-                    text = stringResource(R.string.ia_que_recortar),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = color,
-                    modifier = Modifier.padding(top = Espacio.s),
-                )
-                Text(
-                    text = stringResource(R.string.ia_recorte, recorte.categoria, Formato.montoAproximado(recorte.monto)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = color,
-                )
-            }
-
-            if (mesesDeDatos > 0) {
-                ComoLoCalcule(
-                    detalle = pluralStringResource(R.plurals.metas_como_calcule, mesesDeDatos, mesesDeDatos),
-                    color = color,
-                )
-            }
         }
 
-        AvatarBurbuja(
-            mensaje = mensaje.texto(),
-            emocion = mensaje.animo.emocion(),
-            tamanoAvatar = 64.dp,
-            modifier = Modifier.padding(top = Espacio.m),
-        )
+        if (mesesDeDatos > 0 && plan.estado != EstadoPlan.SIN_DATOS) {
+            ComoLoCalcule(
+                detalle = pluralStringResource(R.plurals.metas_como_calcule, mesesDeDatos, mesesDeDatos),
+                color = color,
+            )
+        }
     }
+}
+
+/** "al mes", "cada quincena", "cada semana" o "cada 2 meses". */
+@Composable
+private fun PlanAhorro.periodo(): String = when {
+    cadencia == CadenciaPlan.SEMANAL -> stringResource(R.string.periodo_semana)
+    cadencia == CadenciaPlan.QUINCENAL -> stringResource(R.string.periodo_quincena)
+    mesesPorPaso > 1 -> stringResource(R.string.periodo_meses, mesesPorPaso)
+    else -> stringResource(R.string.periodo_mes)
 }
 
 /** "+ Bs 100,00" (ahorro, verde) o "- Bs 50,00" (retiro, rojo), con fecha y nota. */
@@ -587,5 +620,6 @@ private fun DetalleMetaPreview() = CashinTheme {
         onGuardarAporte = {},
         onCompletarMeta = {},
         onCancelarMeta = {},
+        onCelebracionVista = {},
     )
 }

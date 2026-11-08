@@ -70,6 +70,7 @@ object Formato {
 
     private val fechaCorta = DateTimeFormatter.ofPattern("d MMM", LOCALE_BO)
     private val fechaLarga = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", LOCALE_BO)
+    private val fechaEnFrase = DateTimeFormatter.ofPattern("d 'de' MMMM", LOCALE_BO)
     private val mesAnio = DateTimeFormatter.ofPattern("MMMM yyyy", LOCALE_BO)
     private val hora = DateTimeFormatter.ofPattern("HH:mm", LOCALE_BO)
 
@@ -79,6 +80,9 @@ object Formato {
 
     /** "24 oct." */
     fun fechaCorta(fecha: LocalDate): String = fecha.format(fechaCorta)
+
+    /** Para usar dentro de una frase: "31 de diciembre". */
+    fun fechaEnFrase(fecha: LocalDate): String = fecha.format(fechaEnFrase)
 
     /** "Hoy", "Ayer" o "sábado 24 de octubre" (para agrupar el historial por día). */
     fun encabezadoDia(fecha: LocalDate): String = when (fecha) {

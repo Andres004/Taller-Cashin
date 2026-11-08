@@ -282,7 +282,6 @@
     <string name="metas_alcanzada">¡Meta alcanzada! 🎉</string>
     <string name="metas_hasta">Hasta el %1$s</string>
     <string name="metas_sin_fecha">Sin fecha límite</string>
-    <string name="metas_lograste">¡Lo lograste! Llegaste a tu meta. Cashi está orgulloso de ti.</string>
     <string name="metas_anotar_ahorro">Anoté un ahorro</string>
     <string name="metas_anotar_retiro">Anoté un retiro</string>
     <string name="metas_ahorro">Ahorro</string>
@@ -296,7 +295,7 @@
     <string name="metas_cancelar_titulo">¿Quitar esta meta?</string>
     <string name="metas_cancelar_mensaje">«%1$s» ya no aparecerá en tus metas.</string>
     <string name="metas_cancelada">Meta quitada</string>
-    <string name="metas_marcar_completada">Marcar como completada</string>
+    <string name="metas_marcar_completada">Marcar como completada · +100 XP</string>
     <string name="metas_estado_completada">✓ Completada</string>
     <string name="metas_completada_mensaje">¡Meta cumplida! Ya está guardada en tus metas completadas.</string>
     <string name="metas_completada_xp">¡Meta lograda! +100 XP</string>
@@ -305,12 +304,46 @@
     <string name="metas_completadas">Completadas (%1$d)</string>
     <string name="metas_ver_completadas">Ver metas completadas</string>
     <string name="metas_ocultar_completadas">Ocultar metas completadas</string>
+    <string name="metas_porcentaje_avance">%1$d %% de avance</string>
+    <string name="metas_te_faltan">Te faltan %1$s</string>
+    <string name="metas_objetivo_llegado">Llegaste a tu objetivo</string>
+    <string name="metas_proximo_ahorro">Tu próximo ahorro: %1$s antes del %2$s</string>
+
+    <!-- Camino hasta la meta -->
+    <string name="camino_titulo">Tu camino</string>
+    <string name="camino_paso_de">Paso %1$d de %2$d</string>
+    <string name="camino_completo">Camino completo</string>
+    <string name="camino_proximo">Tu próximo ahorro</string>
+    <string name="camino_antes_de">antes del %1$s</string>
+    <string name="camino_ultimo">Último ahorro: %1$s antes del %2$s</string>
+    <string name="camino_cada_paso">Cada paso te acerca a tu meta</string>
+    <string name="camino_llegaste">Llegaste a tu meta</string>
+    <string name="camino_al_llegar">Al llegar aquí tendrás</string>
+    <string name="camino_llevabas">En ese paso llevabas</string>
+    <string name="camino_ganado">+ %1$s</string>
+    <string name="camino_hecho">Paso hecho</string>
+    <string name="camino_tu_meta">Tu meta</string>
+
+    <!-- Plan de ahorro en "¿Cuándo lo logro?" -->
+    <string name="plan_llegas">Llegas a tu fecha</string>
+    <string name="plan_ritmo">Guardando unos %1$s %2$s.</string>
+    <string name="plan_con_recorte">Te alcanza con un recorte</string>
+    <string name="plan_recorte_fecha">Guardando %1$s %2$s llegas a tu fecha.</string>
+    <string name="plan_recorte_sin_fecha">Guardando %1$s %2$s lo lograrías en %3$s.</string>
+    <string name="plan_llegarias">Llegarías el %1$s</string>
+    <string name="plan_no_llega">Después de tu fecha, aun guardando lo máximo que te permiten tus ingresos: %1$s %2$s.</string>
+    <string name="plan_sin_margen_titulo">Hoy tus gastos ocupan casi todo</string>
+    <string name="plan_sin_margen">Empieza con poquito: %1$s al mes. Cada paso cuenta.</string>
+    <string name="plan_sin_datos_titulo">Todavía no puedo armar tu camino</string>
+    <string name="plan_sin_datos">Anota tus ingresos y gastos de un mes y te lo preparo.</string>
+    <string name="periodo_semana">cada semana</string>
+    <string name="periodo_quincena">cada quincena</string>
+    <string name="periodo_mes">al mes</string>
+    <string name="periodo_meses">cada %1$d meses</string>
 
     <!-- IA predictiva: motor de predicción (prediccion/) y mensajes de Cashi -->
     <string name="ia_como_lo_calcule">¿Cómo lo calculé?</string>
     <string name="ia_lo_lograrias">Lo lograrías en %1$s</string>
-    <string name="ia_ritmo_aportes">Si sigues guardando unos %1$s al mes.</string>
-    <string name="ia_ritmo_capacidad">Si guardas unos %1$s al mes, lo que te suele sobrar.</string>
     <string name="ia_que_recortar">¿Qué puedo recortar?</string>
     <string name="ia_recorte">En %1$s podrías guardar unos %2$s más al mes.</string>
     <string name="ia_meta_alcanzable">¡Vas bien! Sigue así y llegas.</string>
@@ -318,9 +351,6 @@
         <item quantity="one">Usé tu último mes.</item>
         <item quantity="other">Usé tus últimos %1$d meses.</item>
     </plurals>
-    <string name="ia_no_se_alcanza">A este paso todavía no llegas</string>
-    <string name="ia_a_tiempo">✅ Llegas a tiempo</string>
-    <string name="ia_necesitas">⚠️ Para llegar a tu fecha, guarda unos %1$s al mes.</string>
     <string name="ia_meta_alcanzada">¡Llegaste a tu meta! Cashi está orgulloso de ti.</string>
     <string name="ia_meta_no_llega">Con un empujoncito todavía puedes llegar.</string>
     <string name="ia_meta_ritmo_negativo">Este mes se te fue más de lo que entró. Empieza con poquito.</string>

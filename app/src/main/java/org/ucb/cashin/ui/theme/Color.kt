@@ -20,6 +20,7 @@ val VerdeCategoria = Color(0xFF8DBE84)
 
 val Naranja = Color(0xFFE08A2C)        // acento (avatar, XP, rachas)
 val NaranjaClaro = Color(0xFFFDE7CF)
+val NaranjaRelieve = Color(0xFFB96F1F) // derivado de Naranja: relieve de las monedas del camino
 
 val RojoGasto = Color(0xFFC0473A)      // montos de gasto y errores
 val VerdeIngreso = Color(0xFF2E7D32)   // montos de ingreso

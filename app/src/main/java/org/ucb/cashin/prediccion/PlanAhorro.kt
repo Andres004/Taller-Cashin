@@ -53,7 +53,11 @@ data class PlanAhorro(
     val pasos: List<PasoAhorro>,
     /** Cuándo se llegaría; null si no se puede prometer una fecha. */
     val fechaEstimada: LocalDate?,
-)
+) {
+    /** El próximo paso por cumplir; null si ya no queda ninguno. */
+    val pasoActual: PasoAhorro?
+        get() = pasos.firstOrNull { it.estado != EstadoPaso.COMPLETADO }
+}
 
 private val CERO: BigDecimal = BigDecimal.ZERO.setScale(2)
 private val DIAS_POR_MES = BigDecimal("30.44")
@@ -69,6 +73,7 @@ private const val MIN_PASOS_PENDIENTES = 3
 private const val PASOS_SIMBOLICOS = 3
 private const val DIAS_PARA_MENSUAL = 90L
 private const val DIAS_PARA_QUINCENAL = 21L
+private const val DIAS_PARA_UNIR_ULTIMO_PASO = 7L
 
 /** Ritmo y calendario elegidos para los pasos que faltan. */
 private data class Calendario(
@@ -184,13 +189,16 @@ private fun mesesPorPasoHasta(cadencia: CadenciaPlan, fecha: LocalDate, hoy: Loc
     return Math.ceilDiv(meses, MAX_PASOS_PENDIENTES).coerceAtLeast(1)
 }
 
-/** Vencimientos hasta la fecha límite; el último nunca la pasa. */
+/** Vencimientos hasta la fecha límite; el último nunca la pasa y un tramo final de pocos días se une al anterior. */
 private fun cortesHasta(cadencia: CadenciaPlan, meses: Int, fecha: LocalDate, hoy: LocalDate): List<LocalDate> {
     val cortes = mutableListOf<LocalDate>()
     var corte = primerCorte(cadencia, meses, hoy)
     while (corte < fecha) {
         cortes += corte
         corte = siguienteCorte(cadencia, meses, corte)
+    }
+    if (cortes.isNotEmpty() && ChronoUnit.DAYS.between(cortes.last(), fecha) < DIAS_PARA_UNIR_ULTIMO_PASO) {
+        cortes.removeAt(cortes.lastIndex)
     }
     cortes += fecha
     return cortes

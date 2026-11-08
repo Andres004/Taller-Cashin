@@ -91,6 +91,28 @@ class PlanAhorroTest {
         assertEquals(4, p.pasos.count { it.estado != EstadoPaso.COMPLETADO })
     }
 
+    @Test fun `una fecha limite pegada al ultimo corte se une a ese paso`() {
+        val p = plan(meta("2500", "1051", d(5, 1, 2027)))
+
+        assertEquals(
+            listOf(d(11, 30), d(12, 31), d(1, 31, 2027), d(2, 28, 2027), d(3, 31, 2027), d(5, 1, 2027)),
+            p.pasos.filter { it.estado != EstadoPaso.COMPLETADO }.map { it.fecha },
+        )
+    }
+
+    @Test fun `con pasos semanales una fecha en el dia de corte conserva su paso anterior`() {
+        val p = plan(meta("200", "0", d(11, 22)), aportes = emptyList())
+
+        assertEquals(CadenciaPlan.SEMANAL, p.cadencia)
+        assertEquals(listOf(d(11, 8), d(11, 15), d(11, 22)), p.pasos.map { it.fecha })
+    }
+
+    @Test fun `el paso actual es el primero sin cumplir`() {
+        val p = plan(meta("2400", "500"))
+
+        assertEquals(d(11, 15), p.pasoActual?.fecha)
+    }
+
     @Test fun `si ni con el maximo llega avisa la fecha real`() {
         val p = plan(meta("2400", "500", d(12, 15)))
 
