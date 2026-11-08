@@ -55,13 +55,13 @@ import org.ucb.cashin.ui.components.CashinCampoMonto
 import org.ucb.cashin.ui.components.CashinCampoTexto
 import org.ucb.cashin.ui.components.CashinTarjeta
 import org.ucb.cashin.ui.components.CashinTopBar
+import org.ucb.cashin.ui.components.ComoLoCalcule
 import org.ucb.cashin.ui.components.Emocion
 import org.ucb.cashin.ui.components.EstadoCargando
 import org.ucb.cashin.ui.components.EstadoError
 import org.ucb.cashin.ui.components.RecursoCashi
 import org.ucb.cashin.ui.components.VarianteBoton
 import org.ucb.cashin.ui.components.emocion
-import org.ucb.cashin.ui.components.textoConfianza
 import org.ucb.cashin.ui.components.texto
 import org.ucb.cashin.ui.components.mensaje
 import org.ucb.cashin.ui.theme.CashinColores
@@ -172,6 +172,7 @@ fun DetalleMetaContenido(
                             estimacion = estimacion,
                             mensaje = mensajeIa,
                             mesesDeDatos = estado.mesesDeDatos,
+                            recorte = estado.recorte,
                         )
                     }
                 }
@@ -358,6 +359,7 @@ private fun TarjetaCuandoLoLogro(
     estimacion: EstimacionMeta,
     mensaje: MensajeAvatar,
     mesesDeDatos: Int,
+    recorte: RecorteSugerido?,
 ) {
     val color = MaterialTheme.colorScheme.onTertiaryContainer
 
@@ -378,12 +380,12 @@ private fun TarjetaCuandoLoLogro(
         }
 
         if (estimacion.fuente != FuenteAhorro.SIN_DATOS) {
-            // "~5 meses · marzo 2027" o "Al ritmo actual no se alcanza"
+            // "Lo lograrías en marzo de 2027" o "A este paso todavía no llegas"
             val meses = estimacion.meses
             val fecha = estimacion.fechaEstimada
             Text(
                 text = if (meses != null && fecha != null) {
-                    pluralStringResource(R.plurals.ia_meses_fecha, meses, meses, Formato.mes(fecha).lowercase())
+                    stringResource(R.string.ia_lo_lograrias, Formato.mesEnFrase(fecha))
                 } else {
                     stringResource(R.string.ia_no_se_alcanza)
                 },
@@ -393,14 +395,11 @@ private fun TarjetaCuandoLoLogro(
                 modifier = Modifier.padding(top = Espacio.s),
             )
 
-            // "Ahorras ~Bs 350,00 al mes · según tus aportes"
+            // "Si sigues guardando unos Bs 350 al mes."
             Text(
                 text = stringResource(
-                    R.string.ia_ritmo,
-                    Formato.monto(estimacion.ahorroMensual),
-                    stringResource(
-                        if (estimacion.fuente == FuenteAhorro.APORTES) R.string.ia_fuente_aportes else R.string.ia_fuente_capacidad,
-                    ),
+                    if (estimacion.fuente == FuenteAhorro.APORTES) R.string.ia_ritmo_aportes else R.string.ia_ritmo_capacidad,
+                    Formato.montoAproximado(estimacion.ahorroMensual),
                 ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = color,
@@ -418,7 +417,7 @@ private fun TarjetaCuandoLoLogro(
                 false -> Text(
                     text = stringResource(
                         R.string.ia_necesitas,
-                        Formato.monto(estimacion.ahorroNecesarioPorMes ?: BigDecimal.ZERO),
+                        Formato.montoAproximado(estimacion.ahorroNecesarioPorMes ?: BigDecimal.ZERO),
                     ),
                     style = MaterialTheme.typography.labelLarge,
                     color = CashinColores.gasto,
@@ -427,12 +426,27 @@ private fun TarjetaCuandoLoLogro(
                 null -> Unit
             }
 
-            Text(
-                text = textoConfianza(estimacion.confianza, mesesDeDatos),
-                style = MaterialTheme.typography.bodySmall,
-                color = color,
-                modifier = Modifier.padding(top = Espacio.xs),
-            )
+            if (recorte != null) {
+                Text(
+                    text = stringResource(R.string.ia_que_recortar),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = color,
+                    modifier = Modifier.padding(top = Espacio.s),
+                )
+                Text(
+                    text = stringResource(R.string.ia_recorte, recorte.categoria, Formato.montoAproximado(recorte.monto)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = color,
+                )
+            }
+
+            if (mesesDeDatos > 0) {
+                ComoLoCalcule(
+                    detalle = pluralStringResource(R.plurals.metas_como_calcule, mesesDeDatos, mesesDeDatos),
+                    color = color,
+                )
+            }
         }
 
         AvatarBurbuja(

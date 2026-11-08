@@ -410,7 +410,7 @@ private fun PistaDelReto(desafio: Desafio, progreso: ProgresoDesafio?, diasQueQu
             avance >= UMBRAL_RIESGO -> stringResource(R.string.desafios_pista_cuidado, Formato.monto(queda)) to true
             else -> {
                 val porDia = queda.divide(BigDecimal(diasQueQuedan.coerceAtLeast(1)), 2, RoundingMode.DOWN)
-                stringResource(R.string.desafios_pista_por_dia, Formato.monto(queda), Formato.monto(porDia)) to false
+                stringResource(R.string.desafios_pista_por_dia, Formato.monto(queda), Formato.montoEntero(porDia)) to false
             }
         }
     } else {

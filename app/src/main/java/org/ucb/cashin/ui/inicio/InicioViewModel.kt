@@ -52,6 +52,8 @@ data class InicioUiState(
     val proyeccionMes: BigDecimal = BigDecimal.ZERO,
     /** Pronóstico del próximo mes (rango mínimo–máximo). */
     val pronosticoProximo: Pronostico = Pronostico.SIN_DATOS,
+    /** Lo que suele recibir en un mes; null si todavía no se puede saber. */
+    val ingresoEsperado: BigDecimal? = null,
     /** La proyección del mes supera el máximo pronosticado: se gasta más rápido que de costumbre. */
     val gastaMasRapido: Boolean = false,
     /** HU-21: consejo del día de Cashi (prediccion/Consejos.kt). */
@@ -70,6 +72,9 @@ data class InicioUiState(
 ) {
     /** Ingresos menos gastos del mes. Es solo una diferencia de anotaciones, no un saldo. */
     val diferencia: BigDecimal get() = totalIngresos - totalGastos
+
+    /** Lo que quedaría este mes (negativo si no alcanza); null si no se conocen sus ingresos. */
+    val sobranteDelMes: BigDecimal? get() = ingresoEsperado?.let { it.max(totalIngresos) - proyeccionMes }
 
     /** Hay al menos un mes completo de historia para pronosticar. */
     val hayPronostico: Boolean get() = pronosticoMes.confianza != Confianza.SIN_DATOS
@@ -147,6 +152,9 @@ class InicioViewModel(
             val pronosticoMes = pronosticarSiguienteMes(serieGastos)
             val proyeccion = proyectarMesActual(gastoDelMes, hoy, pronosticoMes)
             val pronosticoProximo = pronosticarProximoMes(serieGastos, proyeccion, hoy)
+            val pronosticoIngresos = pronosticarSiguienteMes(construirSerie(historial, hoy) { it.totalIngresos })
+            val ingresoEsperado = pronosticoIngresos.esperado
+                .takeIf { pronosticoIngresos.confianza != Confianza.SIN_DATOS && it.signum() > 0 }
 
             // Para el consejo: el desafío con límite que va más cerca de pasarse, si hay;
             // y la meta activa más avanzada que todavía no llega al objetivo.
@@ -191,6 +199,7 @@ class InicioViewModel(
                     pronosticoMes = pronosticoMes,
                     proyeccionMes = proyeccion,
                     pronosticoProximo = pronosticoProximo,
+                    ingresoEsperado = ingresoEsperado,
                     gastaMasRapido = pronosticoMes.confianza != Confianza.SIN_DATOS && proyeccion > pronosticoMes.maximo,
                     mensajeIa = consejo,
                     desafiosActivos = activos,

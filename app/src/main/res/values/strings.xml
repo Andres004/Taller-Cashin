@@ -117,10 +117,19 @@
     <string name="inicio_ultimas">Últimas anotaciones</string>
     <string name="inicio_ver_todo">Ver todo</string>
     <string name="inicio_sin_anotaciones">Todavía no tienes anotaciones. Toca + para empezar.</string>
-    <string name="inicio_pronostico">Pronóstico</string>
-    <string name="inicio_pronostico_sin_datos">Necesito al menos un mes completo de anotaciones para pronosticar.</string>
-    <string name="inicio_pronostico_mes">Al ritmo actual terminarás %1$s con ~%2$s de gastos.</string>
-    <string name="inicio_pronostico_proximo">Próximo mes: entre %1$s y %2$s.</string>
+    <string name="inicio_pronostico">¿Me alcanza este mes?</string>
+    <string name="inicio_alcanza_si">¡Sí te alcanza!</string>
+    <string name="inicio_alcanza_sobra">Te sobrarían unos %1$s.</string>
+    <string name="inicio_alcanza_no">Ojo, no te alcanzaría.</string>
+    <string name="inicio_alcanza_falta">Gastarías unos %1$s más de lo que sueles recibir.</string>
+    <string name="inicio_alcanza_justo">Te alcanza justo.</string>
+    <string name="inicio_alcanza_sin_ingresos">Este mes gastarías unos %1$s.</string>
+    <string name="inicio_como_proximo">El próximo mes podrías gastar entre %1$s y %2$s.</string>
+    <plurals name="inicio_como_calcule">
+        <item quantity="one">Miré tu último mes.</item>
+        <item quantity="other">Miré tus últimos %1$d meses.</item>
+    </plurals>
+    <string name="inicio_pronostico_sin_datos">Anota un mes completo y te digo si te alcanza.</string>
     <string name="inicio_racha_en_riesgo">en riesgo · anota hoy</string>
     <string name="inicio_subiste_nivel">¡Subiste al nivel %1$d! Cashi está orgulloso de ti.</string>
 
@@ -298,31 +307,23 @@
     <string name="metas_ocultar_completadas">Ocultar metas completadas</string>
 
     <!-- IA predictiva: motor de predicción (prediccion/) y mensajes de Cashi -->
-    <plurals name="ia_meses_fecha">
-        <item quantity="one">~%1$d mes · %2$s</item>
-        <item quantity="other">~%1$d meses · %2$s</item>
+    <string name="ia_como_lo_calcule">¿Cómo lo calculé?</string>
+    <string name="ia_lo_lograrias">Lo lograrías en %1$s</string>
+    <string name="ia_ritmo_aportes">Si sigues guardando unos %1$s al mes.</string>
+    <string name="ia_ritmo_capacidad">Si guardas unos %1$s al mes, lo que te suele sobrar.</string>
+    <string name="ia_que_recortar">¿Qué puedo recortar?</string>
+    <string name="ia_recorte">En %1$s podrías guardar unos %2$s más al mes.</string>
+    <string name="ia_meta_alcanzable">¡Vas bien! Sigue así y llegas.</string>
+    <plurals name="metas_como_calcule">
+        <item quantity="one">Usé tu último mes.</item>
+        <item quantity="other">Usé tus últimos %1$d meses.</item>
     </plurals>
-    <string name="ia_no_se_alcanza">Al ritmo actual no se alcanza</string>
-    <string name="ia_ritmo">Ahorras ~%1$s al mes · %2$s</string>
-    <string name="ia_fuente_aportes">según tus aportes</string>
-    <string name="ia_fuente_capacidad">según tus ingresos y gastos</string>
+    <string name="ia_no_se_alcanza">A este paso todavía no llegas</string>
     <string name="ia_a_tiempo">✅ Llegas a tiempo</string>
-    <string name="ia_necesitas">⚠️ Necesitas %1$s al mes para llegar</string>
-    <plurals name="ia_confianza_meses">
-        <item quantity="one">Estimación con %1$d mes de datos · confianza %2$s</item>
-        <item quantity="other">Estimación con %1$d meses de datos · confianza %2$s</item>
-    </plurals>
-    <string name="ia_confianza_sin_datos">Todavía no hay datos suficientes para estimar</string>
-    <string name="ia_confianza_alta">alta</string>
-    <string name="ia_confianza_media">media</string>
-    <string name="ia_confianza_baja">baja</string>
+    <string name="ia_necesitas">⚠️ Para llegar a tu fecha, guarda unos %1$s al mes.</string>
     <string name="ia_meta_alcanzada">¡Llegaste a tu meta! Cashi está orgulloso de ti.</string>
-    <plurals name="ia_meta_alcanzable">
-        <item quantity="one">¡Vas bien! Al ritmo actual juntas los %1$s que faltan en unos %2$d mes (%3$s).</item>
-        <item quantity="other">¡Vas bien! Al ritmo actual juntas los %1$s que faltan en unos %2$d meses (%3$s).</item>
-    </plurals>
-    <string name="ia_meta_no_llega">Al ritmo actual no llegas a tu fecha. Necesitarías ahorrar %1$s al mes.</string>
-    <string name="ia_meta_ritmo_negativo">Este mes tus gastos superan tus ingresos. Anota un ahorro para empezar.</string>
+    <string name="ia_meta_no_llega">Con un empujoncito todavía puedes llegar.</string>
+    <string name="ia_meta_ritmo_negativo">Este mes se te fue más de lo que entró. Empieza con poquito.</string>
     <string name="ia_sin_datos">Anota tus gastos unas semanas más para que pueda estimar.</string>
     <string name="ia_gasto_mas_rapido">Vas gastando más rápido que de costumbre. ¡Ojo con los gastos de estos días!</string>
     <string name="ia_gasto_normal">Tus gastos van dentro de lo normal este mes. ¡Sigue así!</string>
@@ -333,7 +334,7 @@
         <item quantity="other">¡Tu racha de %1$d días está en riesgo! Anota algo hoy.</item>
     </plurals>
     <string name="ia_desafio_en_riesgo">Tu desafío «%1$s» está en riesgo: solo te quedan %2$s. ¡Aguanta!</string>
-    <string name="ia_categoria_sube">A este ritmo gastarás %2$s en %1$s este mes, bastante más que de costumbre.</string>
+    <string name="ia_categoria_sube">Vas gastando de más en %1$s. Podrías llegar a unos %2$s este mes.</string>
     <string name="ia_meta_cerca">¡Ya casi! Te faltan solo %2$s para tu meta «%1$s».</string>
     <plurals name="ia_racha_buena">
         <item quantity="one">¡Llevas %1$d día seguido anotando! Sigue así.</item>

@@ -32,4 +32,17 @@ class FormatoTest {
         assertNull(Formato.parsearMonto("abc"))
         assertNull(Formato.parsearMonto("20,555"))
     }
+
+    @Test fun `las estimaciones se redondean a multiplos de 10`() {
+        assertEquals("Bs 3.470", Formato.montoAproximado(java.math.BigDecimal("3465.48")))
+        assertEquals("Bs 310", Formato.montoAproximado(java.math.BigDecimal("314.64")))
+    }
+
+    @Test fun `el monto entero baja para no prometer de mas`() {
+        assertEquals("Bs 18", Formato.montoEntero(java.math.BigDecimal("18.99")))
+    }
+
+    @Test fun `el mes en una frase va en minuscula y con de`() {
+        assertEquals("marzo de 2027", Formato.mesEnFrase(java.time.LocalDate.of(2027, 3, 15)))
+    }
 }

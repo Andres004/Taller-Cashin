@@ -56,6 +56,7 @@ import org.ucb.cashin.ui.components.AvatarBurbuja
 import org.ucb.cashin.ui.components.BarraProgreso
 import org.ucb.cashin.ui.components.CashinBoton
 import org.ucb.cashin.ui.components.CashinTarjeta
+import org.ucb.cashin.ui.components.ComoLoCalcule
 import org.ucb.cashin.ui.components.Emocion
 import org.ucb.cashin.ui.components.EstadoCargando
 import org.ucb.cashin.ui.components.EstadoError
@@ -64,7 +65,6 @@ import org.ucb.cashin.ui.components.RecursoCashi
 import org.ucb.cashin.ui.components.VarianteBoton
 import org.ucb.cashin.ui.components.emocion
 import org.ucb.cashin.ui.components.texto
-import org.ucb.cashin.ui.components.textoConfianza
 import org.ucb.cashin.ui.components.mensaje
 import org.ucb.cashin.ui.desafios.AvisoNuevosDesafios
 import org.ucb.cashin.ui.desafios.ProgresoDeDesafio
@@ -342,8 +342,6 @@ private fun TarjetaDelMes(estado: InicioUiState) {
  */
 @Composable
 private fun TarjetaPronostico(estado: InicioUiState) {
-    val hoy = Formato.hoy()
-
     CashinTarjeta {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
@@ -370,36 +368,48 @@ private fun TarjetaPronostico(estado: InicioUiState) {
                 modifier = Modifier.padding(top = Espacio.s),
             )
         } else {
+            val sobrante = estado.sobranteDelMes
+            val alcanza = sobrante == null || sobrante.signum() >= 0
+            val redondeado = sobrante?.abs()?.let { Formato.aproximado(it) }
+            val (frase, detalle) = when {
+                sobrante == null -> stringResource(R.string.inicio_alcanza_sin_ingresos, Formato.montoAproximado(estado.proyeccionMes)) to null
+                redondeado?.signum() == 0 -> stringResource(R.string.inicio_alcanza_justo) to null
+                alcanza -> stringResource(R.string.inicio_alcanza_si) to
+                    stringResource(R.string.inicio_alcanza_sobra, Formato.montoAproximado(sobrante))
+                else -> stringResource(R.string.inicio_alcanza_no) to
+                    stringResource(R.string.inicio_alcanza_falta, Formato.montoAproximado(sobrante.abs()))
+            }
+            val enRojo = !alcanza || (sobrante == null && estado.gastaMasRapido)
+
             Text(
-                text = stringResource(
-                    R.string.inicio_pronostico_mes,
-                    Formato.mes(hoy).substringBefore(' ').lowercase(),
-                    Formato.monto(estado.proyeccionMes),
-                ),
+                text = frase,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = if (estado.gastaMasRapido) CashinColores.gasto else MaterialTheme.colorScheme.onBackground,
+                color = if (enRojo) CashinColores.gasto else MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(top = Espacio.s),
             )
-
-            if (estado.pronosticoProximo.confianza != Confianza.SIN_DATOS) {
+            if (detalle != null) {
                 Text(
-                    text = stringResource(
-                        R.string.inicio_pronostico_proximo,
-                        Formato.monto(estado.pronosticoProximo.minimo),
-                        Formato.monto(estado.pronosticoProximo.maximo),
-                    ),
+                    text = detalle,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(top = Espacio.xs),
                 )
             }
 
-            Text(
-                text = textoConfianza(estado.pronosticoMes.confianza, estado.pronosticoMes.mesesUsados),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(top = Espacio.xs),
+            val meses = estado.pronosticoMes.mesesUsados
+            val proximo = estado.pronosticoProximo
+            val usados = pluralStringResource(R.plurals.inicio_como_calcule, meses, meses)
+            ComoLoCalcule(
+                detalle = if (proximo.confianza != Confianza.SIN_DATOS) {
+                    usados + " " + stringResource(
+                        R.string.inicio_como_proximo,
+                        Formato.montoAproximado(proximo.minimo),
+                        Formato.montoAproximado(proximo.maximo),
+                    )
+                } else {
+                    usados
+                },
             )
         }
     }

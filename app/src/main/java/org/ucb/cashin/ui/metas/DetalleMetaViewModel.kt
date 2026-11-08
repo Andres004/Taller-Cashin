@@ -30,6 +30,7 @@ import org.ucb.cashin.prediccion.construirSerie
 import org.ucb.cashin.prediccion.estimarMeta
 import org.ucb.cashin.prediccion.mensajeParaMeta
 import org.ucb.cashin.prediccion.pronosticarSiguienteMes
+import java.math.BigDecimal
 import java.time.YearMonth
 import org.ucb.cashin.util.Formato
 
@@ -46,6 +47,8 @@ data class DetalleMetaUiState(
     val mensajeIa: MensajeAvatar? = null,
     /** Cuántos meses de datos usó la estimación (para mostrar la confianza). */
     val mesesDeDatos: Int = 0,
+    /** Dónde podría recortar más; null si no hay un recorte que valga la pena mencionar. */
+    val recorte: RecorteSugerido? = null,
 
     /** Diálogo "Anoté un ahorro / retiro": null = cerrado. */
     val dialogoTipo: TipoAporte? = null,
@@ -76,6 +79,11 @@ data class DetalleMetaUiState(
  * HU-20: estimar cuándo se logra con el motor de predicción (el ViewModel solo lo orquesta).
  * Al llegar al 100 % se puede marcar como completada.
  */
+/** Categoría donde más se podría recortar y cuánto al mes. */
+data class RecorteSugerido(val categoria: String, val monto: BigDecimal)
+
+private val RECORTE_MINIMO_VISIBLE = BigDecimal.TEN
+
 class DetalleMetaViewModel(
     private val metaRepository: MetaRepository,
     private val resumenRepository: ResumenRepository,
@@ -110,14 +118,20 @@ class DetalleMetaViewModel(
             val pronosticoIngresos = pronosticarSiguienteMes(construirSerie(historial, hoy) { it.totalIngresos })
             val pronosticoGastos = pronosticarSiguienteMes(construirSerie(historial, hoy) { it.totalGastos })
             // Si algo de esto falla, la capacidad se calcula solo con el pronóstico.
+            val categorias = categoriaRepository.listarConArchivadas(TipoRegistro.GASTO).getOrDefault(emptyList())
             val desgloseGastos = desglosarGastos(
                 planificados = planificadoRepository.listar().getOrDefault(emptyList()),
                 gastoPorCategoria = resumenRepository.gastoPorCategoria().getOrDefault(emptyList()),
-                importancias = categoriaRepository.listarConArchivadas(TipoRegistro.GASTO).getOrDefault(emptyList())
-                    .associate { it.id to it.importancia },
+                importancias = categorias.associate { it.id to it.importancia },
                 hoy = hoy,
             )
             val estimacion = estimarMeta(avance, aportes, pronosticoIngresos, pronosticoGastos, hoy, desgloseGastos)
+            val recorte = desgloseGastos.porCategoria
+                .maxByOrNull { it.recortable }
+                ?.takeIf { it.recortable >= RECORTE_MINIMO_VISIBLE }
+                ?.let { mayor ->
+                    categorias.find { it.id == mayor.categoriaId }?.let { RecorteSugerido(it.nombre, mayor.recortable) }
+                }
 
             val mesesDeDatos = when (estimacion.fuente) {
                 FuenteAhorro.APORTES -> aportes.map { YearMonth.from(it.fecha) }.distinct().size.coerceAtMost(3)
@@ -132,6 +146,7 @@ class DetalleMetaViewModel(
                     estimacion = estimacion,
                     mensajeIa = mensajeParaMeta(estimacion),
                     mesesDeDatos = mesesDeDatos,
+                    recorte = recorte,
                     cargando = false,
                 )
             }

@@ -139,7 +139,7 @@ class RenovadorDesafios(
             if (periodo == PeriodoDesafio.SEMANAL) R.string.desafios_esta_semana else R.string.desafios_este_mes,
         )
         val limite = Formato.monto(montoLimite ?: BigDecimal.ZERO)
-        val costumbre = Formato.monto(basadoEn ?: BigDecimal.ZERO)
+        val costumbre = Formato.montoAproximado(basadoEn ?: BigDecimal.ZERO)
         val objetivo = diasObjetivo ?: 0
         val nombre = categoriaNombre.orEmpty()
         val dificil = plantilla?.dificil == true

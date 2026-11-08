@@ -30,6 +30,18 @@ object Formato {
         return "${simboloMoneda(moneda)} $texto"
     }
 
+    /** Lleva una estimación a múltiplos de 10: 3465,48 → 3470. Un monto futuro no tiene centavos. */
+    fun aproximado(valor: BigDecimal): BigDecimal =
+        valor.divide(BigDecimal.TEN, 0, RoundingMode.HALF_UP).multiply(BigDecimal.TEN)
+
+    /** Para estimaciones: 3465.48 → "Bs 3.470". */
+    fun montoAproximado(valor: BigDecimal, moneda: String = "BOB"): String =
+        "${simboloMoneda(moneda)} ${DecimalFormat("#,##0", simbolos).format(aproximado(valor))}"
+
+    /** Sin centavos y hacia abajo, para no prometer de más: 18.33 → "Bs 18". */
+    fun montoEntero(valor: BigDecimal, moneda: String = "BOB"): String =
+        "${simboloMoneda(moneda)} ${DecimalFormat("#,##0", simbolos).format(valor.setScale(0, RoundingMode.DOWN))}"
+
     /** Monto con signo para el historial: gasto "- Bs 20,00", ingreso "+ Bs 20,00". */
     fun montoConSigno(valor: BigDecimal, esGasto: Boolean, moneda: String = "BOB"): String =
         (if (esGasto) "- " else "+ ") + monto(valor, moneda)
@@ -77,6 +89,9 @@ object Formato {
 
     /** "Octubre 2026" */
     fun mes(fecha: LocalDate): String = fecha.format(mesAnio).replaceFirstChar { it.uppercase() }
+
+    /** Para usar dentro de una frase: "marzo de 2027". */
+    fun mesEnFrase(fecha: LocalDate): String = fecha.format(mesAnio).lowercase().replace(" ", " de ")
 
     /** "14:35" en hora de Bolivia. */
     fun hora(instante: Instant): String = instante.atZone(ZONA_BOLIVIA).format(hora)
