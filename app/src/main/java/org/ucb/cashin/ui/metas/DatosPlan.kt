@@ -6,6 +6,8 @@ import org.ucb.cashin.data.ResumenRepository
 import org.ucb.cashin.model.AporteMeta
 import org.ucb.cashin.model.AvanceMeta
 import org.ucb.cashin.model.Categoria
+import org.ucb.cashin.model.GastoCategoriaMes
+import org.ucb.cashin.model.TotalesMes
 import org.ucb.cashin.model.TipoRegistro
 import org.ucb.cashin.prediccion.DesgloseGastos
 import org.ucb.cashin.prediccion.PlanAhorro
@@ -34,16 +36,19 @@ internal suspend fun cargarDatosPlan(
     resumenRepository: ResumenRepository,
     planificadoRepository: PlanificadoRepository,
     categoriaRepository: CategoriaRepository,
+    /** Si quien llama ya los leyó, no se piden otra vez. */
+    historial: List<TotalesMes>? = null,
+    gastoPorCategoria: List<GastoCategoriaMes>? = null,
 ): DatosPlan {
-    val historial = resumenRepository.historialMensual().getOrDefault(emptyList())
+    val meses = historial ?: resumenRepository.historialMensual().getOrDefault(emptyList())
     val hoy = Formato.hoy()
     val categorias = categoriaRepository.listarConArchivadas(TipoRegistro.GASTO).getOrDefault(emptyList())
     return DatosPlan(
-        ingresos = pronosticarSiguienteMes(construirSerie(historial, hoy) { it.totalIngresos }),
-        gastos = pronosticarSiguienteMes(construirSerie(historial, hoy) { it.totalGastos }),
+        ingresos = pronosticarSiguienteMes(construirSerie(meses, hoy) { it.totalIngresos }),
+        gastos = pronosticarSiguienteMes(construirSerie(meses, hoy) { it.totalGastos }),
         desglose = desglosarGastos(
             planificados = planificadoRepository.listar().getOrDefault(emptyList()),
-            gastoPorCategoria = resumenRepository.gastoPorCategoria().getOrDefault(emptyList()),
+            gastoPorCategoria = gastoPorCategoria ?: resumenRepository.gastoPorCategoria().getOrDefault(emptyList()),
             importancias = categorias.associate { it.id to it.importancia },
             hoy = hoy,
         ),

@@ -72,6 +72,7 @@ object Formato {
     private val fechaLarga = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", LOCALE_BO)
     private val fechaEnFrase = DateTimeFormatter.ofPattern("d 'de' MMMM", LOCALE_BO)
     private val mesAnio = DateTimeFormatter.ofPattern("MMMM yyyy", LOCALE_BO)
+    private val soloMes = DateTimeFormatter.ofPattern("MMMM", LOCALE_BO)
     private val hora = DateTimeFormatter.ofPattern("HH:mm", LOCALE_BO)
 
     fun hoy(): LocalDate = LocalDate.now(ZONA_BOLIVIA)
@@ -93,6 +94,9 @@ object Formato {
 
     /** "Octubre 2026" */
     fun mes(fecha: LocalDate): String = fecha.format(mesAnio).replaceFirstChar { it.uppercase() }
+
+    /** "Noviembre" */
+    fun nombreMes(fecha: LocalDate): String = fecha.format(soloMes).replaceFirstChar { it.uppercase() }
 
     /** Para usar dentro de una frase: "marzo de 2027". */
     fun mesEnFrase(fecha: LocalDate): String = fecha.format(mesAnio).lowercase().replace(" ", " de ")

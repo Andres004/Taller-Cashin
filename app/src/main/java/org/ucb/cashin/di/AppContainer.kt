@@ -71,6 +71,7 @@ class AppContainer(private val recursos: Resources) {
      * Si al volver a Inicio el nivel es mayor, se celebra "¡Subiste al nivel N!".
      */
     val ultimoNivelVisto: MutableMap<String, Int> = mutableMapOf()
+    val ultimoXpVisto: MutableMap<String, Int> = mutableMapOf()
 
     companion object {
         /** Indica si las claves de Supabase están configuradas en local.properties. */

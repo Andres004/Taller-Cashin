@@ -55,9 +55,9 @@ internal fun DrawScope.dibujarFondoCamino(yMeta: Float) {
  * El sendero: punteado hasta la meta desde el punto [hasta], y verde lo recorrido.
  * [avance] es en unidades de punto (1,5 = a mitad del segundo tramo), así se puede animar.
  */
-internal fun DrawScope.dibujarSendero(puntos: List<Offset>, hasta: Int, avance: Float) {
+internal fun DrawScope.dibujarSendero(puntos: List<Offset>, hasta: Int, avance: Float, escala: Float = 1f) {
     if (puntos.size < 2) return
-    val u = 1.dp.toPx()
+    val u = 1.dp.toPx() * escala
     if (hasta < puntos.lastIndex) {
         val falta = ruta(puntos.drop(hasta.coerceAtLeast(0)))
         drawPath(falta, CremaTarjeta, style = Stroke(20 * u, cap = StrokeCap.Round))

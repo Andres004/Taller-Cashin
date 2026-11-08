@@ -155,9 +155,9 @@ fun PrincipalNavHost() {
         ) {
             composable<Rutas.Inicio> {
                 InicioScreen(
-                    onVerTodo = { irAPestana(Rutas.Historial) },
-                    onRegistroClick = { registroId -> abrirRegistro(registroId) },
                     onAbrirDesafios = { nav.navigate(Rutas.Desafios) },
+                    onMetaClick = { metaId -> nav.navigate(Rutas.DetalleMeta(metaId)) },
+                    onNuevaMeta = { nav.navigate(Rutas.NuevaMeta) },
                 )
             }
 

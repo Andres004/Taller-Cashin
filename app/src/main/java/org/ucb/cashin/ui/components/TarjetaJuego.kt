@@ -22,12 +22,13 @@ private val FORMA_INTERIOR = RoundedCornerShape(18.dp)
 
 /**
  * Tarjeta "de juego": borde de 2 dp con relieve de 5 dp abajo.
- * Si se pasa [onClick], toda la tarjeta es tocable.
+ * Si se pasa [onClick], toda la tarjeta es tocable. Con [conRelleno] en false, el contenido llega al borde.
  */
 @Composable
 fun TarjetaJuego(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    conRelleno: Boolean = true,
     contenido: @Composable ColumnScope.() -> Unit,
 ) {
     val interior: @Composable () -> Unit = {
@@ -36,7 +37,7 @@ fun TarjetaJuego(
             color = CremaTarjeta,
             modifier = Modifier.padding(start = 2.dp, top = 2.dp, end = 2.dp, bottom = 5.dp),
         ) {
-            Column(modifier = Modifier.padding(Espacio.m), content = contenido)
+            Column(modifier = if (conRelleno) Modifier.padding(Espacio.m) else Modifier, content = contenido)
         }
     }
     if (onClick != null) {

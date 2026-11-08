@@ -53,6 +53,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -116,6 +117,7 @@ private val MONEDA_ACTUAL = 72.dp
 private val MONEDA_META = 84.dp
 private val MONEDA_LOGRADA = 96.dp
 private val ANCHO_FINAL = 280.dp
+internal val MARGEN_MONEDA = 6.dp
 private val ALTO_ENCABEZADO = 48.dp
 private val FORMA_FILA = RoundedCornerShape(14.dp)
 private const val DURACION_CELEBRACION_MS = 2800L
@@ -316,7 +318,11 @@ private fun EscenaCamino(
             val xChip = if (indice >= 0) esquema.xPaso(indice) else esquema.indiceActual?.let(esquema::xPaso) ?: xMeta
             val yChip = if (indice >= 0) esquema.ys[indice] else esquema.foco
             key(celebracion) {
-                ChipAhorro(celebracion.monto, Modifier.offset(xChip + 24.dp, yChip - 50.dp).zIndex(6f))
+                ChipSube(
+                    texto = stringResource(R.string.camino_ganado, Formato.montoEntero(celebracion.monto)),
+                    color = VerdeMedio,
+                    modifier = Modifier.offset(xChip + 24.dp, yChip - 50.dp).zIndex(6f),
+                )
                 Confeti(foco = yChip, onFin = {})
             }
         }
@@ -363,7 +369,7 @@ private fun MonedaDePaso(
         estilo = estilo,
         tamano = tamano,
         modifier = Modifier
-            .offset(x - tamano / 2, y - tamano / 2)
+            .offset(x - tamano / 2 - MARGEN_MONEDA, y - tamano / 2 - MARGEN_MONEDA)
             .graphicsLayer {
                 scaleX = escala.value
                 scaleY = escala.value
@@ -392,28 +398,29 @@ private fun MonedaDePaso(
     }
 }
 
-private enum class EstiloMoneda { ORO, ACTUAL, PENDIENTE, TOCADA, META }
+internal enum class EstiloMoneda { ORO, ACTUAL, PENDIENTE, TOCADA, META }
 
 /** Moneda del camino, con relieve abajo y su contenido al centro. */
 @Composable
-private fun MonedaPaso(
+internal fun MonedaPaso(
     estilo: EstiloMoneda,
     tamano: Dp,
     modifier: Modifier = Modifier,
+    escalaBorde: Float = 1f,
     contenido: @Composable () -> Unit,
 ) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .size(tamano + 12.dp)
-            .padding(6.dp)
-            .drawBehind { dibujarMoneda(estilo) },
+            .size(tamano + MARGEN_MONEDA * 2)
+            .padding(MARGEN_MONEDA)
+            .drawBehind { dibujarMoneda(estilo, escalaBorde) },
     ) { contenido() }
 }
 
-private fun DrawScope.dibujarMoneda(estilo: EstiloMoneda) {
+private fun DrawScope.dibujarMoneda(estilo: EstiloMoneda, escalaBorde: Float) {
     val radio = size.minDimension / 2
-    val u = 1.dp.toPx()
+    val u = 1.dp.toPx() * escalaBorde
     when (estilo) {
         EstiloMoneda.ORO, EstiloMoneda.ACTUAL -> {
             drawCircle(NaranjaRelieve, radio + 2 * u)
@@ -436,7 +443,7 @@ private fun DrawScope.dibujarMoneda(estilo: EstiloMoneda) {
 }
 
 @Composable
-private fun AroPulsante(modifier: Modifier) {
+internal fun AroPulsante(modifier: Modifier, tamano: Dp = 92.dp, grosor: Dp = 5.dp) {
     val transicion = rememberInfiniteTransition(label = "aro")
     val avance by transicion.animateFloat(
         initialValue = 0f,
@@ -446,14 +453,14 @@ private fun AroPulsante(modifier: Modifier) {
     )
     Box(
         modifier = modifier
-            .size(92.dp)
+            .size(tamano)
             .graphicsLayer {
                 val escala = 0.82f + avance * 0.46f
                 scaleX = escala
                 scaleY = escala
                 alpha = (1f - avance) * 0.44f
             }
-            .border(5.dp, Naranja, CircleShape),
+            .border(grosor, Naranja, CircleShape),
     )
 }
 
@@ -599,7 +606,7 @@ private fun FinalDelCamino(
         estilo = EstiloMoneda.META,
         tamano = tamano,
         modifier = Modifier
-            .offset(x - tamano / 2 - 6.dp, y - tamano / 2 - 6.dp)
+            .offset(x - tamano / 2 - MARGEN_MONEDA, y - tamano / 2 - MARGEN_MONEDA)
             .graphicsLayer {
                 scaleX = escala.value
                 scaleY = escala.value
@@ -715,13 +722,13 @@ private fun GloboPaso(paso: PasoAhorro, y: Dp, ancho: Dp) {
     }
 }
 
-/** "+ Bs 240" que sube y se desvanece. */
+/** "+ Bs 240" o "+ 30 XP" que sube y se desvanece. */
 @Composable
-private fun ChipAhorro(monto: BigDecimal, modifier: Modifier) {
+internal fun ChipSube(texto: String, color: Color, modifier: Modifier = Modifier) {
     val avance = remember { Animatable(0f) }
     LaunchedEffect(Unit) { avance.animateTo(1f, tween(1400, easing = LinearEasing)) }
     Text(
-        text = stringResource(R.string.camino_ganado, Formato.montoEntero(monto)),
+        text = texto,
         style = MaterialTheme.typography.titleSmall,
         fontWeight = FontWeight.Bold,
         color = Blanco,
@@ -731,7 +738,7 @@ private fun ChipAhorro(monto: BigDecimal, modifier: Modifier) {
                 translationY = (16f - 40f * t) * density
                 alpha = minOf(t * 4f, 1f) * if (t > 0.85f) (1f - t) / 0.15f else 1f
             }
-            .background(VerdeMedio, RoundedCornerShape(14.dp))
+            .background(color, RoundedCornerShape(14.dp))
             .padding(horizontal = 11.dp, vertical = 5.dp),
     )
 }
@@ -739,7 +746,7 @@ private fun ChipAhorro(monto: BigDecimal, modifier: Modifier) {
 private class PiezaConfeti(val x: Float, val y: Float, val velocidad: Float, val retardo: Float, val indiceColor: Int)
 
 @Composable
-private fun Confeti(foco: Dp, onFin: () -> Unit) {
+internal fun Confeti(foco: Dp, onFin: () -> Unit) {
     val avance = remember { Animatable(0f) }
     val colores = remember { listOf(Naranja, Verde, VerdeClaro, VerdeMedio) }
     val piezas = remember {

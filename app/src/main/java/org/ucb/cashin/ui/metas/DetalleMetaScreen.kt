@@ -416,7 +416,7 @@ private fun TarjetaCuandoLoLogro(
             stringResource(R.string.plan_ritmo, monto, periodo),
         )
         EstadoPlan.CON_RECORTE -> Pair(
-            stringResource(R.string.plan_con_recorte),
+            stringResource(if (tieneFechaLimite || fecha == null) R.string.plan_con_recorte else R.string.plan_con_recorte_sin_fecha),
             if (tieneFechaLimite || fecha == null) {
                 stringResource(R.string.plan_recorte_fecha, monto, periodo)
             } else {

@@ -11,10 +11,11 @@ import org.ucb.cashin.data.CategoriaRepository
 import org.ucb.cashin.data.DesafioRepository
 import org.ucb.cashin.data.MetaRepository
 import org.ucb.cashin.data.PerfilRepository
-import org.ucb.cashin.data.RegistroRepository
+import org.ucb.cashin.data.PlanificadoRepository
 import org.ucb.cashin.data.RenovadorDesafios
 import org.ucb.cashin.data.ResumenRepository
 import org.ucb.cashin.di.fabricaDe
+import org.ucb.cashin.model.AvanceMeta
 import org.ucb.cashin.model.Desafio
 import org.ucb.cashin.model.ErrorApp
 import org.ucb.cashin.model.EstadoDesafio
@@ -23,14 +24,15 @@ import org.ucb.cashin.model.ProgresoDesafio
 import org.ucb.cashin.model.comoErrorApp
 import org.ucb.cashin.prediccion.Confianza
 import org.ucb.cashin.prediccion.MensajeAvatar
+import org.ucb.cashin.prediccion.PlanAhorro
 import org.ucb.cashin.prediccion.Pronostico
 import org.ucb.cashin.prediccion.construirSerie
 import org.ucb.cashin.prediccion.consejoDelDia
+import org.ucb.cashin.prediccion.elegirMetaPrincipal
 import org.ucb.cashin.prediccion.pronosticarProximoMes
 import org.ucb.cashin.prediccion.pronosticarSiguienteMes
 import org.ucb.cashin.prediccion.proyectarMesActual
-import org.ucb.cashin.ui.registros.RegistroConCategoria
-import org.ucb.cashin.ui.registros.unirConCategorias
+import org.ucb.cashin.ui.metas.cargarDatosPlan
 import org.ucb.cashin.util.Formato
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -44,8 +46,6 @@ data class InicioUiState(
     val anotoHoy: Boolean = false,
     val nivel: Int = 1,
     val xp: Int = 0,
-    val progresoNivel: Float = 0f,
-    val ultimas: List<RegistroConCategoria> = emptyList(),
     /** Pronóstico del gasto de este mes, hecho solo con los meses completos anteriores. */
     val pronosticoMes: Pronostico = Pronostico.SIN_DATOS,
     /** Cómo terminará este mes al ritmo actual. */
@@ -58,15 +58,25 @@ data class InicioUiState(
     val gastaMasRapido: Boolean = false,
     /** HU-21: consejo del día de Cashi (prediccion/Consejos.kt). */
     val mensajeIa: MensajeAvatar? = null,
-    /** Desafíos en curso, con su progreso (tarjeta "Desafío activo"). */
-    val desafiosActivos: List<Desafio> = emptyList(),
+    /** La meta que se muestra en Inicio; null si no tiene ninguna activa. */
+    val metaPrincipal: AvanceMeta? = null,
+    /** El camino de la meta principal; null si no se pudo calcular. */
+    val planMeta: PlanAhorro? = null,
+    /** Si se pudieron leer las metas: sin esto no se invita a crear la primera por error. */
+    val metasDisponibles: Boolean = false,
+    /** Ya completó alguna: entonces no es su "primera meta". */
+    val tieneMetasCompletadas: Boolean = false,
+    /** El reto que se muestra: el que va más cerca de pasarse o, si ninguno tiene límite, el primero. */
+    val retoPrincipal: Desafio? = null,
     val progresoDesafios: Map<String, ProgresoDesafio> = emptyMap(),
     /** HU-23: desafíos que la evaluación cerró (cumplidos o fallidos) y todavía no se mostraron (animación). */
     val resultadosDesafios: List<Desafio> = emptyList(),
-    /** HU-22: acaban de llegar los desafíos de la semana o del mes (aviso "¡Nuevos desafíos disponibles!"). */
+    /** HU-22: acaban de llegar los desafíos de la semana o del mes. */
     val hayDesafiosNuevos: Boolean = false,
     /** HU-24: nivel al que se acaba de subir (celebración); null si no subió. */
     val subioANivel: Int? = null,
+    /** XP ganados desde la última vez que se vio Inicio, para la celebración. */
+    val xpGanado: Int? = null,
     val cargando: Boolean = true,
     val error: ErrorApp? = null,
 ) {
@@ -84,21 +94,21 @@ data class InicioUiState(
 }
 
 /**
- * HU-13: resumen del mes, racha, XP y últimas anotaciones.
- * IA predictiva: proyección del gasto de este mes y pronóstico del próximo (paquete prediccion/).
+ * HU-13: totales del mes. IA predictiva: si le alcanza el mes y la meta principal con su camino.
  * HU-21: consejo del día. HU-22/23: asigna los desafíos nuevos y evalúa los activos al abrir.
  * HU-24: racha en riesgo y subida de nivel.
  */
 class InicioViewModel(
     private val perfilRepository: PerfilRepository,
     private val resumenRepository: ResumenRepository,
-    private val registroRepository: RegistroRepository,
+    private val planificadoRepository: PlanificadoRepository,
     private val categoriaRepository: CategoriaRepository,
     private val desafioRepository: DesafioRepository,
     private val renovadorDesafios: RenovadorDesafios,
     private val metaRepository: MetaRepository,
-    /** Último nivel mostrado por usuario en esta sesión de la app (vive en AppContainer). */
+    /** Último nivel y XP mostrados por usuario en esta sesión de la app (viven en AppContainer). */
     private val ultimoNivelVisto: MutableMap<String, Int>,
+    private val ultimoXpVisto: MutableMap<String, Int>,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InicioUiState())
@@ -128,14 +138,6 @@ class InicioViewModel(
                 mostrarError(e)
                 return@launch
             }
-            val categorias = categoriaRepository.listarTodas().getOrElse { e ->
-                mostrarError(e)
-                return@launch
-            }
-            val ultimas = registroRepository.listar(limite = CANTIDAD_ULTIMAS).getOrElse { e ->
-                mostrarError(e)
-                return@launch
-            }
 
             // Lo que alimenta al motor y a las tarjetas extra: si falla, Inicio se muestra igual.
             val historial = resumenRepository.historialMensual().getOrDefault(emptyList())
@@ -144,7 +146,8 @@ class InicioViewModel(
                 .sortedBy { it.periodo.ordinal }
             val progreso = desafioRepository.progreso().getOrDefault(emptyList())
                 .associateBy { it.desafioId }
-            val metas = metaRepository.listarAvances().getOrDefault(emptyList())
+            val metasLeidas = metaRepository.listarAvances().getOrNull()
+            val metas = metasLeidas.orEmpty()
 
             val hoy = Formato.hoy()
             val gastoDelMes = totales?.totalGastos ?: BigDecimal.ZERO
@@ -156,14 +159,24 @@ class InicioViewModel(
             val ingresoEsperado = pronosticoIngresos.esperado
                 .takeIf { pronosticoIngresos.confianza != Confianza.SIN_DATOS && it.signum() > 0 }
 
-            // Para el consejo: el desafío con límite que va más cerca de pasarse, si hay;
+            // Para el consejo y la tarjeta: el desafío con límite que va más cerca de pasarse, si hay;
             // y la meta activa más avanzada que todavía no llega al objetivo.
-            val desafioDelConsejo = activos
+            val desafioMasCercano = activos
                 .filter { it.montoLimite != null }
                 .maxByOrNull { d -> progreso[d.id]?.gastado?.divide(d.montoLimite, 4, RoundingMode.HALF_UP) ?: BigDecimal.ZERO }
             val metaMasCercana = metas
                 .filter { it.estado == EstadoMeta.ACTIVA && it.totalAhorrado < it.montoObjetivo }
                 .maxByOrNull { it.progreso }
+
+            val metaPrincipal = elegirMetaPrincipal(metas)
+            val planMeta = metaPrincipal?.let { meta ->
+                metaRepository.listarAportes(meta.metaId).getOrNull()?.let { aportes ->
+                    cargarDatosPlan(
+                        resumenRepository, planificadoRepository, categoriaRepository,
+                        historial = historial, gastoPorCategoria = gastoPorCategoria,
+                    ).planPara(meta, aportes)
+                }
+            }
 
             val racha = perfil.rachaVigente(hoy)
             val anotoHoy = perfil.anotoHoy(hoy)
@@ -174,15 +187,18 @@ class InicioViewModel(
                 gastoPorCategoria = gastoPorCategoria,
                 proyeccionDelMes = proyeccion,
                 pronosticoDelMes = pronosticoMes,
-                desafioActivo = desafioDelConsejo,
-                progreso = desafioDelConsejo?.let { progreso[it.id] },
+                desafioActivo = desafioMasCercano,
+                progreso = desafioMasCercano?.let { progreso[it.id] },
                 metaMasCercana = metaMasCercana,
             )
 
             // HU-24: la primera carga solo guarda el nivel; las siguientes celebran si subió.
             val nivelAnterior = ultimoNivelVisto[perfil.id]
+            val xpAnterior = ultimoXpVisto[perfil.id]
             val subioANivel = perfil.nivel.takeIf { nivelAnterior != null && it > nivelAnterior }
+            val xpGanado = xpAnterior?.let { perfil.xp - it }?.takeIf { subioANivel != null && it > 0 }
             ultimoNivelVisto[perfil.id] = perfil.nivel
+            ultimoXpVisto[perfil.id] = perfil.xp
 
             yaSeMostro = true
             _uiState.update {
@@ -194,21 +210,24 @@ class InicioViewModel(
                     anotoHoy = anotoHoy,
                     nivel = perfil.nivel,
                     xp = perfil.xp,
-                    progresoNivel = perfil.progresoNivel,
-                    ultimas = unirConCategorias(ultimas, categorias),
                     pronosticoMes = pronosticoMes,
                     proyeccionMes = proyeccion,
                     pronosticoProximo = pronosticoProximo,
                     ingresoEsperado = ingresoEsperado,
                     gastaMasRapido = pronosticoMes.confianza != Confianza.SIN_DATOS && proyeccion > pronosticoMes.maximo,
                     mensajeIa = consejo,
-                    desafiosActivos = activos,
+                    metaPrincipal = metaPrincipal,
+                    planMeta = planMeta,
+                    metasDisponibles = metasLeidas != null,
+                    tieneMetasCompletadas = metas.any { m -> m.estado == EstadoMeta.COMPLETADA },
+                    retoPrincipal = desafioMasCercano ?: activos.firstOrNull(),
                     progresoDesafios = progreso,
                     hayDesafiosNuevos = it.hayDesafiosNuevos || llegaron.isNotEmpty(),
                     resultadosDesafios = it.resultadosDesafios + evaluados.filter { d ->
                         d.estado == EstadoDesafio.CUMPLIDO || d.estado == EstadoDesafio.FALLIDO
                     },
                     subioANivel = subioANivel,
+                    xpGanado = xpGanado,
                     cargando = false,
                     error = null,
                 )
@@ -219,19 +238,17 @@ class InicioViewModel(
     /** La animación del primer desafío cerrado ya se vio: pasa al siguiente (si hay). */
     fun resultadoVisto() = _uiState.update { it.copy(resultadosDesafios = it.resultadosDesafios.drop(1)) }
 
-    /** El aviso de desafíos nuevos ya se vio (se cerró o se abrió Desafíos). */
+    /** El aviso de desafíos nuevos ya se vio (se abrió Desafíos). */
     fun avisoNuevosVisto() = _uiState.update { it.copy(hayDesafiosNuevos = false) }
 
     private fun mostrarError(e: Throwable) =
         _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) }
 
     companion object {
-        private const val CANTIDAD_ULTIMAS = 5L
-
         val Factory = fabricaDe {
             InicioViewModel(
-                it.perfilRepository, it.resumenRepository, it.registroRepository, it.categoriaRepository,
-                it.desafioRepository, it.renovadorDesafios, it.metaRepository, it.ultimoNivelVisto,
+                it.perfilRepository, it.resumenRepository, it.planificadoRepository, it.categoriaRepository,
+                it.desafioRepository, it.renovadorDesafios, it.metaRepository, it.ultimoNivelVisto, it.ultimoXpVisto,
             )
         }
     }
