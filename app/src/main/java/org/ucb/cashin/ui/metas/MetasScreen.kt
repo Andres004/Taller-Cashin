@@ -39,6 +39,7 @@ import org.ucb.cashin.ui.components.Emocion
 import org.ucb.cashin.ui.components.EstadoCargando
 import org.ucb.cashin.ui.components.EstadoError
 import org.ucb.cashin.ui.components.EstadoVacio
+import org.ucb.cashin.ui.components.RecursoCashi
 import org.ucb.cashin.ui.components.mensaje
 import org.ucb.cashin.ui.theme.CashinColores
 import org.ucb.cashin.ui.theme.CashinTheme
@@ -99,6 +100,7 @@ fun MetasContenido(
                 emocion = Emocion.FELIZ,
                 textoAccion = stringResource(R.string.metas_vacio_accion),
                 onAccion = onNueva,
+                recurso = RecursoCashi.METAS_VACIO,
             )
 
             else -> Column(modifier = Modifier.fillMaxSize()) {

@@ -48,9 +48,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.ucb.cashin.R
 import org.ucb.cashin.model.Categoria
 import org.ucb.cashin.model.TipoRegistro
+import org.ucb.cashin.ui.components.AvatarBurbuja
 import org.ucb.cashin.ui.components.CashinBoton
 import org.ucb.cashin.ui.components.CashinCampoTexto
 import org.ucb.cashin.ui.components.CashinTopBar
+import org.ucb.cashin.ui.components.Emocion
 import org.ucb.cashin.ui.components.EstadoCargando
 import org.ucb.cashin.ui.components.EstadoError
 import org.ucb.cashin.ui.components.EstadoVacio
@@ -81,6 +83,10 @@ fun CategoriasScreen(
         onColorCambio = viewModel::onColorCambio,
         onCrear = viewModel::crear,
         onCerrarDialogo = viewModel::cerrarDialogo,
+        onAbrirImportancia = viewModel::abrirImportancia,
+        onImportanciaCambio = viewModel::onImportanciaCambio,
+        onGuardarImportancia = viewModel::guardarImportancia,
+        onCerrarImportancia = viewModel::cerrarImportancia,
     )
 }
 
@@ -98,6 +104,10 @@ fun CategoriasContenido(
     onColorCambio: (String) -> Unit,
     onCrear: () -> Unit,
     onCerrarDialogo: () -> Unit,
+    onAbrirImportancia: (Categoria) -> Unit,
+    onImportanciaCambio: (Int) -> Unit,
+    onGuardarImportancia: () -> Unit,
+    onCerrarImportancia: () -> Unit,
 ) {
     var porArchivar by remember { mutableStateOf<Categoria?>(null) }
 
@@ -148,12 +158,30 @@ fun CategoriasContenido(
                         contentPadding = PaddingValues(horizontal = Espacio.pantalla, vertical = Espacio.s),
                         verticalArrangement = Arrangement.spacedBy(Espacio.s),
                     ) {
+                        if (estado.tipo == TipoRegistro.GASTO) {
+                            item(key = "aviso-importancia") {
+                                AvatarBurbuja(
+                                    mensaje = stringResource(R.string.categorias_importancia_aviso),
+                                    emocion = Emocion.FELIZ,
+                                    tamanoAvatar = 64.dp,
+                                )
+                            }
+                        }
                         items(estado.categorias, key = { it.id }) { categoria ->
-                            FilaCategoria(
-                                categoria = categoria,
-                                onArchivar = { porArchivar = categoria },
-                                onDesarchivar = { onArchivar(categoria, false) },
-                            )
+                            if (categoria.tipo == TipoRegistro.GASTO) {
+                                FilaGasto(
+                                    categoria = categoria,
+                                    onTocar = { onAbrirImportancia(categoria) },
+                                    onArchivar = { porArchivar = categoria },
+                                    onDesarchivar = { onArchivar(categoria, false) },
+                                )
+                            } else {
+                                FilaCategoria(
+                                    categoria = categoria,
+                                    onArchivar = { porArchivar = categoria },
+                                    onDesarchivar = { onArchivar(categoria, false) },
+                                )
+                            }
                         }
                     }
                 }
@@ -190,6 +218,18 @@ fun CategoriasContenido(
                 }
             },
             containerColor = MaterialTheme.colorScheme.background,
+        )
+    }
+
+    estado.categoriaEditando?.let { categoria ->
+        HojaImportancia(
+            categoria = categoria,
+            elegida = estado.importanciaElegida,
+            guardando = estado.guardandoImportancia,
+            error = estado.errorImportancia,
+            onElegir = onImportanciaCambio,
+            onGuardar = onGuardarImportancia,
+            onCerrar = onCerrarImportancia,
         )
     }
 
@@ -407,5 +447,9 @@ private fun CategoriasPreview() = CashinTheme {
         onColorCambio = {},
         onCrear = {},
         onCerrarDialogo = {},
+        onAbrirImportancia = {},
+        onImportanciaCambio = {},
+        onGuardarImportancia = {},
+        onCerrarImportancia = {},
     )
 }

@@ -58,6 +58,7 @@ import org.ucb.cashin.ui.components.CashinTopBar
 import org.ucb.cashin.ui.components.Emocion
 import org.ucb.cashin.ui.components.EstadoCargando
 import org.ucb.cashin.ui.components.EstadoError
+import org.ucb.cashin.ui.components.RecursoCashi
 import org.ucb.cashin.ui.components.VarianteBoton
 import org.ucb.cashin.ui.components.emocion
 import org.ucb.cashin.ui.components.textoConfianza
@@ -187,6 +188,11 @@ fun DetalleMetaContenido(
                                     },
                                 ),
                                 emocion = Emocion.CELEBRANDO,
+                                recurso = if (estado.recienCompletada || estado.completada) {
+                                    RecursoCashi.META_COMPLETADA
+                                } else {
+                                    RecursoCashi.META_LOGRADA
+                                },
                             )
                             if (!estado.completada) {
                                 CashinBoton(

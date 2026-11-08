@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ucb.cashin.R
+import org.ucb.cashin.data.CategoriaRepository
 import org.ucb.cashin.data.MetaRepository
+import org.ucb.cashin.data.PlanificadoRepository
 import org.ucb.cashin.data.ResumenRepository
 import org.ucb.cashin.di.fabricaDe
 import org.ucb.cashin.model.AporteMeta
@@ -18,9 +20,11 @@ import org.ucb.cashin.model.ErrorApp
 import org.ucb.cashin.model.EstadoMeta
 import org.ucb.cashin.model.NuevoAporteMeta
 import org.ucb.cashin.model.TipoAporte
+import org.ucb.cashin.model.TipoRegistro
 import org.ucb.cashin.model.comoErrorApp
 import org.ucb.cashin.prediccion.EstimacionMeta
 import org.ucb.cashin.prediccion.FuenteAhorro
+import org.ucb.cashin.prediccion.desglosarGastos
 import org.ucb.cashin.prediccion.MensajeAvatar
 import org.ucb.cashin.prediccion.construirSerie
 import org.ucb.cashin.prediccion.estimarMeta
@@ -75,6 +79,8 @@ data class DetalleMetaUiState(
 class DetalleMetaViewModel(
     private val metaRepository: MetaRepository,
     private val resumenRepository: ResumenRepository,
+    private val planificadoRepository: PlanificadoRepository,
+    private val categoriaRepository: CategoriaRepository,
     private val metaId: String,
 ) : ViewModel() {
 
@@ -103,7 +109,15 @@ class DetalleMetaViewModel(
             val hoy = Formato.hoy()
             val pronosticoIngresos = pronosticarSiguienteMes(construirSerie(historial, hoy) { it.totalIngresos })
             val pronosticoGastos = pronosticarSiguienteMes(construirSerie(historial, hoy) { it.totalGastos })
-            val estimacion = estimarMeta(avance, aportes, pronosticoIngresos, pronosticoGastos, hoy)
+            // Si algo de esto falla, la capacidad se calcula solo con el pronóstico.
+            val desgloseGastos = desglosarGastos(
+                planificados = planificadoRepository.listar().getOrDefault(emptyList()),
+                gastoPorCategoria = resumenRepository.gastoPorCategoria().getOrDefault(emptyList()),
+                importancias = categoriaRepository.listarConArchivadas(TipoRegistro.GASTO).getOrDefault(emptyList())
+                    .associate { it.id to it.importancia },
+                hoy = hoy,
+            )
+            val estimacion = estimarMeta(avance, aportes, pronosticoIngresos, pronosticoGastos, hoy, desgloseGastos)
 
             val mesesDeDatos = when (estimacion.fuente) {
                 FuenteAhorro.APORTES -> aportes.map { YearMonth.from(it.fecha) }.distinct().size.coerceAtMost(3)
@@ -231,6 +245,8 @@ class DetalleMetaViewModel(
         /** Igual que varchar(200) de aporte_meta.nota. */
         const val MAX_NOTA = 200
 
-        fun fabrica(metaId: String) = fabricaDe { DetalleMetaViewModel(it.metaRepository, it.resumenRepository, metaId) }
+        fun fabrica(metaId: String) = fabricaDe {
+            DetalleMetaViewModel(it.metaRepository, it.resumenRepository, it.planificadoRepository, it.categoriaRepository, metaId)
+        }
     }
 }

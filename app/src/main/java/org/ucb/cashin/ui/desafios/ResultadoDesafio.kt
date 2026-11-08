@@ -49,6 +49,7 @@ import org.ucb.cashin.model.ReglaDesafio
 import org.ucb.cashin.ui.components.AvatarImagen
 import org.ucb.cashin.ui.components.CashinBoton
 import org.ucb.cashin.ui.components.Emocion
+import org.ucb.cashin.ui.components.RecursoCashi
 import org.ucb.cashin.ui.components.VarianteBoton
 import org.ucb.cashin.ui.theme.CashinColores
 import org.ucb.cashin.ui.theme.Espacio
@@ -178,6 +179,7 @@ private fun CashiCelebrando() {
     AvatarImagen(
         emocion = Emocion.CELEBRANDO,
         tamano = 128.dp,
+        recurso = RecursoCashi.DESAFIO_CUMPLIDO,
         modifier = Modifier.graphicsLayer {
             scaleX = escala.value
             scaleY = escala.value

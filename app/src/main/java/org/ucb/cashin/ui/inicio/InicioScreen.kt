@@ -60,6 +60,7 @@ import org.ucb.cashin.ui.components.Emocion
 import org.ucb.cashin.ui.components.EstadoCargando
 import org.ucb.cashin.ui.components.EstadoError
 import org.ucb.cashin.ui.components.FilaRegistro
+import org.ucb.cashin.ui.components.RecursoCashi
 import org.ucb.cashin.ui.components.VarianteBoton
 import org.ucb.cashin.ui.components.emocion
 import org.ucb.cashin.ui.components.texto
@@ -218,6 +219,7 @@ private fun Celebraciones(estado: InicioUiState) {
         AvatarBurbuja(
             mensaje = stringResource(R.string.inicio_subiste_nivel, nivel),
             emocion = Emocion.CELEBRANDO,
+            recurso = RecursoCashi.SUBIDA_NIVEL,
         )
     }
 }

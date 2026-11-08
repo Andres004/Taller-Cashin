@@ -190,6 +190,27 @@
     <string name="categorias_crear">Crear categoría</string>
     <string name="categorias_error_nombre">Escribe un nombre de hasta 50 caracteres</string>
     <string name="categorias_error_repetida">Ya existe una categoría con ese nombre</string>
+    <string name="categorias_tuya">Tuya</string>
+    <string name="categorias_importancia_aviso">Ya le puse una importancia a cada categoría. Si alguna no te cuadra, tócala y la cambias.</string>
+    <string name="categorias_importancia_detalle">%1$s · %2$s</string>
+    <string name="categorias_importancia_sobre">/5</string>
+    <string name="categorias_importancia_descripcion">Importancia %1$d de 5</string>
+    <string name="categorias_importancia_pregunta">¿Qué tan importante es este gasto para ti?</string>
+    <string name="categorias_importancia_minimo">Se puede dejar</string>
+    <string name="categorias_importancia_maximo">No puedo dejarlo</string>
+    <string name="categorias_importancia_nota">Tus pagos planificados siempre cuentan como imprescindibles.</string>
+    <string name="categorias_guardar">Guardar</string>
+    <string name="categorias_guardando">Guardando…</string>
+    <string name="importancia_5_nombre">Imprescindible</string>
+    <string name="importancia_5_mensaje">Nunca te sugeriré recortar aquí.</string>
+    <string name="importancia_4_nombre">Importante</string>
+    <string name="importancia_4_mensaje">Solo te sugeriré ajustes pequeños.</string>
+    <string name="importancia_3_nombre">Flexible</string>
+    <string name="importancia_3_mensaje">Puedes recortar un poco si hace falta.</string>
+    <string name="importancia_2_nombre">Recortable</string>
+    <string name="importancia_2_mensaje">Aquí puedes ahorrar bastante.</string>
+    <string name="importancia_1_nombre">Prescindible</string>
+    <string name="importancia_1_mensaje">Aquí es donde más puedes ahorrar.</string>
 
     <!-- Pagos e ingresos esperados (HU-15, HU-16) -->
     <string name="planificados_vacio_titulo">Nada esperado por ahora</string>

@@ -1,7 +1,5 @@
 package org.ucb.cashin.ui.components
 
-import androidx.annotation.DrawableRes
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -15,8 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -30,12 +26,12 @@ import org.ucb.cashin.ui.theme.Espacio
  * Emociones del avatar "Salchi". Coinciden con el campo `emocion` que devuelve la IA
  * (Maestro §8.3: feliz | neutral | preocupado | celebrando). `COOL` es para rachas y logros.
  */
-enum class Emocion(@DrawableRes val imagen: Int) {
-    FELIZ(R.drawable.avatar_feliz),
-    NEUTRAL(R.drawable.avatar_pensando),
-    PREOCUPADO(R.drawable.avatar_pensando), // TODO: reemplazar con la pose "preocupado" del Figma
-    CELEBRANDO(R.drawable.avatar_celebrando),
-    COOL(R.drawable.avatar_cool);
+enum class Emocion(val recurso: RecursoCashi) {
+    FELIZ(RecursoCashi.FELIZ),
+    NEUTRAL(RecursoCashi.PENSANDO),
+    PREOCUPADO(RecursoCashi.PREOCUPADO),
+    CELEBRANDO(RecursoCashi.CELEBRANDO),
+    COOL(RecursoCashi.COOL);
 
     companion object {
         /** Convierte el texto de la IA ("feliz", "celebrando"...) en una emoción; NEUTRAL si no se reconoce. */
@@ -44,17 +40,17 @@ enum class Emocion(@DrawableRes val imagen: Int) {
     }
 }
 
-/** Solo la imagen del avatar. En el Sprint 5 se reemplaza por la animación Lottie (T-16). */
+/** Solo el avatar. [recurso] permite usar la imagen de un momento concreto (por ejemplo, un logro). */
 @Composable
 fun AvatarImagen(
     emocion: Emocion,
     modifier: Modifier = Modifier,
     tamano: Dp = 96.dp,
+    recurso: RecursoCashi = emocion.recurso,
 ) {
-    Image(
-        painter = painterResource(emocion.imagen),
+    ImagenCashi(
+        recurso = recurso,
         contentDescription = stringResource(R.string.avatar_descripcion),
-        contentScale = ContentScale.Fit,
         modifier = modifier.size(tamano),
     )
 }
@@ -69,13 +65,14 @@ fun AvatarBurbuja(
     modifier: Modifier = Modifier,
     emocion: Emocion = Emocion.FELIZ,
     tamanoAvatar: Dp = 88.dp,
+    recurso: RecursoCashi = emocion.recurso,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Espacio.s),
     ) {
-        AvatarImagen(emocion = emocion, tamano = tamanoAvatar)
+        AvatarImagen(emocion = emocion, tamano = tamanoAvatar, recurso = recurso)
         Box(modifier = Modifier.weight(1f)) {
             Surface(
                 color = CashinColores.fondoAvatar,
