@@ -115,24 +115,9 @@ private fun ritmoDeAhorro(
     pronosticoGastos: Pronostico,
     desgloseGastos: DesgloseGastos?,
 ): Triple<BigDecimal, FuenteAhorro, Confianza> {
-    // 1. Por aportes: neto de cada mes (ahorros suman, retiros restan).
-    val netoPorMes: Map<YearMonth, BigDecimal> = aportes
-        .groupBy { YearMonth.from(it.fecha) }
-        .mapValues { (_, delMes) ->
-            delMes.fold(BigDecimal.ZERO) { suma, aporte ->
-                if (aporte.tipo == TipoAporte.AHORRO) suma + aporte.monto else suma - aporte.monto
-            }
-        }
-
-    if (netoPorMes.size >= 2) {
-        val recientes = netoPorMes.entries
-            .sortedByDescending { it.key }
-            .take(MESES_RITMO_APORTES)
-            .map { it.value }
-        val promedio = recientes
-            .fold(BigDecimal.ZERO) { suma, valor -> suma + valor }
-            .divide(BigDecimal.valueOf(recientes.size.toLong()), 2, RoundingMode.HALF_UP)
-        val confianza = if (recientes.size >= MESES_RITMO_APORTES) Confianza.MEDIA else Confianza.BAJA
+    // 1. Por aportes.
+    ritmoPorAportes(aportes)?.let { (promedio, meses) ->
+        val confianza = if (meses >= MESES_RITMO_APORTES) Confianza.MEDIA else Confianza.BAJA
         return Triple(promedio, FuenteAhorro.APORTES, confianza)
     }
 
@@ -145,4 +130,28 @@ private fun ritmoDeAhorro(
 
     // 3. Sin datos.
     return Triple(BigDecimal.ZERO.setScale(2), FuenteAhorro.SIN_DATOS, Confianza.SIN_DATOS)
+}
+
+/**
+ * Promedio mensual de los aportes netos (ahorros − retiros) de los últimos 3 meses con aportes, y
+ * cuántos meses se usaron. Null si hay aportes en menos de 2 meses distintos.
+ */
+internal fun ritmoPorAportes(aportes: List<AporteMeta>): Pair<BigDecimal, Int>? {
+    val netoPorMes: Map<YearMonth, BigDecimal> = aportes
+        .groupBy { YearMonth.from(it.fecha) }
+        .mapValues { (_, delMes) ->
+            delMes.fold(BigDecimal.ZERO) { suma, aporte ->
+                if (aporte.tipo == TipoAporte.AHORRO) suma + aporte.monto else suma - aporte.monto
+            }
+        }
+    if (netoPorMes.size < 2) return null
+
+    val recientes = netoPorMes.entries
+        .sortedByDescending { it.key }
+        .take(MESES_RITMO_APORTES)
+        .map { it.value }
+    val promedio = recientes
+        .fold(BigDecimal.ZERO) { suma, valor -> suma + valor }
+        .divide(BigDecimal.valueOf(recientes.size.toLong()), 2, RoundingMode.HALF_UP)
+    return promedio to recientes.size
 }
