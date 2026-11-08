@@ -104,25 +104,42 @@
 
     <!-- Inicio (HU-13) -->
     <string name="inicio_saludo">¡Hola, %1$s!</string>
-    <string name="inicio_diferencia">Diferencia del mes</string>
+    <string name="inicio_diferencia_corta">Diferencia</string>
+    <string name="inicio_este_mes">Este mes · %1$s</string>
+    <string name="inicio_tu_meta">Tu meta</string>
+    <string name="inicio_tu_reto">Tu reto</string>
+    <string name="inicio_ver">Ver</string>
+    <string name="inicio_ver_camino">Ver mi camino</string>
+    <string name="inicio_ver_meta">Ver mi meta</string>
+    <string name="inicio_porcentaje">%1$d %%</string>
+    <string name="inicio_marcala">Márcala como completada y gana 100 XP.</string>
+    <string name="inicio_sin_activas_titulo">No tienes metas activas</string>
+    <string name="inicio_chip_racha">🔥 %1$d</string>
+    <string name="inicio_chip_nivel">Nivel %1$d · %2$d XP</string>
+    <string name="inicio_xp_ganado">+ %1$d XP</string>
     <string name="inicio_gastos">Gastos</string>
     <string name="inicio_ingresos">Ingresos</string>
-    <string name="inicio_racha">Racha 🔥</string>
     <plurals name="inicio_dias_seguidos">
         <item quantity="one">día seguido</item>
         <item quantity="other">días seguidos</item>
     </plurals>
     <string name="inicio_nivel">Nivel %1$d</string>
     <string name="inicio_xp">%1$d XP</string>
-    <string name="inicio_ultimas">Últimas anotaciones</string>
-    <string name="inicio_ver_todo">Ver todo</string>
-    <string name="inicio_sin_anotaciones">Todavía no tienes anotaciones. Toca + para empezar.</string>
-    <string name="inicio_pronostico">Pronóstico</string>
-    <string name="inicio_pronostico_sin_datos">Necesito al menos un mes completo de anotaciones para pronosticar.</string>
-    <string name="inicio_pronostico_mes">Al ritmo actual terminarás %1$s con ~%2$s de gastos.</string>
-    <string name="inicio_pronostico_proximo">Próximo mes: entre %1$s y %2$s.</string>
+    <string name="inicio_pronostico">¿Me alcanza este mes?</string>
+    <string name="inicio_alcanza_si">Este mes te alcanza.</string>
+    <string name="inicio_alcanza_sobra">Te van a sobrar unos %1$s.</string>
+    <string name="inicio_alcanza_no">Este mes no te va a alcanzar.</string>
+    <string name="inicio_alcanza_falta">Vas a gastar unos %1$s más de lo que sueles recibir.</string>
+    <string name="inicio_alcanza_justo">Este mes te alcanza justo.</string>
+    <string name="inicio_alcanza_sin_ingresos">Este mes vas a gastar unos %1$s.</string>
+    <string name="inicio_como_proximo">El próximo mes podrías gastar entre %1$s y %2$s.</string>
+    <plurals name="inicio_como_calcule">
+        <item quantity="one">Revisé tu último mes.</item>
+        <item quantity="other">Revisé tus últimos %1$d meses.</item>
+    </plurals>
+    <string name="inicio_pronostico_sin_datos">Anota un mes completo y te digo si te alcanza.</string>
     <string name="inicio_racha_en_riesgo">en riesgo · anota hoy</string>
-    <string name="inicio_subiste_nivel">¡Subiste al nivel %1$d! Cashi está orgulloso de ti.</string>
+    <string name="inicio_subiste_nivel">Subiste al nivel %1$d. ¡Felicidades!</string>
 
     <!-- Anotar (HU-06, HU-07) y editar (HU-08) -->
     <string name="anotar_tipo_gasto">Gasto</string>
@@ -190,6 +207,27 @@
     <string name="categorias_crear">Crear categoría</string>
     <string name="categorias_error_nombre">Escribe un nombre de hasta 50 caracteres</string>
     <string name="categorias_error_repetida">Ya existe una categoría con ese nombre</string>
+    <string name="categorias_tuya">Tuya</string>
+    <string name="categorias_importancia_aviso">Ya le puse una importancia a cada categoría. Si alguna no te convence, tócala y cámbiala.</string>
+    <string name="categorias_importancia_detalle">%1$s · %2$s</string>
+    <string name="categorias_importancia_sobre">/5</string>
+    <string name="categorias_importancia_descripcion">Importancia %1$d de 5</string>
+    <string name="categorias_importancia_pregunta">¿Qué tan importante es este gasto para ti?</string>
+    <string name="categorias_importancia_minimo">Se puede dejar</string>
+    <string name="categorias_importancia_maximo">No puedo dejarlo</string>
+    <string name="categorias_importancia_nota">Tus pagos planificados siempre cuentan como imprescindibles.</string>
+    <string name="categorias_guardar">Guardar</string>
+    <string name="categorias_guardando">Guardando…</string>
+    <string name="importancia_5_nombre">Imprescindible</string>
+    <string name="importancia_5_mensaje">Nunca te sugeriré recortar aquí.</string>
+    <string name="importancia_4_nombre">Importante</string>
+    <string name="importancia_4_mensaje">Solo te sugeriré ajustes pequeños.</string>
+    <string name="importancia_3_nombre">Flexible</string>
+    <string name="importancia_3_mensaje">Puedes recortar un poco si hace falta.</string>
+    <string name="importancia_2_nombre">Recortable</string>
+    <string name="importancia_2_mensaje">Aquí puedes ahorrar bastante.</string>
+    <string name="importancia_1_nombre">Prescindible</string>
+    <string name="importancia_1_mensaje">Aquí es donde más puedes ahorrar.</string>
 
     <!-- Pagos e ingresos esperados (HU-15, HU-16) -->
     <string name="planificados_vacio_titulo">Nada esperado por ahora</string>
@@ -228,7 +266,7 @@
 
     <!-- Metas de ahorro (HU-17, HU-18, HU-19) -->
     <string name="metas_vacio_titulo">Todavía no tienes metas</string>
-    <string name="metas_vacio_mensaje">Ponte un objetivo, como un celular o un viaje, y anota lo que vas apartando para verlo crecer.</string>
+    <string name="metas_vacio_mensaje">Ponte un objetivo, como un celular o un viaje, y anota lo que vas ahorrando.</string>
     <string name="metas_vacio_accion">Crear mi primera meta</string>
     <string name="metas_nueva">Nueva meta</string>
     <string name="metas_editar">Editar meta</string>
@@ -252,7 +290,6 @@
     <string name="metas_alcanzada">¡Meta alcanzada! 🎉</string>
     <string name="metas_hasta">Hasta el %1$s</string>
     <string name="metas_sin_fecha">Sin fecha límite</string>
-    <string name="metas_lograste">¡Lo lograste! Llegaste a tu meta. Cashi está orgulloso de ti.</string>
     <string name="metas_anotar_ahorro">Anoté un ahorro</string>
     <string name="metas_anotar_retiro">Anoté un retiro</string>
     <string name="metas_ahorro">Ahorro</string>
@@ -266,7 +303,7 @@
     <string name="metas_cancelar_titulo">¿Quitar esta meta?</string>
     <string name="metas_cancelar_mensaje">«%1$s» ya no aparecerá en tus metas.</string>
     <string name="metas_cancelada">Meta quitada</string>
-    <string name="metas_marcar_completada">Marcar como completada</string>
+    <string name="metas_marcar_completada">Marcar como completada · +100 XP</string>
     <string name="metas_estado_completada">✓ Completada</string>
     <string name="metas_completada_mensaje">¡Meta cumplida! Ya está guardada en tus metas completadas.</string>
     <string name="metas_completada_xp">¡Meta lograda! +100 XP</string>
@@ -275,48 +312,72 @@
     <string name="metas_completadas">Completadas (%1$d)</string>
     <string name="metas_ver_completadas">Ver metas completadas</string>
     <string name="metas_ocultar_completadas">Ocultar metas completadas</string>
+    <string name="metas_porcentaje_avance">%1$d %% de avance</string>
+    <string name="metas_te_faltan">Te faltan %1$s</string>
+    <string name="metas_objetivo_llegado">Llegaste a tu objetivo</string>
+    <string name="metas_proximo_ahorro">Tu próximo ahorro: %1$s antes del %2$s</string>
+
+    <!-- Camino hasta la meta -->
+    <string name="camino_titulo">Tu camino</string>
+    <string name="camino_paso_de">Paso %1$d de %2$d</string>
+    <string name="camino_completo">Camino completo</string>
+    <string name="camino_proximo">Tu próximo ahorro</string>
+    <string name="camino_antes_de">antes del %1$s</string>
+    <string name="camino_ultimo">Último ahorro: %1$s antes del %2$s</string>
+    <string name="camino_cada_paso">Cada paso te acerca a tu meta</string>
+    <string name="camino_llegaste">Llegaste a tu meta</string>
+    <string name="camino_al_llegar">Al llegar aquí tendrás</string>
+    <string name="camino_llevabas">En ese paso llevabas</string>
+    <string name="camino_ganado">+ %1$s</string>
+    <string name="camino_hecho">Paso hecho</string>
+    <string name="camino_tu_meta">Tu meta</string>
+
+    <!-- Plan de ahorro en "¿Cuándo lo logro?" -->
+    <string name="plan_llegas">Vas a llegar a tu fecha</string>
+    <string name="plan_con_recorte_sin_fecha">Puedes lograrlo si recortas gastos</string>
+    <string name="plan_ritmo">Si ahorras unos %1$s %2$s.</string>
+    <string name="plan_con_recorte">Puedes llegar si recortas gastos</string>
+    <string name="plan_recorte_fecha">Con %1$s %2$s llegas a tu fecha.</string>
+    <string name="plan_recorte_sin_fecha">Con %1$s %2$s lo logras en %3$s.</string>
+    <string name="plan_llegarias">Llegarías el %1$s</string>
+    <string name="plan_no_llega">Es después de tu fecha, aun ahorrando lo máximo que permiten tus ingresos: %1$s %2$s.</string>
+    <string name="plan_sin_margen_titulo">Hoy casi todo se te va en gastos</string>
+    <string name="plan_sin_margen">Empieza con poco: %1$s al mes. Cada paso cuenta.</string>
+    <string name="plan_sin_datos_titulo">Todavía no puedo armar tu camino</string>
+    <string name="plan_sin_datos">Anota tus ingresos y gastos de un mes y lo preparo.</string>
+    <string name="periodo_semana">cada semana</string>
+    <string name="periodo_quincena">cada quincena</string>
+    <string name="periodo_mes">al mes</string>
+    <string name="periodo_meses">cada %1$d meses</string>
 
     <!-- IA predictiva: motor de predicción (prediccion/) y mensajes de Cashi -->
-    <plurals name="ia_meses_fecha">
-        <item quantity="one">~%1$d mes · %2$s</item>
-        <item quantity="other">~%1$d meses · %2$s</item>
+    <string name="ia_como_lo_calcule">¿Cómo lo calculé?</string>
+    <string name="ia_lo_lograrias">Lo vas a lograr en %1$s</string>
+    <string name="ia_que_recortar">¿Qué puedo recortar?</string>
+    <string name="ia_recorte">En %1$s podrías ahorrar unos %2$s más al mes.</string>
+    <string name="ia_meta_alcanzable">¡Vas bien! Sigue así y llegas.</string>
+    <plurals name="metas_como_calcule">
+        <item quantity="one">Usé tu último mes.</item>
+        <item quantity="other">Usé tus últimos %1$d meses.</item>
     </plurals>
-    <string name="ia_no_se_alcanza">Al ritmo actual no se alcanza</string>
-    <string name="ia_ritmo">Ahorras ~%1$s al mes · %2$s</string>
-    <string name="ia_fuente_aportes">según tus aportes</string>
-    <string name="ia_fuente_capacidad">según tus ingresos y gastos</string>
-    <string name="ia_a_tiempo">✅ Llegas a tiempo</string>
-    <string name="ia_necesitas">⚠️ Necesitas %1$s al mes para llegar</string>
-    <plurals name="ia_confianza_meses">
-        <item quantity="one">Estimación con %1$d mes de datos · confianza %2$s</item>
-        <item quantity="other">Estimación con %1$d meses de datos · confianza %2$s</item>
-    </plurals>
-    <string name="ia_confianza_sin_datos">Todavía no hay datos suficientes para estimar</string>
-    <string name="ia_confianza_alta">alta</string>
-    <string name="ia_confianza_media">media</string>
-    <string name="ia_confianza_baja">baja</string>
     <string name="ia_meta_alcanzada">¡Llegaste a tu meta! Cashi está orgulloso de ti.</string>
-    <plurals name="ia_meta_alcanzable">
-        <item quantity="one">¡Vas bien! Al ritmo actual juntas los %1$s que faltan en unos %2$d mes (%3$s).</item>
-        <item quantity="other">¡Vas bien! Al ritmo actual juntas los %1$s que faltan en unos %2$d meses (%3$s).</item>
-    </plurals>
-    <string name="ia_meta_no_llega">Al ritmo actual no llegas a tu fecha. Necesitarías ahorrar %1$s al mes.</string>
-    <string name="ia_meta_ritmo_negativo">Este mes tus gastos superan tus ingresos. Anota un ahorro para empezar.</string>
-    <string name="ia_sin_datos">Anota tus gastos unas semanas más para que pueda estimar.</string>
-    <string name="ia_gasto_mas_rapido">Vas gastando más rápido que de costumbre. ¡Ojo con los gastos de estos días!</string>
-    <string name="ia_gasto_normal">Tus gastos van dentro de lo normal este mes. ¡Sigue así!</string>
+    <string name="ia_meta_no_llega">Todavía puedes llegar si ahorras un poco más.</string>
+    <string name="ia_meta_ritmo_negativo">Este mes se te fue más de lo que entró. Empieza con poquito.</string>
+    <string name="ia_sin_datos">Anota tus gastos unas semanas más y te doy un consejo.</string>
+    <string name="ia_gasto_mas_rapido">Este mes estás gastando más rápido que de costumbre.</string>
+    <string name="ia_gasto_normal">Tus gastos van normales este mes. Sigue así.</string>
 
     <!-- Consejo del día (HU-21) -->
     <plurals name="ia_racha_en_riesgo">
-        <item quantity="one">¡Tu racha de %1$d día está en riesgo! Anota algo hoy.</item>
-        <item quantity="other">¡Tu racha de %1$d días está en riesgo! Anota algo hoy.</item>
+        <item quantity="one">Tu racha de %1$d día está en riesgo. Anota algo hoy para no perderla.</item>
+        <item quantity="other">Tu racha de %1$d días está en riesgo. Anota algo hoy para no perderla.</item>
     </plurals>
-    <string name="ia_desafio_en_riesgo">Tu desafío «%1$s» está en riesgo: solo te quedan %2$s. ¡Aguanta!</string>
-    <string name="ia_categoria_sube">A este ritmo gastarás %2$s en %1$s este mes, bastante más que de costumbre.</string>
-    <string name="ia_meta_cerca">¡Ya casi! Te faltan solo %2$s para tu meta «%1$s».</string>
+    <string name="ia_desafio_en_riesgo">Solo te quedan %2$s en tu desafío «%1$s».</string>
+    <string name="ia_categoria_sube">Estás gastando más de lo normal en %1$s. Podrías llegar a unos %2$s este mes.</string>
+    <string name="ia_meta_cerca">Ya casi llegas: te faltan solo %2$s para «%1$s».</string>
     <plurals name="ia_racha_buena">
-        <item quantity="one">¡Llevas %1$d día seguido anotando! Sigue así.</item>
-        <item quantity="other">¡Llevas %1$d días seguidos anotando! Sigue así.</item>
+        <item quantity="one">Llevas %1$d día seguido anotando. Sigue así.</item>
+        <item quantity="other">Llevas %1$d días seguidos anotando. Sigue así.</item>
     </plurals>
 
     <!-- Desafíos (HU-22, HU-23) -->
@@ -325,6 +386,7 @@
     <string name="desafios_descartar_titulo">¿Descartar el desafío?</string>
     <string name="desafios_descartar_mensaje">«%1$s» dejará de contar y no ganarás su XP.</string>
     <string name="desafios_xp">+%1$d XP</string>
+    <string name="desafios_pagos_fijos_no_cuentan">Tus pagos fijos no cuentan para este reto</string>
     <plurals name="desafios_quedan_dias">
         <item quantity="one">Queda %1$d día</item>
         <item quantity="other">Quedan %1$d días</item>
@@ -338,7 +400,7 @@
     <string name="desafios_dato_xp">ganados</string>
     <string name="desafios_dato_seguidos">seguidos</string>
     <string name="desafios_pista_por_dia">Te quedan %1$s: unos %2$s por día.</string>
-    <string name="desafios_pista_cuidado">¡Cuidado! Solo te quedan %1$s.</string>
+    <string name="desafios_pista_cuidado">Solo te quedan %1$s.</string>
     <string name="desafios_pista_sin_margen">Llegaste al límite: un gasto más y se pierde el reto.</string>
     <string name="desafios_estado_cumplido">¡Cumplido! Bien hecho.</string>
     <string name="desafios_estado_fallido">No salió</string>
@@ -360,7 +422,7 @@
     <!-- Plantillas de las propuestas del motor (no es IA generativa) -->
     <!-- Desafíos automáticos (004): llegan solos cada lunes y cada día 1 -->
     <string name="desafios_vacio">Tus próximos desafíos llegan el lunes. ¡Cashi ya los está preparando!</string>
-    <string name="desafios_nuevos_titulo">¡Nuevos desafíos disponibles!</string>
+    <string name="desafios_nuevos_titulo">Tienes desafíos nuevos</string>
     <string name="desafios_nuevos_mensaje">Llegaron tus retos. Cúmplelos para ganar XP.</string>
     <string name="desafios_nuevos_ver">Ver desafíos</string>
     <string name="desafios_nuevo">NUEVO</string>
@@ -369,7 +431,7 @@
     <string name="desafios_renuevan_lunes">Se renuevan el lunes %1$s</string>
     <string name="desafios_renuevan_mes">Se renueva el %1$s</string>
     <string name="inicio_tus_desafios">Tus desafíos</string>
-    <string name="inicio_sin_desafios">Tus desafíos llegan cada lunes. ¡Pronto tendrás nuevos retos!</string>
+    <string name="inicio_sin_desafios">Tus desafíos llegan cada lunes.</string>
     <string name="inicio_ver_desafios">Ver todos</string>
     <string name="desafios_progreso_dias">%1$d de %2$d días anotando</string>
     <string name="desafios_progreso_movimientos">%1$d de %2$d movimientos</string>

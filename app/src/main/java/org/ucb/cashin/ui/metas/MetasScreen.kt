@@ -26,22 +26,26 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.ucb.cashin.R
 import org.ucb.cashin.model.AvanceMeta
 import org.ucb.cashin.model.EstadoMeta
-import org.ucb.cashin.ui.components.BarraProgreso
+import org.ucb.cashin.prediccion.PlanAhorro
+import org.ucb.cashin.ui.components.AnilloAvance
 import org.ucb.cashin.ui.components.CashinBoton
-import org.ucb.cashin.ui.components.CashinTarjeta
 import org.ucb.cashin.ui.components.CashinTopBar
 import org.ucb.cashin.ui.components.Emocion
 import org.ucb.cashin.ui.components.EstadoCargando
 import org.ucb.cashin.ui.components.EstadoError
 import org.ucb.cashin.ui.components.EstadoVacio
+import org.ucb.cashin.ui.components.RecursoCashi
+import org.ucb.cashin.ui.components.TarjetaJuego
 import org.ucb.cashin.ui.components.mensaje
 import org.ucb.cashin.ui.theme.CashinColores
 import org.ucb.cashin.ui.theme.CashinTheme
+import org.ucb.cashin.ui.theme.GrisTexto
 import org.ucb.cashin.ui.theme.Espacio
 import org.ucb.cashin.util.Formato
 import java.math.BigDecimal
@@ -99,6 +103,7 @@ fun MetasContenido(
                 emocion = Emocion.FELIZ,
                 textoAccion = stringResource(R.string.metas_vacio_accion),
                 onAccion = onNueva,
+                recurso = RecursoCashi.METAS_VACIO,
             )
 
             else -> Column(modifier = Modifier.fillMaxSize()) {
@@ -118,7 +123,7 @@ fun MetasContenido(
                         }
 
                         items(estado.activas, key = { it.metaId }) { meta ->
-                            TarjetaMeta(meta = meta, onClick = { onMetaClick(meta.metaId) })
+                            TarjetaMeta(meta = meta, plan = estado.planes[meta.metaId], onClick = { onMetaClick(meta.metaId) })
                         }
 
                         if (estado.completadas.isNotEmpty()) {
@@ -131,7 +136,7 @@ fun MetasContenido(
                             }
                             if (estado.verCompletadas) {
                                 items(estado.completadas, key = { it.metaId }) { meta ->
-                                    TarjetaMeta(meta = meta, onClick = { onMetaClick(meta.metaId) })
+                                    TarjetaMeta(meta = meta, plan = null, onClick = { onMetaClick(meta.metaId) })
                                 }
                             }
                         }
@@ -171,57 +176,60 @@ private fun EncabezadoCompletadas(cantidad: Int, abierto: Boolean, onClick: () -
     }
 }
 
-/**
- * Nombre, "Bs 300,00 de Bs 2.500,00 (12 %)", la barra y la fecha límite.
- * Si ya llegó al objetivo, lo celebra en verde.
- */
+/** Anillo de avance, nombre, cuánto falta y qué hacer a continuación. */
 @Composable
-private fun TarjetaMeta(meta: AvanceMeta, onClick: () -> Unit) {
-    CashinTarjeta(onClick = onClick) {
-        Text(
-            text = meta.nombre,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = stringResource(
-                R.string.metas_de_porcentaje,
-                Formato.monto(meta.totalAhorrado),
-                Formato.monto(meta.montoObjetivo),
-                meta.porcentaje,
-            ),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(top = Espacio.xs, bottom = Espacio.s),
-        )
-        BarraProgreso(progreso = meta.progreso)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = Espacio.s),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = when {
-                    meta.estado == EstadoMeta.COMPLETADA -> stringResource(R.string.metas_estado_completada)
-                    meta.alcanzada -> stringResource(R.string.metas_alcanzada)
-                    else -> ""
-                },
-                style = MaterialTheme.typography.labelLarge,
-                color = CashinColores.ingreso,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = meta.fechaLimite?.let { stringResource(R.string.metas_hasta, Formato.fechaCorta(it)) }
-                    ?: stringResource(R.string.metas_sin_fecha),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
+private fun TarjetaMeta(meta: AvanceMeta, plan: PlanAhorro?, onClick: () -> Unit) {
+    TarjetaJuego(onClick = onClick) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AnilloAvance(progreso = meta.progreso, porcentaje = meta.porcentaje)
+            Column(modifier = Modifier.padding(start = Espacio.m).weight(1f)) {
+                Text(
+                    text = meta.nombre,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = if (meta.alcanzada) {
+                        stringResource(R.string.metas_objetivo_llegado)
+                    } else {
+                        stringResource(R.string.metas_te_faltan, Formato.monto(meta.faltante))
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = GrisTexto,
+                )
+                val paso = plan?.pasoActual
+                when {
+                    meta.estado == EstadoMeta.COMPLETADA -> TextoLogro(stringResource(R.string.metas_estado_completada))
+                    meta.alcanzada -> TextoLogro(stringResource(R.string.metas_alcanzada))
+                    paso != null -> Text(
+                        text = stringResource(
+                            R.string.metas_proximo_ahorro,
+                            Formato.montoEntero(paso.monto),
+                            Formato.fechaCorta(paso.fecha),
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun TextoLogro(texto: String) {
+    Text(
+        text = texto,
+        style = MaterialTheme.typography.bodySmall,
+        fontWeight = FontWeight.Bold,
+        color = CashinColores.ingreso,
+        modifier = Modifier.padding(top = 2.dp),
+    )
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFFFCF7EA)

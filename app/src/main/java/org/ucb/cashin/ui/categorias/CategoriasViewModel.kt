@@ -15,6 +15,7 @@ import org.ucb.cashin.data.CategoriaRepository
 import org.ucb.cashin.di.fabricaDe
 import org.ucb.cashin.model.Categoria
 import org.ucb.cashin.model.ErrorApp
+import org.ucb.cashin.model.IMPORTANCIA_POR_DEFECTO
 import org.ucb.cashin.model.NuevaCategoria
 import org.ucb.cashin.model.TipoRegistro
 import org.ucb.cashin.model.comoErrorApp
@@ -36,6 +37,11 @@ data class CategoriasUiState(
     @StringRes val errorNombre: Int? = null,
     val errorGuardar: ErrorApp? = null,
     val guardando: Boolean = false,
+    /** Categoría cuya importancia se está cambiando; null si la hoja está cerrada. */
+    val categoriaEditando: Categoria? = null,
+    val importanciaElegida: Int = IMPORTANCIA_POR_DEFECTO,
+    val guardandoImportancia: Boolean = false,
+    val errorImportancia: ErrorApp? = null,
 )
 
 /** Nombres de ícono que entiende `iconoCategoria()`. */
@@ -162,6 +168,54 @@ class CategoriasViewModel(
             categoriaRepository.archivar(categoria.id, archivada)
                 .onSuccess { cargar() }
                 .onFailure { e -> _uiState.update { it.copy(errorAccion = e.comoErrorApp()) } }
+        }
+    }
+
+    fun abrirImportancia(categoria: Categoria) = _uiState.update {
+        it.copy(categoriaEditando = categoria, importanciaElegida = categoria.importancia, errorImportancia = null)
+    }
+
+    fun onImportanciaCambio(valor: Int) = _uiState.update { it.copy(importanciaElegida = valor, errorImportancia = null) }
+
+    fun cerrarImportancia() {
+        if (_uiState.value.guardandoImportancia) return
+        _uiState.update { it.copy(categoriaEditando = null) }
+    }
+
+    /** Si no cambió nada solo cierra. Si falla, la hoja sigue abierta con lo elegido. */
+    fun guardarImportancia() {
+        val estado = _uiState.value
+        val categoria = estado.categoriaEditando ?: return
+        if (estado.guardandoImportancia) return
+
+        val importancia = estado.importanciaElegida
+        if (importancia == categoria.importancia) {
+            _uiState.update { it.copy(categoriaEditando = null) }
+            return
+        }
+        val usuarioId = authRepository.usuarioIdActual()
+        if (usuarioId == null) {
+            _uiState.update { it.copy(errorImportancia = ErrorApp.SIN_PERMISO) }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(guardandoImportancia = true, errorImportancia = null) }
+            categoriaRepository.fijarImportancia(usuarioId, categoria.id, importancia)
+                .onSuccess {
+                    _uiState.update { actual ->
+                        actual.copy(
+                            guardandoImportancia = false,
+                            categoriaEditando = null,
+                            categorias = actual.categorias.map { c ->
+                                if (c.id == categoria.id) c.copy(importancia = importancia) else c
+                            },
+                        )
+                    }
+                }
+                .onFailure { e ->
+                    _uiState.update { it.copy(guardandoImportancia = false, errorImportancia = e.comoErrorApp()) }
+                }
         }
     }
 

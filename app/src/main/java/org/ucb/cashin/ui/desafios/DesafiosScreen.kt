@@ -410,7 +410,7 @@ private fun PistaDelReto(desafio: Desafio, progreso: ProgresoDesafio?, diasQueQu
             avance >= UMBRAL_RIESGO -> stringResource(R.string.desafios_pista_cuidado, Formato.monto(queda)) to true
             else -> {
                 val porDia = queda.divide(BigDecimal(diasQueQuedan.coerceAtLeast(1)), 2, RoundingMode.DOWN)
-                stringResource(R.string.desafios_pista_por_dia, Formato.monto(queda), Formato.monto(porDia)) to false
+                stringResource(R.string.desafios_pista_por_dia, Formato.monto(queda), Formato.montoEntero(porDia)) to false
             }
         }
     } else {
@@ -498,6 +498,14 @@ private fun TarjetaActivo(
         ProgresoDeDesafio(desafio = desafio, progreso = progreso)
         // Cuenta hoy también: "quedan 3 días" + hoy = 4 días para gastar o anotar.
         PistaDelReto(desafio = desafio, progreso = progreso, diasQueQuedan = restantes + 1)
+        if (desafio.categoriasExcluidas != null) {
+            Text(
+                text = stringResource(R.string.desafios_pagos_fijos_no_cuentan),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = Espacio.xs),
+            )
+        }
 
         CashinBoton(
             texto = stringResource(R.string.desafios_descartar),

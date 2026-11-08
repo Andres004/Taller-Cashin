@@ -45,7 +45,7 @@ private const val MESES_RITMO_APORTES = 3
  * Ritmo de ahorro:
  * 1. Si hay aportes en **2 o más meses distintos**: promedio mensual de los aportes netos
  *    (AHORRO − RETIRO) de los últimos 3 meses con aportes → APORTES.
- * 2. Si no: capacidad = ingresos esperados − gastos esperados → CAPACIDAD
+ * 2. Si no: capacidad de ahorro (ver [capacidadDeAhorro]), que respeta los pagos fijos → CAPACIDAD
  *    (la confianza es la menor de los dos pronósticos).
  * 3. Si tampoco hay pronósticos → SIN_DATOS.
  *
@@ -59,6 +59,7 @@ fun estimarMeta(
     pronosticoIngresos: Pronostico,
     pronosticoGastos: Pronostico,
     hoy: LocalDate,
+    desgloseGastos: DesgloseGastos? = null,
 ): EstimacionMeta {
     val faltante = (avance.montoObjetivo - avance.totalAhorrado).max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP)
     val fechaLimite = avance.fechaLimite
@@ -77,7 +78,7 @@ fun estimarMeta(
         )
     }
 
-    val (ritmo, fuente, confianza) = ritmoDeAhorro(aportes, pronosticoIngresos, pronosticoGastos)
+    val (ritmo, fuente, confianza) = ritmoDeAhorro(aportes, pronosticoIngresos, pronosticoGastos, desgloseGastos)
 
     val meses: Int? = if (fuente == FuenteAhorro.SIN_DATOS || ritmo.signum() <= 0) {
         null
@@ -112,8 +113,30 @@ private fun ritmoDeAhorro(
     aportes: List<AporteMeta>,
     pronosticoIngresos: Pronostico,
     pronosticoGastos: Pronostico,
+    desgloseGastos: DesgloseGastos?,
 ): Triple<BigDecimal, FuenteAhorro, Confianza> {
-    // 1. Por aportes: neto de cada mes (ahorros suman, retiros restan).
+    // 1. Por aportes.
+    ritmoPorAportes(aportes)?.let { (promedio, meses) ->
+        val confianza = if (meses >= MESES_RITMO_APORTES) Confianza.MEDIA else Confianza.BAJA
+        return Triple(promedio, FuenteAhorro.APORTES, confianza)
+    }
+
+    // 2. Por capacidad: lo que suele entrar menos lo que suele salir.
+    if (pronosticoIngresos.confianza != Confianza.SIN_DATOS && pronosticoGastos.confianza != Confianza.SIN_DATOS) {
+        val capacidad = capacidadDeAhorro(pronosticoIngresos.esperado, pronosticoGastos.esperado, desgloseGastos)
+        val confianza = minOf(pronosticoIngresos.confianza, pronosticoGastos.confianza)
+        return Triple(capacidad, FuenteAhorro.CAPACIDAD, confianza)
+    }
+
+    // 3. Sin datos.
+    return Triple(BigDecimal.ZERO.setScale(2), FuenteAhorro.SIN_DATOS, Confianza.SIN_DATOS)
+}
+
+/**
+ * Promedio mensual de los aportes netos (ahorros − retiros) de los últimos 3 meses con aportes, y
+ * cuántos meses se usaron. Null si hay aportes en menos de 2 meses distintos.
+ */
+internal fun ritmoPorAportes(aportes: List<AporteMeta>): Pair<BigDecimal, Int>? {
     val netoPorMes: Map<YearMonth, BigDecimal> = aportes
         .groupBy { YearMonth.from(it.fecha) }
         .mapValues { (_, delMes) ->
@@ -121,26 +144,14 @@ private fun ritmoDeAhorro(
                 if (aporte.tipo == TipoAporte.AHORRO) suma + aporte.monto else suma - aporte.monto
             }
         }
+    if (netoPorMes.size < 2) return null
 
-    if (netoPorMes.size >= 2) {
-        val recientes = netoPorMes.entries
-            .sortedByDescending { it.key }
-            .take(MESES_RITMO_APORTES)
-            .map { it.value }
-        val promedio = recientes
-            .fold(BigDecimal.ZERO) { suma, valor -> suma + valor }
-            .divide(BigDecimal.valueOf(recientes.size.toLong()), 2, RoundingMode.HALF_UP)
-        val confianza = if (recientes.size >= MESES_RITMO_APORTES) Confianza.MEDIA else Confianza.BAJA
-        return Triple(promedio, FuenteAhorro.APORTES, confianza)
-    }
-
-    // 2. Por capacidad: lo que suele entrar menos lo que suele salir.
-    if (pronosticoIngresos.confianza != Confianza.SIN_DATOS && pronosticoGastos.confianza != Confianza.SIN_DATOS) {
-        val capacidad = (pronosticoIngresos.esperado - pronosticoGastos.esperado).setScale(2, RoundingMode.HALF_UP)
-        val confianza = minOf(pronosticoIngresos.confianza, pronosticoGastos.confianza)
-        return Triple(capacidad, FuenteAhorro.CAPACIDAD, confianza)
-    }
-
-    // 3. Sin datos.
-    return Triple(BigDecimal.ZERO.setScale(2), FuenteAhorro.SIN_DATOS, Confianza.SIN_DATOS)
+    val recientes = netoPorMes.entries
+        .sortedByDescending { it.key }
+        .take(MESES_RITMO_APORTES)
+        .map { it.value }
+    val promedio = recientes
+        .fold(BigDecimal.ZERO) { suma, valor -> suma + valor }
+        .divide(BigDecimal.valueOf(recientes.size.toLong()), 2, RoundingMode.HALF_UP)
+    return promedio to recientes.size
 }

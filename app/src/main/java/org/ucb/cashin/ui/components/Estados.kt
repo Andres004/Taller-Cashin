@@ -44,10 +44,12 @@ fun EstadoVacio(
     emocion: Emocion = Emocion.NEUTRAL,
     textoAccion: String? = null,
     onAccion: (() -> Unit)? = null,
+    recurso: RecursoCashi = emocion.recurso,
 ) {
     EstadoBase(
         modifier = modifier,
         emocion = emocion,
+        recurso = recurso,
         titulo = titulo,
         mensaje = mensaje,
         textoAccion = textoAccion,
@@ -67,6 +69,7 @@ fun EstadoError(
     EstadoBase(
         modifier = modifier,
         emocion = Emocion.PREOCUPADO,
+        recurso = Emocion.PREOCUPADO.recurso,
         titulo = stringResource(R.string.estado_error_titulo),
         mensaje = mensaje,
         textoAccion = stringResource(R.string.estado_reintentar),
@@ -80,6 +83,7 @@ fun EstadoError(
 private fun EstadoBase(
     modifier: Modifier,
     emocion: Emocion,
+    recurso: RecursoCashi,
     titulo: String,
     mensaje: String,
     textoAccion: String?,
@@ -93,7 +97,7 @@ private fun EstadoBase(
             verticalArrangement = Arrangement.spacedBy(Espacio.s),
             modifier = Modifier.widthIn(max = 360.dp),
         ) {
-            AvatarImagen(emocion = emocion, tamano = 160.dp)
+            AvatarImagen(emocion = emocion, tamano = 160.dp, recurso = recurso)
             Text(
                 text = titulo,
                 style = MaterialTheme.typography.titleLarge,

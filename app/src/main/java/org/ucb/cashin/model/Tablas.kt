@@ -61,6 +61,9 @@ data class PerfilEditable(
     val avatar: String,
 )
 
+/** Importancia con la que arranca una categoría propia (categoria.importancia en la BD). */
+const val IMPORTANCIA_POR_DEFECTO = 3
+
 /** Tabla `categoria`. `usuarioId == null` → categoría del sistema (no se edita). */
 @Serializable
 data class Categoria(
@@ -71,9 +74,19 @@ data class Categoria(
     val icono: String? = null,
     val color: String? = null,
     val archivada: Boolean = false,
+    /** Del 1 al 5: el valor inicial o, si la persona lo cambió, el suyo. Solo aplica a gastos. */
+    val importancia: Int = IMPORTANCIA_POR_DEFECTO,
 ) {
     val esDelSistema: Boolean get() = usuarioId == null
 }
+
+/** Tabla `categoria_importancia`: la importancia que una persona eligió para una categoría. */
+@Serializable
+data class ImportanciaCategoria(
+    @SerialName("usuario_id") val usuarioId: String,
+    @SerialName("categoria_id") val categoriaId: String,
+    val importancia: Int,
+)
 
 @Serializable
 data class NuevaCategoria(
@@ -242,4 +255,9 @@ data class Desafio(
     val automatico: Boolean = false,
     /** Qué reto del catálogo es (PlantillaDesafio.name), si lo asignó el sistema. */
     val plantilla: String? = null,
+    /**
+     * Retos de límite: categorías que no cuentan (importancia 4 o 5 al asignarse) y tampoco cuentan
+     * los pagos planificados. Null = regla anterior, en la que cuenta todo (006_desafios_sin_fijos.sql).
+     */
+    @SerialName("categorias_excluidas") val categoriasExcluidas: List<String>? = null,
 )

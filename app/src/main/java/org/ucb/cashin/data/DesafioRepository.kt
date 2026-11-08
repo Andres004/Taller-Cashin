@@ -1,8 +1,10 @@
 package org.ucb.cashin.data
 
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.postgrest.exception.PostgrestRestException
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.rpc
 import kotlinx.serialization.json.buildJsonObject
@@ -14,6 +16,8 @@ import org.ucb.cashin.model.ParametrosAsignarDesafios
 import org.ucb.cashin.model.PeriodoDesafio
 import org.ucb.cashin.model.ProgresoDesafio
 import java.time.LocalDate
+
+private const val CODIGO_COLUMNA_INEXISTENTE = "42703"
 
 /**
  * Módulo M8 · Desafíos (HU-22, HU-23). La app solo LEE la tabla `desafio`;
@@ -62,6 +66,19 @@ class DesafioRepository(private val supabase: SupabaseClient) {
                 gte("fecha_inicio", desde.toString())
             }
         }.decodeList<Desafio>()
+    }
+
+    /**
+     * Si el servidor ya tiene la migración 006 (los retos de límite no cuentan los pagos fijos).
+     * Hasta entonces se sigue generando con la regla anterior, para que límite y medición coincidan.
+     */
+    suspend fun midenSinFijos(): Result<Boolean> = llamada {
+        try {
+            supabase.from("desafio").select(Columns.list("categorias_excluidas")) { limit(1) }
+            true
+        } catch (e: PostgrestRestException) {
+            if (e.code == CODIGO_COLUMNA_INEXISTENTE) false else throw e
+        }
     }
 
     /** Descarta un desafío activo. Devuelve false si ya no estaba activo. */

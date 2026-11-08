@@ -98,6 +98,8 @@ data class HistoriaDesafios(
     val totales: List<TotalesMes>,
     /** Tiene al menos una meta activa (si no, "ahorra en tu meta" no tiene sentido). */
     val tieneMetasActivas: Boolean,
+    /** Con él, los límites se calculan solo sobre lo recortable; null usa la regla anterior. */
+    val desglose: DesgloseGastos? = null,
 )
 
 /** Semilla propia de la cuenta y el periodo: la misma cuenta en la misma semana sortea lo mismo. */
@@ -155,10 +157,7 @@ fun armarPropuesta(
 
     return when (plantilla.regla) {
         ReglaDesafio.LIMITE_CATEGORIA -> {
-            val categoria = promediosPorCategoria(historia.gastoPorCategoria, hoy)
-                .filter { it.esRegular }
-                .sortedByDescending { it.promedio }
-                .getOrNull(plantilla.puestoCategoria - 1) ?: return null
+            val categoria = categoriasParaLimite(historia, hoy).getOrNull(plantilla.puestoCategoria - 1) ?: return null
             val deCostumbre = categoria.promedio * factor
             if (deCostumbre < minimo.toDouble()) return null
             val limite = limiteRealista(deCostumbre * plantilla.recorte, minimo)
@@ -173,7 +172,8 @@ fun armarPropuesta(
         ReglaDesafio.LIMITE_TOTAL -> {
             val pronostico = pronosticarSiguienteMes(construirSerie(historia.totales, hoy) { it.totalGastos })
             if (pronostico.confianza == Confianza.SIN_DATOS) return null
-            val deCostumbre = pronostico.esperado.toDouble() * factor
+            val medible = historia.desglose?.let { (pronostico.esperado - it.fueraDeRetos).max(BigDecimal.ZERO) } ?: pronostico.esperado
+            val deCostumbre = medible.toDouble() * factor
             if (deCostumbre < minimo.toDouble()) return null
             val limite = limiteRealista(deCostumbre * plantilla.recorte, minimo)
             if (yaPerdido(medicion.gastoTotal, limite)) return null
@@ -194,6 +194,25 @@ fun armarPropuesta(
             if (!historia.tieneMetasActivas) null
             else contable(plantilla, medicion.ahorros, posible = Long.MAX_VALUE)
     }
+}
+
+/**
+ * Categorías regulares, de mayor a menor gasto. Con desglose: solo las de importancia 1 a 3,
+ * y su gasto es únicamente la parte variable.
+ */
+private fun categoriasParaLimite(historia: HistoriaDesafios, hoy: LocalDate): List<PromedioCategoria> {
+    val regulares = promediosPorCategoria(historia.gastoPorCategoria, hoy).filter { it.esRegular }
+    val desglose = historia.desglose?.porCategoria?.associateBy { it.categoriaId }
+    val medibles = if (desglose == null) {
+        regulares
+    } else {
+        regulares.mapNotNull { promedio ->
+            desglose[promedio.categoriaId]
+                ?.takeIf { it.importancia < IMPORTANCIA_SIN_RETOS }
+                ?.let { promedio.copy(promedio = it.variable.toDouble()) }
+        }
+    }
+    return medibles.sortedByDescending { it.promedio }
 }
 
 /** Retos que cuentan algo: no se proponen si ya están logrados o si ya no alcanza el tiempo. */

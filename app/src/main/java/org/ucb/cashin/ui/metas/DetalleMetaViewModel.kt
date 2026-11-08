@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ucb.cashin.R
+import org.ucb.cashin.data.CategoriaRepository
 import org.ucb.cashin.data.MetaRepository
+import org.ucb.cashin.data.PlanificadoRepository
 import org.ucb.cashin.data.ResumenRepository
 import org.ucb.cashin.di.fabricaDe
 import org.ucb.cashin.model.AporteMeta
@@ -19,13 +21,12 @@ import org.ucb.cashin.model.EstadoMeta
 import org.ucb.cashin.model.NuevoAporteMeta
 import org.ucb.cashin.model.TipoAporte
 import org.ucb.cashin.model.comoErrorApp
-import org.ucb.cashin.prediccion.EstimacionMeta
+import org.ucb.cashin.prediccion.EstadoPlan
 import org.ucb.cashin.prediccion.FuenteAhorro
-import org.ucb.cashin.prediccion.MensajeAvatar
-import org.ucb.cashin.prediccion.construirSerie
+import org.ucb.cashin.prediccion.PlanAhorro
 import org.ucb.cashin.prediccion.estimarMeta
-import org.ucb.cashin.prediccion.mensajeParaMeta
-import org.ucb.cashin.prediccion.pronosticarSiguienteMes
+import org.ucb.cashin.ui.components.CelebracionAhorro
+import java.math.BigDecimal
 import java.time.YearMonth
 import org.ucb.cashin.util.Formato
 
@@ -37,11 +38,12 @@ data class DetalleMetaUiState(
     val cargando: Boolean = true,
     val error: ErrorApp? = null,
 
-    /** HU-20: "¿Cuándo lo logro?" calculado por el motor de predicción. */
-    val estimacion: EstimacionMeta? = null,
-    val mensajeIa: MensajeAvatar? = null,
+    /** HU-20: el camino hasta la meta y "¿Cuándo lo logro?", con una sola cuenta. */
+    val plan: PlanAhorro? = null,
     /** Cuántos meses de datos usó la estimación (para mostrar la confianza). */
     val mesesDeDatos: Int = 0,
+    /** Dónde podría recortar más; null si no hay un recorte que valga la pena mencionar. */
+    val recorte: RecorteSugerido? = null,
 
     /** Diálogo "Anoté un ahorro / retiro": null = cerrado. */
     val dialogoTipo: TipoAporte? = null,
@@ -50,6 +52,8 @@ data class DetalleMetaUiState(
     @StringRes val errorMontoAporte: Int? = null,
     val errorAporte: ErrorApp? = null,
     val guardandoAporte: Boolean = false,
+    /** Se acaba de anotar un ahorro: el camino lo festeja una vez. */
+    val celebracion: CelebracionAhorro? = null,
 
     /** Completar o cancelar la meta en curso. */
     val cambiandoEstado: Boolean = false,
@@ -72,9 +76,16 @@ data class DetalleMetaUiState(
  * HU-20: estimar cuándo se logra con el motor de predicción (el ViewModel solo lo orquesta).
  * Al llegar al 100 % se puede marcar como completada.
  */
+/** Categoría donde más se podría recortar y cuánto al mes. */
+data class RecorteSugerido(val categoria: String, val monto: BigDecimal)
+
+private val RECORTE_MINIMO_VISIBLE = BigDecimal.TEN
+
 class DetalleMetaViewModel(
     private val metaRepository: MetaRepository,
     private val resumenRepository: ResumenRepository,
+    private val planificadoRepository: PlanificadoRepository,
+    private val categoriaRepository: CategoriaRepository,
     private val metaId: String,
 ) : ViewModel() {
 
@@ -87,42 +98,48 @@ class DetalleMetaViewModel(
      * después de anotar, así la estimación se recalcula sola.
      */
     fun cargar() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(cargando = it.avance == null, error = null) }
-            val avance = metaRepository.obtenerAvance(metaId).getOrElse { e ->
-                _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) }
-                return@launch
-            }
-            val aportes = metaRepository.listarAportes(metaId).getOrElse { e ->
-                _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) }
-                return@launch
-            }
-            // Si la historia no se puede leer, la meta igual se muestra: la estimación queda "sin datos".
-            val historial = resumenRepository.historialMensual().getOrDefault(emptyList())
+        viewModelScope.launch { recargar() }
+    }
 
-            val hoy = Formato.hoy()
-            val pronosticoIngresos = pronosticarSiguienteMes(construirSerie(historial, hoy) { it.totalIngresos })
-            val pronosticoGastos = pronosticarSiguienteMes(construirSerie(historial, hoy) { it.totalGastos })
-            val estimacion = estimarMeta(avance, aportes, pronosticoIngresos, pronosticoGastos, hoy)
-
-            val mesesDeDatos = when (estimacion.fuente) {
-                FuenteAhorro.APORTES -> aportes.map { YearMonth.from(it.fecha) }.distinct().size.coerceAtMost(3)
-                FuenteAhorro.CAPACIDAD -> minOf(pronosticoIngresos.mesesUsados, pronosticoGastos.mesesUsados)
-                FuenteAhorro.SIN_DATOS -> 0
+    private suspend fun recargar() {
+        _uiState.update { it.copy(cargando = it.avance == null, error = null) }
+        val avance = metaRepository.obtenerAvance(metaId).getOrElse { e ->
+            _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) }
+            return
+        }
+        val aportes = metaRepository.listarAportes(metaId).getOrElse { e ->
+            _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) }
+            return
+        }
+        val datos = cargarDatosPlan(resumenRepository, planificadoRepository, categoriaRepository)
+        val estimacion = estimarMeta(avance, aportes, datos.ingresos, datos.gastos, datos.hoy, datos.desglose)
+        val recorte = datos.desglose.porCategoria
+            .maxByOrNull { it.recortable }
+            ?.takeIf { it.recortable >= RECORTE_MINIMO_VISIBLE }
+            ?.let { mayor ->
+                datos.categorias.find { it.id == mayor.categoriaId }?.let { RecorteSugerido(it.nombre, mayor.recortable) }
             }
 
-            _uiState.update {
-                it.copy(
-                    avance = avance,
-                    aportes = aportes,
-                    estimacion = estimacion,
-                    mensajeIa = mensajeParaMeta(estimacion),
-                    mesesDeDatos = mesesDeDatos,
-                    cargando = false,
-                )
-            }
+        val mesesDeDatos = when (estimacion.fuente) {
+            FuenteAhorro.APORTES -> aportes.map { YearMonth.from(it.fecha) }.distinct().size.coerceAtMost(3)
+            FuenteAhorro.CAPACIDAD -> minOf(datos.ingresos.mesesUsados, datos.gastos.mesesUsados)
+            FuenteAhorro.SIN_DATOS -> 0
+        }
+
+        _uiState.update {
+            it.copy(
+                avance = avance,
+                aportes = aportes,
+                plan = datos.planPara(avance, aportes),
+                mesesDeDatos = mesesDeDatos,
+                recorte = recorte,
+                cargando = false,
+            )
         }
     }
+
+    /** El camino ya festejó el último ahorro. */
+    fun celebracionVista() = _uiState.update { it.copy(celebracion = null) }
 
     fun abrirDialogo(tipo: TipoAporte) {
         if (_uiState.value.completada) return
@@ -174,8 +191,15 @@ class DetalleMetaViewModel(
                 ),
             )
                 .onSuccess {
+                    val pasoAntes = estado.plan?.pasoActual?.numero
                     _uiState.update { it.copy(guardandoAporte = false, dialogoTipo = null) }
-                    cargar()
+                    recargar()
+                    if (tipo == TipoAporte.AHORRO) {
+                        _uiState.update { nuevo ->
+                            val hayCamino = nuevo.plan != null && nuevo.plan.estado != EstadoPlan.SIN_DATOS
+                            if (hayCamino) nuevo.copy(celebracion = CelebracionAhorro(monto, pasoAntes)) else nuevo
+                        }
+                    }
                 }
                 .onFailure { e ->
                     _uiState.update {
@@ -231,6 +255,8 @@ class DetalleMetaViewModel(
         /** Igual que varchar(200) de aporte_meta.nota. */
         const val MAX_NOTA = 200
 
-        fun fabrica(metaId: String) = fabricaDe { DetalleMetaViewModel(it.metaRepository, it.resumenRepository, metaId) }
+        fun fabrica(metaId: String) = fabricaDe {
+            DetalleMetaViewModel(it.metaRepository, it.resumenRepository, it.planificadoRepository, it.categoriaRepository, metaId)
+        }
     }
 }

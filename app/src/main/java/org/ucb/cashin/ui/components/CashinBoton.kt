@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.ucb.cashin.ui.theme.CashinTheme
 
@@ -43,6 +44,7 @@ fun CashinBoton(
     cargando: Boolean = false,
     habilitado: Boolean = true,
     icono: ImageVector? = null,
+    grosorBorde: Dp = 1.5.dp,
 ) {
     val activo = habilitado && !cargando
     val forma = RoundedCornerShape(50)
@@ -85,7 +87,7 @@ fun CashinBoton(
             onClick = onClick,
             enabled = activo,
             shape = forma,
-            border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
+            border = BorderStroke(grosorBorde, MaterialTheme.colorScheme.primary),
             modifier = modifier.fillMaxWidth().height(54.dp),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.secondary),
         ) { contenido() }

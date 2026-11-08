@@ -1,13 +1,17 @@
 package org.ucb.cashin.prediccion
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.ucb.cashin.model.Desafio
+import org.ucb.cashin.model.Frecuencia
 import org.ucb.cashin.model.GastoCategoriaMes
 import org.ucb.cashin.model.PeriodoDesafio
+import org.ucb.cashin.model.RegistroPlanificado
 import org.ucb.cashin.model.ReglaDesafio
+import org.ucb.cashin.model.TipoRegistro
 import org.ucb.cashin.model.TotalesMes
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -172,5 +176,88 @@ class GeneradorDesafiosTest {
         assertEquals(LocalDate.of(2026, 11, 15), finDelPeriodo(PeriodoDesafio.SEMANAL, lunes))
         assertEquals(LocalDate.of(2026, 11, 1), inicioDelPeriodo(PeriodoDesafio.MENSUAL, lunes))
         assertEquals(LocalDate.of(2026, 11, 30), finDelPeriodo(PeriodoDesafio.MENSUAL, lunes))
+    }
+
+    // Pagos fijos (Fase 4)
+
+    private fun planificado(categoriaId: String, monto: String) = RegistroPlanificado(
+        id = categoriaId + monto,
+        usuarioId = "u1",
+        categoriaId = categoriaId,
+        tipo = TipoRegistro.GASTO,
+        nombre = "Pago",
+        monto = bd(monto),
+        frecuencia = Frecuencia.MENSUAL,
+        proximaFecha = lunes,
+    )
+
+    /** Alquiler 900 y WiFi 350 (planificados), comida 800 y salidas 300 cada mes. */
+    private fun historiaConFijos(
+        planificados: List<RegistroPlanificado> = listOf(planificado("c-viv", "900"), planificado("c-viv", "350")),
+        importancias: Map<String, Int> = mapOf("c-viv" to 4, "c-com" to 3, "c-sal" to 1),
+    ): HistoriaDesafios {
+        val gastos = meses.flatMap { mes ->
+            listOf(
+                gasto(mes, "c-viv", "Vivienda", "1250"),
+                gasto(mes, "c-com", "Alimentación", "800"),
+                gasto(mes, "c-sal", "Salidas", "300"),
+            )
+        }
+        return HistoriaDesafios(
+            gastoPorCategoria = gastos,
+            totales = meses.map { totales(it, "2350") },
+            tieneMetasActivas = true,
+            desglose = desglosarGastos(planificados, gastos, importancias, lunes),
+        )
+    }
+
+    @Test fun `el limite total se calcula sobre lo variable y no sobre los pagos fijos`() {
+        val conFijos = armar(PlantillaDesafio.S_TOTAL, h = historiaConFijos())
+        val reglaAnterior = armar(PlantillaDesafio.S_TOTAL, h = historiaConFijos().copy(desglose = null))
+
+        assertEquals(bd("225.00"), conFijos?.montoLimite)
+        assertEquals(bd("485.00"), reglaAnterior?.montoLimite)
+    }
+
+    @Test fun `no se proponen limites en categorias de importancia 4 o 5`() {
+        val h = historiaConFijos()
+
+        assertEquals("c-com", armar(PlantillaDesafio.S_CATEGORIA_1, h = h)?.categoriaId)
+        assertEquals("c-sal", armar(PlantillaDesafio.S_CATEGORIA_2, h = h)?.categoriaId)
+        assertNull(armar(PlantillaDesafio.S_CATEGORIA_3, h = h))
+    }
+
+    @Test fun `el limite de categoria usa solo su parte variable`() {
+        val h = historiaConFijos(planificados = listOf(planificado("c-com", "200")))
+
+        assertEquals(bd("115.00"), armar(PlantillaDesafio.S_CATEGORIA_1, h = h)?.montoLimite)
+    }
+
+    @Test fun `si todo es importante no hay retos de limite por categoria`() {
+        val h = historiaConFijos(importancias = mapOf("c-viv" to 5, "c-com" to 4, "c-sal" to 4))
+
+        assertNull(armar(PlantillaDesafio.S_CATEGORIA_1, h = h))
+    }
+
+    @Test fun `el WiFi de Bs 350 no cuenta y el reto de Bs 225 sigue vivo`() {
+        val excluidas = setOf("c-viv")
+        val pagos = listOf(
+            Triple("plan-wifi", "c-viv", "350"),
+            Triple("plan-alquiler", "c-viv", "900"),
+            Triple(null, "c-com", "120"),
+        )
+        val medido = pagos
+            .filter { (planificado, categoria, _) -> cuentaParaLimites(planificado, categoria, excluidas) }
+            .fold(BigDecimal.ZERO) { suma, (_, _, monto) -> suma + bd(monto) }
+
+        assertEquals(bd("120"), medido)
+        val propuesta = armar(PlantillaDesafio.S_TOTAL, medicion = MedicionPeriodo(gastoTotal = medido), h = historiaConFijos())
+        assertEquals(bd("225.00"), propuesta?.montoLimite)
+    }
+
+    @Test fun `un pago planificado no cuenta aunque su categoria sea recortable`() {
+        assertFalse(cuentaParaLimites("plan", "c-sal", emptySet()))
+        assertFalse(cuentaParaLimites(null, "c-viv", setOf("c-viv")))
+        assertTrue(cuentaParaLimites(null, "c-sal", setOf("c-viv")))
     }
 }
