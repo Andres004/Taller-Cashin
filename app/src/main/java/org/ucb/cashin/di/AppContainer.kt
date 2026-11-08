@@ -59,7 +59,10 @@ class AppContainer(private val recursos: Resources) {
 
     /** HU-22: asigna solos los desafíos de la semana y del mes (una vez por periodo). */
     val renovadorDesafios: RenovadorDesafios by lazy {
-        RenovadorDesafios(authRepository, desafioRepository, resumenRepository, registroRepository, metaRepository, recursos)
+        RenovadorDesafios(
+            authRepository, desafioRepository, resumenRepository, registroRepository, metaRepository,
+            planificadoRepository, categoriaRepository, recursos,
+        )
     }
 
     /**

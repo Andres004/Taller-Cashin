@@ -498,6 +498,14 @@ private fun TarjetaActivo(
         ProgresoDeDesafio(desafio = desafio, progreso = progreso)
         // Cuenta hoy también: "quedan 3 días" + hoy = 4 días para gastar o anotar.
         PistaDelReto(desafio = desafio, progreso = progreso, diasQueQuedan = restantes + 1)
+        if (desafio.categoriasExcluidas != null) {
+            Text(
+                text = stringResource(R.string.desafios_pagos_fijos_no_cuentan),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = Espacio.xs),
+            )
+        }
 
         CashinBoton(
             texto = stringResource(R.string.desafios_descartar),

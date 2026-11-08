@@ -153,28 +153,29 @@ internal fun FilaGasto(
 @Composable
 private fun InsigniaImportancia(importancia: Int) {
     val descripcion = stringResource(R.string.categorias_importancia_descripcion, importancia)
-    Row(
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
+    Box(
+        contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(48.dp)
             .background(MaterialTheme.colorScheme.tertiaryContainer, CircleShape)
             .border(2.dp, CashinColores.xp, CircleShape)
             .clearAndSetSemantics { contentDescription = descripcion },
     ) {
-        Text(
-            text = importancia.toString(),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.alignByBaseline(),
-        )
-        Text(
-            text = stringResource(R.string.categorias_importancia_sobre),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.alignByBaseline(),
-        )
+        Row {
+            Text(
+                text = importancia.toString(),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.alignByBaseline(),
+            )
+            Text(
+                text = stringResource(R.string.categorias_importancia_sobre),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.alignByBaseline(),
+            )
+        }
     }
 }
 

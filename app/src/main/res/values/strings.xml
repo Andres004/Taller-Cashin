@@ -346,6 +346,7 @@
     <string name="desafios_descartar_titulo">¿Descartar el desafío?</string>
     <string name="desafios_descartar_mensaje">«%1$s» dejará de contar y no ganarás su XP.</string>
     <string name="desafios_xp">+%1$d XP</string>
+    <string name="desafios_pagos_fijos_no_cuentan">Tus pagos fijos no cuentan para este reto</string>
     <plurals name="desafios_quedan_dias">
         <item quantity="one">Queda %1$d día</item>
         <item quantity="other">Quedan %1$d días</item>

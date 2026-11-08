@@ -255,4 +255,9 @@ data class Desafio(
     val automatico: Boolean = false,
     /** Qué reto del catálogo es (PlantillaDesafio.name), si lo asignó el sistema. */
     val plantilla: String? = null,
+    /**
+     * Retos de límite: categorías que no cuentan (importancia 4 o 5 al asignarse) y tampoco cuentan
+     * los pagos planificados. Null = regla anterior, en la que cuenta todo (006_desafios_sin_fijos.sql).
+     */
+    @SerialName("categorias_excluidas") val categoriasExcluidas: List<String>? = null,
 )

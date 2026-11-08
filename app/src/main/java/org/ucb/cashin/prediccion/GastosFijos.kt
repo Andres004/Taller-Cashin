@@ -19,6 +19,9 @@ data class DesgloseCategoria(
     val recortable: BigDecimal,
 )
 
+/** Desde esta importancia, una categoría no entra en los retos de límite. */
+const val IMPORTANCIA_SIN_RETOS = 4
+
 /** Montos mensuales: lo comprometido en pagos fijos, lo variable y cuánto de eso se podría recortar. */
 data class DesgloseGastos(
     val porCategoria: List<DesgloseCategoria>,
@@ -27,6 +30,12 @@ data class DesgloseGastos(
     val variableMensual: BigDecimal get() = porCategoria.fold(CERO) { suma, c -> suma + c.variable }
     val margenRecortable: BigDecimal get() = porCategoria.fold(CERO) { suma, c -> suma + c.recortable }
     val comprometidoMensual: BigDecimal get() = fijoMensual + variableMensual
+
+    /** Lo que no miden los retos de límite: los fijos y lo variable de importancia alta. */
+    val fueraDeRetos: BigDecimal
+        get() = porCategoria
+            .filter { it.importancia >= IMPORTANCIA_SIN_RETOS }
+            .fold(fijoMensual) { suma, c -> suma + c.variable }
 }
 
 private val CERO: BigDecimal = BigDecimal.ZERO.setScale(2)
@@ -90,6 +99,10 @@ fun desglosarGastos(
     }
     return DesgloseGastos(categorias)
 }
+
+/** Si una anotación cuenta para un reto de límite: igual que lo mide el servidor (fn_medir_desafio). */
+fun cuentaParaLimites(planificadoId: String?, categoriaId: String, excluidas: Set<String>): Boolean =
+    planificadoId == null && categoriaId !in excluidas
 
 /**
  * Lo que queda libre al mes sin hacer ningún sacrificio. Se toma el mayor gasto entre el pronóstico
