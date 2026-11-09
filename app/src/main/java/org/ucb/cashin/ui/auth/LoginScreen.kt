@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import org.ucb.cashin.R
+import org.ucb.cashin.ui.components.RecursoCashi
 import org.ucb.cashin.ui.components.CashinBoton
 import org.ucb.cashin.ui.components.CashinCampoTexto
 import org.ucb.cashin.ui.components.VarianteBoton
@@ -74,6 +75,7 @@ fun LoginContenido(
         snackbar = snackbar,
         error = estado.error,
         onAtras = onAtras,
+        recursoCashi = RecursoCashi.INICIO_SESION,
     ) {
         CashinCampoTexto(
             etiqueta = stringResource(R.string.campo_correo),

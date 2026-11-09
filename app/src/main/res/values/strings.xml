@@ -104,6 +104,7 @@
 
     <!-- Inicio (HU-13) -->
     <string name="inicio_saludo">¡Hola, %1$s!</string>
+    <string name="inicio_cashi_saludo">¡Qué bueno verte! Anota algo hoy y sumamos XP.</string>
     <string name="inicio_diferencia_corta">Diferencia</string>
     <string name="inicio_este_mes">Este mes · %1$s</string>
     <string name="inicio_tu_meta">Tu meta</string>
@@ -156,7 +157,11 @@
     <string name="anotar_nota_ejemplo">Ej.: almuerzo con amigos</string>
     <string name="anotar_guardar">Guardar</string>
     <string name="anotar_guardado">¡Anotado!</string>
-    <string name="anotar_guardado_xp">¡Anotado! +10 XP</string>
+    <string name="anotar_cashi_monto">¿Cuánto fue?</string>
+    <string name="anotar_cashi_categoria_gasto">¿En qué lo gastaste?</string>
+    <string name="anotar_cashi_categoria_ingreso">¿De dónde vino?</string>
+    <string name="anotar_cashi_medio">¿Cómo fue el pago?</string>
+    <string name="anotar_cashi_listo">¡Listo! Guárdalo y suma XP.</string>
     <string name="anotar_sin_categorias_mensaje">No encontramos categorías para este tipo. Inténtalo de nuevo más tarde.</string>
     <string name="anotar_editar_titulo">Editar anotación</string>
     <string name="anotar_guardar_cambios">Guardar cambios</string>
@@ -167,6 +172,10 @@
     <string name="anotar_eliminada">Anotación eliminada</string>
 
     <!-- Historial (HU-09, HU-10) -->
+    <plurals name="historial_cashi">
+        <item quantity="one">Aquí hay %1$d anotación. ¡Buen comienzo!</item>
+        <item quantity="other">Aquí hay %1$d anotaciones. ¡Vas muy bien!</item>
+    </plurals>
     <string name="historial_vacio_titulo">Aún no anotaste nada</string>
     <string name="historial_vacio_mensaje">Toca + para anotar tu primer gasto o ingreso. ¡Cada anotación suma 10 XP!</string>
     <string name="historial_vacio_accion">Anotar ahora</string>
@@ -514,4 +523,21 @@
     <string name="perfil_cerrar_sesion">Cerrar sesión</string>
     <string name="perfil_cerrar_titulo">¿Cerrar sesión?</string>
     <string name="perfil_cerrar_mensaje">Tus anotaciones quedan guardadas. Podrás volver a entrar con tu correo.</string>
+
+    <!-- Racha (HU-24) -->
+    <string name="racha_titulo">Tu racha</string>
+    <string name="racha_esta_semana">Esta semana</string>
+    <string name="racha_empezo">¡Empezó tu racha!</string>
+    <plurals name="racha_dias_seguidos">
+        <item quantity="one">día seguido</item>
+        <item quantity="other">días seguidos</item>
+    </plurals>
+    <string name="racha_vuelve_manana">Vuelve mañana y anota algo para mantenerla viva.</string>
+    <string name="racha_seguir">¡Seguir!</string>
+    <string name="racha_ver">Ver mi racha</string>
+    <string name="racha_dia_logrado">Día anotado</string>
+    <string name="racha_mensaje_viva">¡Tu racha sigue encendida!</string>
+    <string name="racha_mensaje_en_riesgo">Anota algo hoy para que no se apague.</string>
+    <string name="racha_mensaje_sin_racha">Anota algo hoy y enciende tu racha.</string>
+    <string name="racha_como_funciona">Con una anotación al día la racha sigue. Las 5 primeras del día te dan 10 XP cada una.</string>
 </resources>

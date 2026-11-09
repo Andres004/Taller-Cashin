@@ -70,6 +70,8 @@ import org.ucb.cashin.ui.components.CashinCampoTexto
 import org.ucb.cashin.ui.components.CashinTarjeta
 import org.ucb.cashin.ui.components.CashinTopBar
 import org.ucb.cashin.ui.components.Emocion
+import org.ucb.cashin.ui.components.ImagenCashi
+import org.ucb.cashin.ui.components.RecursoCashi
 import org.ucb.cashin.ui.components.VarianteBoton
 import org.ucb.cashin.ui.components.mensaje
 import org.ucb.cashin.ui.theme.CashinColores
@@ -90,6 +92,7 @@ enum class OpcionPerfil { MIS_CATEGORIAS, PLANIFICADOS, DEUDAS, DESAFIOS }
 @Composable
 fun PerfilScreen(
     onOpcion: (OpcionPerfil) -> Unit,
+    onAbrirRacha: () -> Unit = {},
     viewModel: PerfilViewModel = viewModel(factory = PerfilViewModel.Factory),
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
@@ -107,6 +110,7 @@ fun PerfilScreen(
         onMonedaCambio = viewModel::cambiarMoneda,
         onOpcion = onOpcion,
         onCerrarSesion = viewModel::cerrarSesion,
+        onAbrirRacha = onAbrirRacha,
     )
 }
 
@@ -122,6 +126,7 @@ fun PerfilContenido(
     onMonedaCambio: (Moneda) -> Unit,
     onOpcion: (OpcionPerfil) -> Unit,
     onCerrarSesion: () -> Unit,
+    onAbrirRacha: () -> Unit = {},
 ) {
     var confirmarCierre by rememberSaveable { mutableStateOf(false) }
 
@@ -162,6 +167,7 @@ fun PerfilContenido(
                     guardandoMoneda = estado.guardandoMoneda,
                     onEditarNombre = onEditarNombre,
                     onMonedaCambio = onMonedaCambio,
+                    onAbrirRacha = onAbrirRacha,
                 )
             }
 
@@ -222,6 +228,7 @@ private fun DatosDelPerfil(
     guardandoMoneda: Boolean,
     onEditarNombre: () -> Unit,
     onMonedaCambio: (Moneda) -> Unit,
+    onAbrirRacha: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
         EncabezadoPerfil(nombre = perfil.nombre, correo = correo, onEditarNombre = onEditarNombre)
@@ -238,11 +245,15 @@ private fun DatosDelPerfil(
                 titulo = stringResource(R.string.perfil_racha_actual),
                 dias = racha,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
+                recurso = RecursoCashi.RACHA,
+                onClick = onAbrirRacha,
             )
             TarjetaRacha(
                 titulo = stringResource(R.string.perfil_racha_maxima),
                 dias = perfil.rachaMaxima,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
+                recurso = RecursoCashi.SUBIDA_NIVEL,
+                onClick = onAbrirRacha,
             )
         }
 
@@ -312,6 +323,11 @@ private fun TarjetaNivel(perfil: Perfil) {
 
     CashinTarjeta {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            ImagenCashi(
+                recurso = RecursoCashi.XP,
+                contentDescription = null,
+                modifier = Modifier.padding(end = Espacio.s).size(56.dp),
+            )
             Text(
                 text = stringResource(R.string.perfil_nivel, perfil.nivel),
                 style = MaterialTheme.typography.titleLarge,
@@ -336,8 +352,15 @@ private fun TarjetaNivel(perfil: Perfil) {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun TarjetaRacha(titulo: String, dias: Int, modifier: Modifier = Modifier) {
-    CashinTarjeta(modifier = modifier) {
+private fun TarjetaRacha(
+    titulo: String,
+    dias: Int,
+    recurso: RecursoCashi,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    CashinTarjeta(modifier = modifier, onClick = onClick) {
+        ImagenCashi(recurso = recurso, contentDescription = null, modifier = Modifier.size(56.dp))
         Text(
             text = titulo,
             style = MaterialTheme.typography.labelMedium,

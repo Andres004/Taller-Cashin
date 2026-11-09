@@ -1,5 +1,9 @@
 package org.ucb.cashin.ui.inicio
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -30,6 +35,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
@@ -54,7 +62,7 @@ import org.ucb.cashin.prediccion.EstadoPlan
 import org.ucb.cashin.prediccion.MensajeAvatar
 import org.ucb.cashin.prediccion.PlanAhorro
 import org.ucb.cashin.prediccion.TipoMensaje
-import org.ucb.cashin.ui.components.AvatarBurbuja
+import org.ucb.cashin.ui.components.AvatarImagen
 import org.ucb.cashin.ui.components.BarraEstadisticas
 import org.ucb.cashin.ui.components.CashinBoton
 import org.ucb.cashin.ui.components.ChipSube
@@ -83,6 +91,7 @@ import org.ucb.cashin.util.Formato
 import java.math.BigDecimal
 
 private val SEPARACION_BLOQUES = 10.dp
+private val TAMANO_CASHI = 210.dp
 private val FOCO_CONFETI = 300.dp
 
 /**
@@ -94,6 +103,7 @@ fun InicioScreen(
     onAbrirDesafios: () -> Unit,
     onMetaClick: (metaId: String) -> Unit,
     onNuevaMeta: () -> Unit,
+    onAbrirRacha: () -> Unit = {},
     viewModel: InicioViewModel = viewModel(factory = InicioViewModel.Factory),
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
@@ -110,6 +120,7 @@ fun InicioScreen(
             viewModel.avisoNuevosVisto()
             onAbrirDesafios()
         },
+        onAbrirRacha = onAbrirRacha,
     )
 
     // HU-23: si al abrir Inicio se cerró un desafío, se muestra la animación (cumplido o fallido).
@@ -133,6 +144,7 @@ fun InicioContenido(
     onMetaClick: (metaId: String) -> Unit,
     onNuevaMeta: () -> Unit,
     onAbrirDesafios: () -> Unit,
+    onAbrirRacha: () -> Unit = {},
 ) {
     when {
         estado.cargando -> EstadoCargando()
@@ -153,7 +165,7 @@ fun InicioContenido(
                     .padding(start = Espacio.pantalla, end = Espacio.pantalla, top = Espacio.l, bottom = Espacio.m),
                 verticalArrangement = Arrangement.spacedBy(SEPARACION_BLOQUES),
             ) {
-                Encabezado(estado)
+                Encabezado(estado, onAbrirRacha)
                 if (estado.hayDesafiosNuevos) AvisoDesafiosNuevos(onAbrirDesafios)
                 MensajeDeCashi(estado)
                 if (estado.metasDisponibles) {
@@ -183,7 +195,7 @@ private fun ConfetiDeNivel() {
 
 /** El saludo y debajo la racha y el nivel; al subir de nivel, los XP ganados suben al costado. */
 @Composable
-private fun Encabezado(estado: InicioUiState) {
+private fun Encabezado(estado: InicioUiState, onAbrirRacha: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
             text = stringResource(R.string.inicio_saludo, estado.nombre),
@@ -199,6 +211,7 @@ private fun Encabezado(estado: InicioUiState) {
                 nivel = estado.nivel,
                 xp = estado.xp,
                 resaltarNivel = estado.subioANivel != null,
+                onRachaClick = onAbrirRacha,
             )
             Spacer(Modifier.weight(1f))
             estado.xpGanado?.let { xp ->
@@ -242,22 +255,67 @@ private fun AvisoDesafiosNuevos(onVer: () -> Unit) {
     }
 }
 
-/** HU-21 / HU-24: el consejo del día; al subir de nivel, Cashi celebra en su lugar. */
+/**
+ * HU-21 / HU-24: Cashi grande, con el consejo del día en un globo; al subir de nivel celebra.
+ * Queda apoyado sobre la tarjeta siguiente, que tapa el corte de las poses de medio cuerpo.
+ */
 @Composable
 private fun MensajeDeCashi(estado: InicioUiState) {
     val nivel = estado.subioANivel
     val consejo = estado.mensajeIa
-    when {
-        nivel != null -> AvatarBurbuja(
-            mensaje = stringResource(R.string.inicio_subiste_nivel, nivel),
-            emocion = Emocion.CELEBRANDO,
-            recurso = RecursoCashi.SUBIDA_NIVEL,
-            tamanoAvatar = 70.dp,
-        )
-        consejo != null -> AvatarBurbuja(
-            mensaje = consejo.texto(),
-            emocion = consejo.animo.emocion(),
-            tamanoAvatar = 70.dp,
+    val emocion = when {
+        nivel != null -> Emocion.CELEBRANDO
+        consejo != null -> consejo.animo.emocion()
+        else -> Emocion.FELIZ
+    }
+    val texto = when {
+        nivel != null -> stringResource(R.string.inicio_subiste_nivel, nivel)
+        consejo != null -> consejo.texto()
+        else -> stringResource(R.string.inicio_cashi_saludo)
+    }
+    val colorGlobo = CashinColores.fondoAvatar
+    val escala = remember { Animatable(0.75f) }
+    LaunchedEffect(Unit) {
+        escala.animateTo(1f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow))
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .offset(y = SEPARACION_BLOQUES + 2.dp),
+    ) {
+        Surface(
+            color = colorGlobo,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = texto,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+        }
+        Canvas(modifier = Modifier.size(width = 24.dp, height = 12.dp)) {
+            val cola = Path().apply {
+                moveTo(0f, 0f)
+                lineTo(size.width, 0f)
+                lineTo(size.width / 2, size.height)
+                close()
+            }
+            drawPath(cola, colorGlobo)
+        }
+        AvatarImagen(
+            emocion = emocion,
+            tamano = TAMANO_CASHI,
+            recurso = if (nivel != null) RecursoCashi.SUBIDA_NIVEL else emocion.recurso,
+            modifier = Modifier.graphicsLayer {
+                transformOrigin = TransformOrigin(0.5f, 1f)
+                scaleX = escala.value
+                scaleY = escala.value
+            },
         )
     }
 }

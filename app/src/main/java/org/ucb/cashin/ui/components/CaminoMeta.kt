@@ -571,7 +571,7 @@ private fun FilaActual(
                 )
             }
             ImagenCashi(
-                recurso = if (celebrando) RecursoCashi.CELEBRANDO else RecursoCashi.FELIZ,
+                recurso = if (celebrando) RecursoCashi.AHORRO else RecursoCashi.CAMINO,
                 contentDescription = null,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)

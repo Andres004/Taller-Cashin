@@ -11,6 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.ucb.cashin.R
+import org.ucb.cashin.ui.components.RecursoCashi
 import org.ucb.cashin.ui.components.AvatarBurbuja
 import org.ucb.cashin.ui.components.CashinBoton
 import org.ucb.cashin.ui.components.CashinCampoTexto
@@ -54,6 +55,7 @@ fun CrearCuentaContenido(
         snackbar = remember { SnackbarHostState() },
         error = estado.error,
         onAtras = onAtras,
+        recursoCashi = RecursoCashi.CREAR_CUENTA,
     ) {
         // Cuenta creada pero falta confirmar el correo: se reemplaza el formulario.
         val correoEnviado = estado.correoConfirmacion

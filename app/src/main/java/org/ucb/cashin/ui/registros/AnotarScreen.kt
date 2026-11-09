@@ -50,13 +50,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.ucb.cashin.R
 import org.ucb.cashin.model.Categoria
 import org.ucb.cashin.model.MedioPago
+import org.ucb.cashin.model.RecompensaAnotar
 import org.ucb.cashin.model.TipoRegistro
+import org.ucb.cashin.ui.components.AvatarBurbuja
 import org.ucb.cashin.ui.components.CashinBoton
 import org.ucb.cashin.ui.components.CashinCampoMonto
 import org.ucb.cashin.ui.components.CashinCampoTexto
 import org.ucb.cashin.ui.components.CashinTopBar
+import org.ucb.cashin.ui.components.Emocion
 import org.ucb.cashin.ui.components.EstadoCargando
 import org.ucb.cashin.ui.components.EstadoError
+import org.ucb.cashin.ui.components.RecursoCashi
 import org.ucb.cashin.ui.components.SelectorCategoria
 import org.ucb.cashin.ui.components.VarianteBoton
 import org.ucb.cashin.ui.components.mensaje
@@ -70,7 +74,7 @@ import org.ucb.cashin.ui.theme.Espacio
  */
 @Composable
 fun AnotarScreen(
-    onGuardado: (ganoXp: Boolean) -> Unit,
+    onGuardado: (recompensa: RecompensaAnotar?) -> Unit,
     registroId: String? = null,
     onEliminado: () -> Unit = {},
     onAtras: (() -> Unit)? = null,
@@ -81,9 +85,9 @@ fun AnotarScreen(
     // Cuando se guarda: limpia el formulario y avisa a quien abrió la pantalla.
     LaunchedEffect(estado.guardado) {
         if (estado.guardado) {
-            val ganoXp = estado.ganoXp
+            val recompensa = estado.recompensa
             viewModel.limpiarFormulario()
-            onGuardado(ganoXp)
+            onGuardado(recompensa)
         }
     }
 
@@ -147,6 +151,8 @@ fun AnotarContenido(
                     .padding(horizontal = Espacio.pantalla, vertical = Espacio.s),
                 verticalArrangement = Arrangement.spacedBy(Espacio.l),
             ) {
+                if (!estado.esEdicion) GuiaDeCashi(estado)
+
                 SelectorTipo(tipo = estado.tipo, onTipoCambio = onTipoCambio, habilitado = !ocupado)
 
                 CashinCampoMonto(
@@ -230,6 +236,25 @@ fun AnotarContenido(
             containerColor = MaterialTheme.colorScheme.background,
         )
     }
+}
+
+/** Cashi acompaña el formulario: pide lo que falta y celebra cuando ya se puede guardar. */
+@Composable
+private fun GuiaDeCashi(estado: AnotarUiState) {
+    val esGasto = estado.tipo == TipoRegistro.GASTO
+    val (mensaje, emocion) = when {
+        estado.monto.isBlank() -> R.string.anotar_cashi_monto to Emocion.NEUTRAL
+        estado.categoriaId == null ->
+            (if (esGasto) R.string.anotar_cashi_categoria_gasto else R.string.anotar_cashi_categoria_ingreso) to Emocion.FELIZ
+        estado.medioPago == null -> R.string.anotar_cashi_medio to Emocion.FELIZ
+        else -> R.string.anotar_cashi_listo to Emocion.CELEBRANDO
+    }
+    AvatarBurbuja(
+        mensaje = stringResource(mensaje),
+        emocion = emocion,
+        recurso = if (emocion == Emocion.CELEBRANDO) RecursoCashi.XP else emocion.recurso,
+        tamanoAvatar = 60.dp,
+    )
 }
 
 /** Rojo para gastos y verde para ingresos, igual que en el historial. */

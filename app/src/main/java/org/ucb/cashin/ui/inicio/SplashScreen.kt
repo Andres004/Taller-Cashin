@@ -28,7 +28,7 @@ fun SplashScreen() {
             ImagenCashi(
                 recurso = RecursoCashi.BIENVENIDA,
                 contentDescription = stringResource(R.string.logo_descripcion),
-                modifier = Modifier.size(width = 200.dp, height = 170.dp),
+                modifier = Modifier.size(220.dp),
             )
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
         }

@@ -1,6 +1,5 @@
 package org.ucb.cashin.ui.auth
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,8 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -32,6 +29,8 @@ import org.ucb.cashin.model.ErrorApp
 import org.ucb.cashin.ui.components.AvatarImagen
 import org.ucb.cashin.ui.components.CashinTopBar
 import org.ucb.cashin.ui.components.Emocion
+import org.ucb.cashin.ui.components.ImagenCashi
+import org.ucb.cashin.ui.components.RecursoCashi
 import org.ucb.cashin.ui.components.mensaje
 import org.ucb.cashin.ui.theme.Espacio
 
@@ -40,7 +39,7 @@ import org.ucb.cashin.ui.theme.Espacio
  * y el formulario. Desplazable y se ajusta cuando aparece el teclado.
  *
  * Encabezado:
- * - Sin [emocionAvatar] (Login, Crear cuenta): logo de Cashin arriba y el título centrado.
+ * - Sin [emocionAvatar] (Login, Crear cuenta): [recursoCashi] arriba y el título centrado.
  * - Con [emocionAvatar] (Recuperar contraseña): Cashi a la izquierda y el título al lado.
  * Si [subtitulo] es null no se dibuja; útil cuando la pantalla pone su propio texto en [contenido].
  */
@@ -52,6 +51,7 @@ fun AuthLayout(
     error: ErrorApp?,
     onAtras: (() -> Unit)? = null,
     emocionAvatar: Emocion? = null,
+    recursoCashi: RecursoCashi = RecursoCashi.BIENVENIDA,
     contenido: @Composable ColumnScope.() -> Unit,
 ) {
     Scaffold(
@@ -78,10 +78,9 @@ fun AuthLayout(
                 val centrado = emocionAvatar == null
 
                 if (emocionAvatar == null) {
-                    Image(
-                        painter = painterResource(R.drawable.logo_cashin),
-                        contentDescription = stringResource(R.string.logo_descripcion),
-                        contentScale = ContentScale.Fit,
+                    ImagenCashi(
+                        recurso = recursoCashi,
+                        contentDescription = stringResource(R.string.avatar_descripcion),
                         modifier = Modifier.size(width = 170.dp, height = 145.dp),
                     )
                     Text(

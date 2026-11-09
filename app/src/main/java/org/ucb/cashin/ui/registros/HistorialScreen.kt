@@ -39,8 +39,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.ucb.cashin.R
@@ -51,6 +53,7 @@ import org.ucb.cashin.ui.components.CashinTopBar
 import org.ucb.cashin.ui.components.Emocion
 import org.ucb.cashin.ui.components.EstadoCargando
 import org.ucb.cashin.ui.components.EstadoError
+import org.ucb.cashin.ui.components.AvatarBurbuja
 import org.ucb.cashin.ui.components.EstadoVacio
 import org.ucb.cashin.ui.components.FilaRegistro
 import org.ucb.cashin.ui.components.colorCategoria
@@ -147,7 +150,18 @@ fun HistorialContenido(
                         emocion = Emocion.NEUTRAL,
                     )
                 } else {
-                    ListaPorDia(dias = estado.dias, onRegistroClick = onRegistroClick)
+                    ListaPorDia(
+                        dias = estado.dias,
+                        onRegistroClick = onRegistroClick,
+                        encabezado = {
+                            val cantidad = estado.dias.sumOf { it.registros.size }
+                            AvatarBurbuja(
+                                mensaje = pluralStringResource(R.plurals.historial_cashi, cantidad, cantidad),
+                                emocion = Emocion.FELIZ,
+                                tamanoAvatar = 60.dp,
+                            )
+                        },
+                    )
                 }
             }
         }
@@ -449,11 +463,13 @@ private fun coloresDeChip(): SelectableChipColors = FilterChipDefaults.filterChi
 private fun ListaPorDia(
     dias: List<DiaHistorial>,
     onRegistroClick: (registroId: String) -> Unit,
+    encabezado: @Composable () -> Unit,
 ) {
     LazyColumn(
         contentPadding = PaddingValues(horizontal = Espacio.pantalla, vertical = Espacio.s),
         verticalArrangement = Arrangement.spacedBy(Espacio.s),
     ) {
+        item(key = "encabezado") { encabezado() }
         dias.forEach { dia ->
             item(key = dia.fecha.toString()) {
                 EncabezadoDia(dia = dia)
