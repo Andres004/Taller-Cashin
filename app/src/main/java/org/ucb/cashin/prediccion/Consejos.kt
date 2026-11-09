@@ -69,6 +69,51 @@ fun consejoDelDia(
     }
 }
 
+/**
+ * Todo lo que Cashi puede decir ahora, para no repetir siempre lo mismo. El primero es el
+ * [principal]. Si la racha está por perderse, solo se avisa eso: es lo único que no puede esperar.
+ */
+fun consejosDisponibles(
+    principal: MensajeAvatar,
+    hoy: LocalDate,
+    racha: Int,
+    gastoPorCategoria: List<GastoCategoriaMes>,
+    desafioActivo: Desafio?,
+    progreso: ProgresoDesafio?,
+    metaMasCercana: AvanceMeta?,
+    totalGastos: BigDecimal,
+    totalIngresos: BigDecimal,
+    xpParaNivel: Int,
+): List<MensajeAvatar> {
+    if (principal.tipo == TipoMensaje.RACHA_EN_RIESGO) return listOf(principal)
+    return buildList {
+        add(principal)
+        desafioEnRiesgo(desafioActivo, progreso)?.let(::add)
+        categoriaQueSube(gastoPorCategoria, hoy)?.let(::add)
+        metaCerca(metaMasCercana)?.let(::add)
+        if (racha >= 3) add(MensajeAvatar(TipoMensaje.RACHA_BUENA, Animo.FELIZ, dias = racha))
+        if (totalIngresos.signum() > 0) {
+            add(MensajeAvatar(TipoMensaje.INGRESOS_DEL_MES, Animo.CELEBRANDO, monto = totalIngresos))
+        }
+        if (totalIngresos > totalGastos) {
+            add(MensajeAvatar(TipoMensaje.INGRESOS_A_FAVOR, Animo.FELIZ, monto = totalIngresos - totalGastos))
+        }
+        metaMasCercana?.let { meta ->
+            add(MensajeAvatar(TipoMensaje.META_AVANCE, Animo.FELIZ, monto = meta.montoObjetivo - meta.totalAhorrado, nombre = meta.nombre))
+        }
+        add(MensajeAvatar(TipoMensaje.XP_PARA_NIVEL, Animo.FELIZ, dias = xpParaNivel))
+    }.distinctBy { it.tipo }
+}
+
+/**
+ * Cambia de mensaje en cada visita a Inicio con [turno]. Si [entroIngreso], Cashi reacciona a
+ * ese ingreso antes que nada.
+ */
+fun elegirConsejo(consejos: List<MensajeAvatar>, turno: Int, entroIngreso: Boolean): MensajeAvatar {
+    if (entroIngreso) consejos.firstOrNull { it.tipo == TipoMensaje.INGRESOS_DEL_MES }?.let { return it }
+    return consejos[turno.mod(consejos.size)]
+}
+
 /** Regla 2: el desafío activo con límite ya gastó el 80 % o más. [monto] = lo que queda. */
 private fun desafioEnRiesgo(desafio: Desafio?, progreso: ProgresoDesafio?): MensajeAvatar? {
     val limite = desafio?.montoLimite ?: return null

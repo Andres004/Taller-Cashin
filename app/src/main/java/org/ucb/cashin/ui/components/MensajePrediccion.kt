@@ -34,6 +34,10 @@ fun MensajeAvatar.texto(): String {
             stringResource(R.string.ia_categoria_sube, nombre.orEmpty(), Formato.montoAproximado(monto ?: BigDecimal.ZERO))
         TipoMensaje.META_CERCA -> stringResource(R.string.ia_meta_cerca, nombre.orEmpty(), montoTexto)
         TipoMensaje.RACHA_BUENA -> (dias ?: 0).let { pluralStringResource(R.plurals.ia_racha_buena, it, it) }
+        TipoMensaje.INGRESOS_DEL_MES -> stringResource(R.string.ia_ingresos_del_mes, montoTexto)
+        TipoMensaje.INGRESOS_A_FAVOR -> stringResource(R.string.ia_ingresos_a_favor, montoTexto)
+        TipoMensaje.META_AVANCE -> stringResource(R.string.ia_meta_avance, nombre.orEmpty(), montoTexto)
+        TipoMensaje.XP_PARA_NIVEL -> stringResource(R.string.ia_xp_para_nivel, dias ?: 0)
     }
 }
 

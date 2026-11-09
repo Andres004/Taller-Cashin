@@ -374,6 +374,10 @@
     <string name="ia_meta_ritmo_negativo">Este mes se te fue más de lo que entró. Empieza con poquito.</string>
     <string name="ia_sin_datos">Anota tus gastos unas semanas más y te doy un consejo.</string>
     <string name="ia_gasto_mas_rapido">Este mes estás gastando más rápido que de costumbre.</string>
+    <string name="ia_ingresos_del_mes">¡Bien! Ya anotaste %1$s de ingresos este mes.</string>
+    <string name="ia_ingresos_a_favor">¡Vas a favor! Este mes entró %1$s más de lo que salió.</string>
+    <string name="ia_meta_avance">Para %1$s te faltan %2$s. ¡Paso a paso!</string>
+    <string name="ia_xp_para_nivel">Te faltan %1$d XP para subir de nivel. ¡Cada anotación suma!</string>
     <string name="ia_gasto_normal">Tus gastos van normales este mes. Sigue así.</string>
 
     <!-- Consejo del día (HU-21) -->
