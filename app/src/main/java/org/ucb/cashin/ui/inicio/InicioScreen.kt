@@ -256,6 +256,22 @@ private fun AvisoDesafiosNuevos(onVer: () -> Unit) {
 }
 
 /**
+ * La pose de Cashi en Inicio según lo que dice: preocupado si hay que cuidarse, pensando sin datos,
+ * cool si la racha o los ingresos van bien, ahorro con dinero o metas, subida de nivel con XP y feliz lo demás.
+ */
+private fun MensajeAvatar.recursoEnInicio(): RecursoCashi = when (tipo) {
+    TipoMensaje.RACHA_EN_RIESGO, TipoMensaje.DESAFIO_EN_RIESGO, TipoMensaje.CATEGORIA_SUBE,
+    TipoMensaje.GASTO_MAS_RAPIDO, TipoMensaje.META_NO_LLEGA, TipoMensaje.META_RITMO_NEGATIVO,
+    -> RecursoCashi.PREOCUPADO
+    TipoMensaje.SIN_DATOS -> RecursoCashi.PENSANDO
+    TipoMensaje.RACHA_BUENA, TipoMensaje.INGRESOS_A_FAVOR -> RecursoCashi.COOL
+    TipoMensaje.INGRESOS_DEL_MES, TipoMensaje.META_CERCA, TipoMensaje.META_ALCANZADA, TipoMensaje.META_ALCANZABLE,
+    -> RecursoCashi.AHORRO
+    TipoMensaje.XP_PARA_NIVEL -> RecursoCashi.SUBIDA_NIVEL
+    TipoMensaje.GASTO_NORMAL, TipoMensaje.META_AVANCE -> RecursoCashi.FELIZ
+}
+
+/**
  * HU-21 / HU-24: Cashi grande, con el consejo del día en un globo; al subir de nivel celebra.
  * Queda apoyado sobre la tarjeta siguiente, que tapa el corte de las poses de medio cuerpo.
  */
@@ -310,7 +326,11 @@ private fun MensajeDeCashi(estado: InicioUiState) {
         AvatarImagen(
             emocion = emocion,
             tamano = TAMANO_CASHI,
-            recurso = if (nivel != null) RecursoCashi.SUBIDA_NIVEL else emocion.recurso,
+            recurso = when {
+                nivel != null -> RecursoCashi.SUBIDA_NIVEL
+                consejo != null -> consejo.recursoEnInicio()
+                else -> RecursoCashi.FELIZ
+            },
             modifier = Modifier.graphicsLayer {
                 transformOrigin = TransformOrigin(0.5f, 1f)
                 scaleX = escala.value

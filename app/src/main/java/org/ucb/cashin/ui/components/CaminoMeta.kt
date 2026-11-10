@@ -112,6 +112,7 @@ private val HASTA_META = 112.dp
 private val BAJO_META = 118.dp
 private val ALTO_FILA = 48.dp
 private val ALTO_ACTUAL = 88.dp
+private val CASHI_CAMINO = 96.dp
 private val MONEDA = 58.dp
 private val MONEDA_ACTUAL = 72.dp
 private val MONEDA_META = 84.dp
@@ -549,7 +550,7 @@ private fun FilaActual(
             .height(alto),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.padding(horizontal = 13.dp, vertical = 7.dp)) {
+            Column(modifier = Modifier.padding(start = 13.dp, end = CASHI_CAMINO - 18.dp, top = 7.dp, bottom = 7.dp)) {
                 Text(
                     text = stringResource(R.string.camino_proximo),
                     style = MaterialTheme.typography.bodySmall,
@@ -570,17 +571,17 @@ private fun FilaActual(
                     maxLines = 1,
                 )
             }
-            ImagenCashi(
-                recurso = if (celebrando) RecursoCashi.AHORRO else RecursoCashi.CAMINO,
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 2.dp, bottom = 1.dp)
-                    .size(58.dp)
-                    .graphicsLayer { translationY = salto.value * density },
-            )
         }
     }
+    // Fuera de la tarjeta para que Cashi pueda asomarse por arriba.
+    ImagenCashi(
+        recurso = if (celebrando) RecursoCashi.AHORRO else RecursoCashi.CAMINO,
+        contentDescription = null,
+        modifier = Modifier
+            .offset(X_FILA + ancho - CASHI_CAMINO, y + alto / 2 - CASHI_CAMINO - 2.dp)
+            .size(CASHI_CAMINO)
+            .graphicsLayer { translationY = salto.value * density },
+    )
 }
 
 @Composable

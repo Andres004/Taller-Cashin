@@ -81,7 +81,7 @@ fun AuthLayout(
                     ImagenCashi(
                         recurso = recursoCashi,
                         contentDescription = stringResource(R.string.avatar_descripcion),
-                        modifier = Modifier.size(width = 170.dp, height = 145.dp),
+                        modifier = Modifier.size(240.dp),
                     )
                     Text(
                         text = titulo,

@@ -104,6 +104,7 @@ fun MetasContenido(
                 textoAccion = stringResource(R.string.metas_vacio_accion),
                 onAccion = onNueva,
                 recurso = RecursoCashi.METAS_VACIO,
+                tamanoAvatar = 240.dp,
             )
 
             else -> Column(modifier = Modifier.fillMaxSize()) {

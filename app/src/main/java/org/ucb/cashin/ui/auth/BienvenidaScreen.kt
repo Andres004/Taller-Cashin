@@ -67,7 +67,7 @@ fun BienvenidaScreen(
                     ImagenCashi(
                         recurso = RecursoCashi.PANTALLA_BIENVENIDA,
                         contentDescription = stringResource(R.string.logo_descripcion),
-                        modifier = Modifier.size(240.dp),
+                        modifier = Modifier.size(320.dp),
                     )
                     Spacer(Modifier.height(Espacio.l))
                     Text(
