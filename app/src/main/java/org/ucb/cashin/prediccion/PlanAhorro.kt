@@ -408,54 +408,39 @@ private fun planSimbolico(
 }
 
 // ---------------------------------------------------------------------------------------------
-// Camino guardado: se arma una vez, se guarda con la meta y solo se vuelve a estimar cuando la
-// persona anota un ahorro o un retiro. Los pasos completados nunca cambian.
-// - Con fecha límite: las fechas no se mueven; se reparten de nuevo los montos de los pasos que quedan.
-// - Sin fecha: se vuelve a estimar el monto de cada paso y cuántos pasos hacen falta.
+// Camino fijo: se arma una sola vez, se guarda con la meta y los ahorros lo van llenando en orden,
+// como las lecciones de Duolingo. Así el camino no cambia cada vez que se abre la meta.
 // ---------------------------------------------------------------------------------------------
 
 private const val PASOS_VISIBLES_SIMBOLICOS = 6
 
-/** Un paso guardado: hasta cuándo y cuánto. */
-data class PasoGuardado(val fecha: LocalDate, val monto: BigDecimal)
-
+/**
+ * El camino guardado de una meta. Los montos de cada paso salen de [paso]; el último completa lo que falta.
+ * Las fechas salen de [primerCorte]; desde [reinicioIndice] siguen desde [reinicioCorte] si el camino se corrió.
+ */
 data class CaminoGuardado(
-    /** Todos los pasos en orden, completados y por cumplir. */
-    val pasos: List<PasoGuardado>,
-    /** Desde aquí se cuentan los pasos: lo ahorrado menos lo que suman los completados. */
+    val paso: BigDecimal,
+    val cadencia: CadenciaPlan,
+    val mesesPorPaso: Int,
+    val primerCorte: LocalDate,
+    /** Lo que ya estaba ahorrado cuando se armó el camino: los pasos cuentan desde ahí. */
     val ahorradoInicial: BigDecimal,
-    /** Lo ahorrado la última vez que se estimó: si cambia, la persona anotó algo. */
-    val ahorradoAlEstimar: BigDecimal,
-    /** Monto objetivo y fecha límite con que se armó: si la meta se edita, se arma de nuevo. */
+    /** Monto objetivo y fecha límite con que se armó: si la meta se edita, el camino se arma de nuevo. */
     val objetivo: BigDecimal,
     val fechaLimite: LocalDate?,
     val estado: EstadoPlan,
-    val cadencia: CadenciaPlan,
-    val mesesPorPaso: Int,
-    val ahorroPorPaso: BigDecimal,
+    val reinicioIndice: Int = 0,
+    val reinicioCorte: LocalDate? = null,
 )
 
 /** El camino sigue sirviendo mientras la meta tenga el mismo objetivo y la misma fecha límite. */
 fun CaminoGuardado.vigentePara(avance: AvanceMeta): Boolean =
     objetivo.compareTo(avance.montoObjetivo) == 0 && fechaLimite == avance.fechaLimite
 
-/** Ingresos, gastos y lo recortable con que se estima cuánto puede ahorrar la persona. */
-private class Margen(val capacidad: BigDecimal, val maximo: BigDecimal, val ingresos: BigDecimal)
-
-private fun margenDe(pronosticoIngresos: Pronostico, pronosticoGastos: Pronostico, desglose: DesgloseGastos?): Margen? {
-    val ingresos = pronosticoIngresos.esperado
-    val sinDatos = pronosticoIngresos.confianza == Confianza.SIN_DATOS ||
-        pronosticoGastos.confianza == Confianza.SIN_DATOS ||
-        ingresos.signum() <= 0
-    if (sinDatos) return null
-    val capacidad = capacidadDeAhorro(ingresos, pronosticoGastos.esperado, desglose)
-    val maximo = (capacidad + (desglose?.margenRecortable ?: BigDecimal.ZERO)).max(BigDecimal.ZERO)
-    return Margen(capacidad, maximo, ingresos)
-}
-
 /**
- * Arma el camino de una meta. Null si todavía no hay datos de ingresos y gastos o si ya llegó al objetivo.
- * Con fecha límite, el último paso siempre cae en esa fecha.
+ * Arma el camino de una meta. Null si todavía no hay datos para pedir montos o si ya llegó al objetivo.
+ * - Con fecha límite: todos los pasos terminan en esa fecha, aunque pida más de lo que permiten los ingresos.
+ * - Sin fecha: al ritmo posible; si casi no hay margen, pasos simbólicos.
  */
 fun crearCamino(
     avance: AvanceMeta,
@@ -465,166 +450,130 @@ fun crearCamino(
     desglose: DesgloseGastos?,
     hoy: LocalDate,
 ): CaminoGuardado? {
-    val total = avance.totalAhorrado.setScale(2, RoundingMode.HALF_UP)
-    val faltante = (avance.montoObjetivo - total).max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP)
+    val faltante = (avance.montoObjetivo - avance.totalAhorrado).max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP)
     if (faltante.signum() == 0) return null
-    val margen = margenDe(pronosticoIngresos, pronosticoGastos, desglose) ?: return null
+    val ingresos = pronosticoIngresos.esperado
+    val sinDatos = pronosticoIngresos.confianza == Confianza.SIN_DATOS ||
+        pronosticoGastos.confianza == Confianza.SIN_DATOS ||
+        ingresos.signum() <= 0
+    if (sinDatos) return null
+
+    val capacidad = capacidadDeAhorro(ingresos, pronosticoGastos.esperado, desglose)
+    val maximo = (capacidad + (desglose?.margenRecortable ?: BigDecimal.ZERO)).max(BigDecimal.ZERO)
     val fecha = avance.fechaLimite
-    val calendario = if (fecha != null) {
-        calendarioHastaFecha(fecha, faltante, margen, hoy)
-    } else {
-        calendarioSinFecha(faltante, aportes, margen, hoy, despuesDe = null)
+    val calendario = when {
+        fecha != null && fecha.isAfter(hoy) -> calendarioHastaFecha(fecha, faltante, capacidad, maximo, hoy)
+        fecha != null -> Calendario(EstadoPlan.NO_LLEGA_A_FECHA, CadenciaPlan.SEMANAL, 1, faltante, listOf(fecha))
+        maximo < MINIMO_CON_MARGEN -> {
+            val paso = aMultiplo((ingresos * PARTE_DEL_INGRESO_SIMBOLICA).min(MINIMO_CON_MARGEN).max(SIMBOLICO_MINIMO)).min(faltante)
+            Calendario(EstadoPlan.SIN_MARGEN, CadenciaPlan.MENSUAL, 1, paso, listOf(finDeMes(YearMonth.from(hoy))))
+        }
+        else -> porRitmo(faltante, ritmoSinFecha(aportes, maximo), capacidad, false, hoy)
     }
     return CaminoGuardado(
-        pasos = repartir(calendario.cortes, calendario.paso, faltante),
-        ahorradoInicial = total,
-        ahorradoAlEstimar = total,
+        paso = calendario.paso,
+        cadencia = calendario.cadencia,
+        mesesPorPaso = calendario.mesesPorPaso,
+        primerCorte = calendario.cortes.first(),
+        ahorradoInicial = avance.totalAhorrado.setScale(2, RoundingMode.HALF_UP),
         objetivo = avance.montoObjetivo.setScale(2, RoundingMode.HALF_UP),
         fechaLimite = fecha,
         estado = calendario.estado,
-        cadencia = calendario.cadencia,
-        mesesPorPaso = calendario.mesesPorPaso,
-        ahorroPorPaso = calendario.paso,
     )
 }
 
-/**
- * Vuelve a estimar el camino solo si la persona anotó un ahorro o un retiro desde la última vez.
- * Lo ahorrado completa los pasos en orden (si sobra, completa los siguientes por adelantado);
- * un retiro vuelve a abrir los últimos completados. Después se reparte lo que falta.
- */
-fun CaminoGuardado.reestimar(
-    avance: AvanceMeta,
-    aportes: List<AporteMeta>,
-    pronosticoIngresos: Pronostico,
-    pronosticoGastos: Pronostico,
-    desglose: DesgloseGastos?,
-    hoy: LocalDate,
-): CaminoGuardado {
-    val total = avance.totalAhorrado.setScale(2, RoundingMode.HALF_UP)
-    if (total.compareTo(ahorradoAlEstimar) == 0) return this
-
-    val avanceDesdeInicio = total - ahorradoInicial
-    val completados = mutableListOf<PasoGuardado>()
-    var suma = BigDecimal.ZERO.setScale(2)
-    for (paso in pasos) {
-        if (suma + paso.monto > avanceDesdeInicio) break
-        completados += paso
-        suma += paso.monto
-    }
-    val faltante = (objetivo - total).max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP)
-    val base = copy(ahorradoInicial = total - suma, ahorradoAlEstimar = total)
-    if (faltante.signum() == 0) return base.copy(pasos = completados)
-
-    val margen = margenDe(pronosticoIngresos, pronosticoGastos, desglose)
-    val fecha = fechaLimite
-    val calendario = if (fecha != null) {
-        // Las fechas no se mueven: los pasos vencidos sin completar se quitan y su monto pasa a los que vienen.
-        val quedan = pasos.drop(completados.size).map { it.fecha }.filter { !it.isBefore(hoy) }.ifEmpty { listOf(fecha) }
-        val necesario = faltante.divide(BigDecimal.valueOf(quedan.size.toLong()), 2, RoundingMode.CEILING)
-        Calendario(estadoPara(necesario, margen, cadencia, mesesPorPaso), cadencia, mesesPorPaso, aMultiplo(necesario).max(MULTIPLO).min(faltante), quedan)
-    } else if (margen != null) {
-        calendarioSinFecha(faltante, aportes, margen, hoy, despuesDe = completados.lastOrNull()?.fecha)
-    } else {
-        // Sin datos de ingresos y gastos: se mantiene el monto por paso y se recalcula cuántos hacen falta.
-        val cantidad = faltante.divide(ahorroPorPaso, 0, RoundingMode.CEILING).toInt().coerceAtLeast(1)
-        Calendario(estado, cadencia, mesesPorPaso, ahorroPorPaso.min(faltante), cortesDesde(cadencia, mesesPorPaso, hoy, completados.lastOrNull()?.fecha, cantidad))
-    }
-    return base.copy(
-        pasos = completados + repartir(calendario.cortes, calendario.paso, faltante),
-        estado = calendario.estado,
-        cadencia = calendario.cadencia,
-        mesesPorPaso = calendario.mesesPorPaso,
-        ahorroPorPaso = calendario.paso,
-    )
-}
-
-/** Hasta la fecha límite, siempre. El estado dice si alcanza, si hay que recortar o si pide más de lo posible. */
-private fun calendarioHastaFecha(fecha: LocalDate, base: BigDecimal, margen: Margen, hoy: LocalDate): Calendario {
-    if (!fecha.isAfter(hoy)) return Calendario(EstadoPlan.NO_LLEGA_A_FECHA, CadenciaPlan.SEMANAL, 1, base, listOf(fecha))
+/** Hasta la fecha límite, siempre. El estado dice si alcanza, si necesita recortar o si pide más de lo posible. */
+private fun calendarioHastaFecha(fecha: LocalDate, base: BigDecimal, capacidad: BigDecimal, maximo: BigDecimal, hoy: LocalDate): Calendario {
     val cadencia = cadenciaPara(ChronoUnit.DAYS.between(hoy, fecha))
     val meses = mesesPorPasoHasta(cadencia, fecha, hoy)
     val cortes = cortesHasta(cadencia, meses, fecha, hoy)
     val necesario = base.divide(BigDecimal.valueOf(cortes.size.toLong()), 2, RoundingMode.CEILING)
-    return Calendario(estadoPara(necesario, margen, cadencia, meses), cadencia, meses, aMultiplo(necesario).max(MULTIPLO).min(base), cortes)
-}
-
-private fun estadoPara(necesario: BigDecimal, margen: Margen?, cadencia: CadenciaPlan, meses: Int): EstadoPlan = when {
-    margen == null -> EstadoPlan.ALCANZA
-    necesario <= montoDelPeriodo(margen.capacidad.max(BigDecimal.ZERO), cadencia, meses) -> EstadoPlan.ALCANZA
-    necesario <= montoDelPeriodo(margen.maximo, cadencia, meses) -> EstadoPlan.CON_RECORTE
-    else -> EstadoPlan.NO_LLEGA_A_FECHA
-}
-
-/** Sin fecha: al ritmo posible según los ahorros y el historial; si casi no hay margen, pasos simbólicos. */
-private fun calendarioSinFecha(
-    faltante: BigDecimal,
-    aportes: List<AporteMeta>,
-    margen: Margen,
-    hoy: LocalDate,
-    despuesDe: LocalDate?,
-): Calendario {
-    if (margen.maximo < MINIMO_CON_MARGEN) {
-        val paso = aMultiplo((margen.ingresos * PARTE_DEL_INGRESO_SIMBOLICA).min(MINIMO_CON_MARGEN).max(SIMBOLICO_MINIMO)).min(faltante)
-        val cantidad = faltante.divide(paso, 0, RoundingMode.CEILING).toInt().coerceAtLeast(1)
-        return Calendario(EstadoPlan.SIN_MARGEN, CadenciaPlan.MENSUAL, 1, paso, cortesDesde(CadenciaPlan.MENSUAL, 1, hoy, despuesDe, cantidad))
+    val estado = when {
+        necesario <= montoDelPeriodo(capacidad.max(BigDecimal.ZERO), cadencia, meses) -> EstadoPlan.ALCANZA
+        necesario <= montoDelPeriodo(maximo, cadencia, meses) -> EstadoPlan.CON_RECORTE
+        else -> EstadoPlan.NO_LLEGA_A_FECHA
     }
-    val calendario = porRitmo(faltante, ritmoSinFecha(aportes, margen.maximo), margen.capacidad, false, hoy)
-    val cortes = cortesDesde(calendario.cadencia, calendario.mesesPorPaso, hoy, despuesDe, calendario.cortes.size)
-    return calendario.copy(cortes = cortes)
+    return Calendario(estado, cadencia, meses, aMultiplo(necesario).max(MULTIPLO).min(base), cortes)
 }
 
-/** [cantidad] vencimientos desde el periodo actual, siempre después del último paso completado. */
-private fun cortesDesde(cadencia: CadenciaPlan, meses: Int, hoy: LocalDate, despuesDe: LocalDate?, cantidad: Int): List<LocalDate> {
-    var primero = primerCorte(cadencia, meses, hoy)
-    while (despuesDe != null && !primero.isAfter(despuesDe)) primero = siguienteCorte(cadencia, meses, primero)
-    return generateSequence(primero) { siguienteCorte(cadencia, meses, it) }.take(cantidad).toList()
-}
-
-/** El mismo monto en cada paso y el último completa lo que falta. Nunca un paso de Bs 0. */
-private fun repartir(cortes: List<LocalDate>, paso: BigDecimal, faltante: BigDecimal): List<PasoGuardado> {
-    var restante = faltante
-    val pasos = mutableListOf<PasoGuardado>()
-    cortes.forEachIndexed { i, corte ->
-        val monto = if (i == cortes.lastIndex) restante else paso.min(restante)
-        if (monto.signum() > 0) {
-            pasos += PasoGuardado(corte, monto.setScale(2, RoundingMode.HALF_UP))
-            restante -= monto
+/** Fechas de cada paso del camino guardado. */
+private fun CaminoGuardado.fechas(): List<LocalDate> {
+    val base = objetivo - ahorradoInicial
+    val siguiente = { corte: LocalDate -> siguienteCorte(cadencia, mesesPorPaso, corte) }
+    val fecha = fechaLimite
+    if (fecha != null) {
+        if (!primerCorte.isBefore(fecha)) return listOf(fecha)
+        val cortes = generateSequence(primerCorte, siguiente).takeWhile { it < fecha }.toMutableList()
+        if (ChronoUnit.DAYS.between(cortes.last(), fecha) < DIAS_PARA_UNIR_ULTIMO_PASO) cortes.removeAt(cortes.lastIndex)
+        return cortes + fecha
+    }
+    val cantidad = base.divide(paso, 0, RoundingMode.CEILING).toInt().coerceAtLeast(1)
+    val reinicio = reinicioCorte
+    return List(cantidad) { i ->
+        if (reinicio != null && i >= reinicioIndice) {
+            generateSequence(reinicio, siguiente).elementAt(i - reinicioIndice)
+        } else {
+            generateSequence(primerCorte, siguiente).elementAt(i)
         }
     }
-    return pasos
 }
 
-/** Los pasos del camino según lo ahorrado: los primeros se llenan antes, como lecciones. */
+/** Cuánto pide cada paso: el mismo monto, y el último completa justo lo que falta. */
+private fun CaminoGuardado.montos(cantidad: Int): List<BigDecimal> {
+    val base = (objetivo - ahorradoInicial).setScale(2, RoundingMode.HALF_UP)
+    return List(cantidad) { i ->
+        if (i == cantidad - 1) base - paso * BigDecimal.valueOf((cantidad - 1).toLong()) else paso.setScale(2, RoundingMode.HALF_UP)
+    }
+}
+
+/**
+ * Sin fecha límite, si se venció el paso actual sin completarlo, las fechas desde ese paso se corren
+ * hasta el próximo periodo. Lo ya completado no cambia. Con fecha límite nunca se mueve.
+ */
+fun CaminoGuardado.alDia(totalAhorrado: BigDecimal, hoy: LocalDate): CaminoGuardado {
+    if (fechaLimite != null) return this
+    val fechas = fechas()
+    val actual = indiceActual(totalAhorrado, fechas.size) ?: return this
+    if (!fechas[actual].isBefore(hoy)) return this
+    return copy(reinicioIndice = actual, reinicioCorte = primerCorte(cadencia, mesesPorPaso, hoy))
+}
+
+private fun CaminoGuardado.indiceActual(totalAhorrado: BigDecimal, cantidad: Int): Int? {
+    val avance = totalAhorrado - ahorradoInicial
+    var umbral = BigDecimal.ZERO
+    montos(cantidad).forEachIndexed { i, monto ->
+        umbral += monto
+        if (avance < umbral) return i
+    }
+    return null
+}
+
+/** Los pasos del camino guardado según lo ahorrado: los primeros se llenan antes, como lecciones. */
 fun CaminoGuardado.camino(totalAhorrado: BigDecimal, hoy: LocalDate): PlanAhorro {
+    val fechas = fechas()
+    val montos = montos(fechas.size)
     val avance = totalAhorrado - ahorradoInicial
     var umbral = BigDecimal.ZERO
     var hayActual = false
-    val todos = pasos.mapIndexed { i, guardado ->
-        umbral += guardado.monto
-        val estadoPaso = when {
+    val pasos = fechas.mapIndexed { i, fecha ->
+        umbral += montos[i]
+        val estado = when {
             avance >= umbral -> EstadoPaso.COMPLETADO
             !hayActual -> EstadoPaso.ACTUAL.also { hayActual = true }
             else -> EstadoPaso.PENDIENTE
         }
-        val monto = if (estadoPaso == EstadoPaso.ACTUAL) (umbral - avance).min(guardado.monto) else guardado.monto
-        PasoAhorro(
-            numero = i + 1,
-            fecha = guardado.fecha,
-            monto = monto.setScale(2, RoundingMode.HALF_UP),
-            acumulado = (ahorradoInicial + umbral).setScale(2, RoundingMode.HALF_UP),
-            estado = estadoPaso,
-            esMeta = i == pasos.lastIndex,
-        )
+        val monto = if (estado == EstadoPaso.ACTUAL) (umbral - avance).min(montos[i]) else montos[i]
+        PasoAhorro(i + 1, fecha, monto.setScale(2, RoundingMode.HALF_UP), (ahorradoInicial + umbral).setScale(2, RoundingMode.HALF_UP), estado, esMeta = i == fechas.lastIndex)
     }
-    val simbolico = estado == EstadoPlan.SIN_MARGEN && hayActual
+    val logrado = !hayActual
+    val visibles = if (estado == EstadoPlan.SIN_MARGEN && !logrado) ventanaSimbolica(pasos) else pasos
     return PlanAhorro(
-        estado = if (hayActual) estado else EstadoPlan.LOGRADA,
+        estado = if (logrado) EstadoPlan.LOGRADA else estado,
         cadencia = cadencia,
         mesesPorPaso = mesesPorPaso,
-        ahorroPorPaso = ahorroPorPaso,
-        pasos = if (simbolico) ventanaSimbolica(todos) else todos,
-        fechaEstimada = if (simbolico) null else pasos.lastOrNull()?.fecha,
+        ahorroPorPaso = paso,
+        pasos = visibles,
+        fechaEstimada = if (estado == EstadoPlan.SIN_MARGEN && !logrado) null else fechas.last(),
     )
 }
 

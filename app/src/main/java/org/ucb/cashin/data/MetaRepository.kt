@@ -20,7 +20,6 @@ import org.ucb.cashin.model.TipoAporte
 import org.ucb.cashin.prediccion.CadenciaPlan
 import org.ucb.cashin.prediccion.CaminoGuardado
 import org.ucb.cashin.prediccion.EstadoPlan
-import org.ucb.cashin.prediccion.PasoGuardado
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -159,49 +158,48 @@ private data class FilaCamino(val id: String, val camino: CaminoJson? = null)
 @Serializable
 private data class CambioCamino(val camino: CaminoJson)
 
-/** Un paso dentro de la columna `meta.camino`. */
-@Serializable
-private data class PasoJson(val fecha: String, val monto: String)
-
 /** Columna `meta.camino` (jsonb). Los montos van como texto para no perder decimales. */
 @Serializable
 private data class CaminoJson(
-    val pasos: List<PasoJson>,
+    val paso: String,
+    val cadencia: String,
+    @SerialName("meses_por_paso") val mesesPorPaso: Int,
+    @SerialName("primer_corte") val primerCorte: String,
     @SerialName("ahorrado_inicial") val ahorradoInicial: String,
-    @SerialName("ahorrado_al_estimar") val ahorradoAlEstimar: String,
     val objetivo: String,
     @SerialName("fecha_limite") val fechaLimite: String? = null,
     val estado: String,
-    val cadencia: String,
-    @SerialName("meses_por_paso") val mesesPorPaso: Int,
-    @SerialName("ahorro_por_paso") val ahorroPorPaso: String,
+    @SerialName("reinicio_indice") val reinicioIndice: Int = 0,
+    @SerialName("reinicio_corte") val reinicioCorte: String? = null,
 ) {
-    /** Null si el contenido no se puede leer (por ejemplo, un camino con el formato anterior): se arma uno nuevo. */
+    /** Null si el contenido no se puede leer: entonces se arma un camino nuevo. */
     fun aCamino(): CaminoGuardado? = runCatching {
         CaminoGuardado(
-            pasos = pasos.map { PasoGuardado(LocalDate.parse(it.fecha), BigDecimal(it.monto)) },
+            paso = BigDecimal(paso),
+            cadencia = CadenciaPlan.valueOf(cadencia),
+            mesesPorPaso = mesesPorPaso,
+            primerCorte = LocalDate.parse(primerCorte),
             ahorradoInicial = BigDecimal(ahorradoInicial),
-            ahorradoAlEstimar = BigDecimal(ahorradoAlEstimar),
             objetivo = BigDecimal(objetivo),
             fechaLimite = fechaLimite?.let(LocalDate::parse),
             estado = EstadoPlan.valueOf(estado),
-            cadencia = CadenciaPlan.valueOf(cadencia),
-            mesesPorPaso = mesesPorPaso,
-            ahorroPorPaso = BigDecimal(ahorroPorPaso),
+            reinicioIndice = reinicioIndice,
+            reinicioCorte = reinicioCorte?.let(LocalDate::parse),
         )
     }.getOrNull()
 
     companion object {
         fun de(c: CaminoGuardado) = CaminoJson(
-            pasos = c.pasos.map { PasoJson(it.fecha.toString(), it.monto.toPlainString()) },
+            paso = c.paso.toPlainString(),
+            cadencia = c.cadencia.name,
+            mesesPorPaso = c.mesesPorPaso,
+            primerCorte = c.primerCorte.toString(),
             ahorradoInicial = c.ahorradoInicial.toPlainString(),
-            ahorradoAlEstimar = c.ahorradoAlEstimar.toPlainString(),
             objetivo = c.objetivo.toPlainString(),
             fechaLimite = c.fechaLimite?.toString(),
             estado = c.estado.name,
-            cadencia = c.cadencia.name,
-            mesesPorPaso = c.mesesPorPaso,
-            ahorroPorPaso = c.ahorroPorPaso.toPlainString(),
+            reinicioIndice = c.reinicioIndice,
+            reinicioCorte = c.reinicioCorte?.toString(),
         )
     }
 }

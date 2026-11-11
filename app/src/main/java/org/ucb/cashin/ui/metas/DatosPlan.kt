@@ -11,7 +11,7 @@ import org.ucb.cashin.model.TotalesMes
 import org.ucb.cashin.model.TipoRegistro
 import org.ucb.cashin.prediccion.CaminoGuardado
 import org.ucb.cashin.prediccion.DesgloseGastos
-import org.ucb.cashin.prediccion.reestimar
+import org.ucb.cashin.prediccion.alDia
 import org.ucb.cashin.prediccion.camino
 import org.ucb.cashin.prediccion.crearCamino
 import org.ucb.cashin.prediccion.vigentePara
@@ -34,7 +34,7 @@ internal class DatosPlan(
 ) {
     /**
      * El camino fijo de la meta: usa el guardado si sigue sirviendo; si no, arma uno y lo guarda.
-     * Se vuelve a estimar solo cuando la persona anotó algo. Sin datos para armarlo, usa el plan de siempre.
+     * Sin fecha límite, si se atrasó, corre las fechas y guarda el cambio. Sin datos, usa el plan de siempre.
      */
     suspend fun caminoPara(
         avance: AvanceMeta,
@@ -47,10 +47,9 @@ internal class DatosPlan(
             camino = crearCamino(avance, aportes, ingresos, gastos, desglose, hoy) ?: return planPara(avance, aportes)
             guardar(camino)
         }
-        // Solo cambia si la persona anotó un ahorro o un retiro desde la última vez.
-        val estimado = camino.reestimar(avance, aportes, ingresos, gastos, desglose, hoy)
-        if (estimado != camino) guardar(estimado)
-        return estimado.camino(avance.totalAhorrado, hoy)
+        val alDia = camino.alDia(avance.totalAhorrado, hoy)
+        if (alDia != camino) guardar(alDia)
+        return alDia.camino(avance.totalAhorrado, hoy)
     }
 
     fun planPara(avance: AvanceMeta, aportes: List<AporteMeta>): PlanAhorro =
