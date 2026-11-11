@@ -66,3 +66,9 @@ data class ResumenDeuda(
     val estado: EstadoDeuda,
     val pendiente: BigDecimal,
 )
+
+/**
+ * Vista `v_ingreso_categoria_mes` (migración 008). Tiene las mismas columnas que
+ * `v_gasto_categoria_mes`, así que se lee con la misma clase.
+ */
+typealias IngresoCategoriaMes = GastoCategoriaMes

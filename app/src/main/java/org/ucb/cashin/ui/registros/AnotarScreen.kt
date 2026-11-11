@@ -428,10 +428,10 @@ private fun MedioPago.etiqueta(): Int = when (this) {
 }
 
 private val categoriasDeEjemplo = listOf(
-    Categoria(id = "1", nombre = "Alimentación", tipo = TipoRegistro.GASTO, icono = "restaurant", color = "#4CAF50"),
-    Categoria(id = "2", nombre = "Transporte", tipo = TipoRegistro.GASTO, icono = "bus", color = "#2E7D32"),
-    Categoria(id = "3", nombre = "Vivienda", tipo = TipoRegistro.GASTO, icono = "home", color = "#81C784"),
-    Categoria(id = "4", nombre = "Salud", tipo = TipoRegistro.GASTO, icono = "health", color = "#FF8C32"),
+    Categoria(id = "1", nombre = "Alimentación", tipo = TipoRegistro.GASTO, icono = "restaurant", color = "#E08A2C"),
+    Categoria(id = "2", nombre = "Transporte", tipo = TipoRegistro.GASTO, icono = "bus", color = "#1F6E8C"),
+    Categoria(id = "3", nombre = "Vivienda", tipo = TipoRegistro.GASTO, icono = "home", color = "#2E7D32"),
+    Categoria(id = "4", nombre = "Salud", tipo = TipoRegistro.GASTO, icono = "health", color = "#D4829C"),
     Categoria(id = "5", nombre = "Educación", tipo = TipoRegistro.GASTO, icono = "school", color = "#1F6E8C"),
 )
 

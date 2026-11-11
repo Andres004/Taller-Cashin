@@ -544,4 +544,74 @@
     <string name="racha_mensaje_en_riesgo">Anota algo hoy para que no se apague.</string>
     <string name="racha_mensaje_sin_racha">Anota algo hoy y enciende tu racha.</string>
     <string name="racha_como_funciona">Con una anotación al día la racha sigue. Las 5 primeras del día te dan 10 XP cada una.</string>
+
+    <!-- Sprint 5 · Reportes en Historial (HU-14) -->
+    <string name="historial_pestana_movimientos">Movimientos</string>
+    <string name="historial_pestana_reportes">Reportes</string>
+    <string name="historial_resumen_categoria">%1$s en %2$s</string>
+    <plurals name="historial_resumen_cantidad">
+        <item quantity="one">%d movimiento</item>
+        <item quantity="other">%d movimientos</item>
+    </plurals>
+    <string name="historial_resumen_sube">▲ %1$d %% vs. %2$s</string>
+    <string name="historial_resumen_baja">▼ %1$d %% vs. %2$s</string>
+    <string name="historial_resumen_igual">Igual que en %1$s</string>
+    <string name="historial_resumen_nueva">Nueva este mes</string>
+
+    <string name="reportes_vista_gastos">Gastos</string>
+    <string name="reportes_vista_ingresos">Ingresos</string>
+    <string name="reportes_vista_meses">Meses</string>
+    <string name="reportes_mes_anterior">Mes anterior</string>
+    <string name="reportes_mes_siguiente">Mes siguiente</string>
+    <string name="reportes_gastaste">Gastaste</string>
+    <string name="reportes_recibiste">Recibiste</string>
+    <string name="reportes_centro_sube">▲ %1$s vs. %2$s</string>
+    <string name="reportes_centro_baja">▼ %1$s vs. %2$s</string>
+    <string name="reportes_centro_igual">Igual que en %1$s</string>
+    <string name="reportes_porcentaje_gastos">%1$d %% de tus gastos</string>
+    <string name="reportes_porcentaje_ingresos">%1$d %% de tus ingresos</string>
+    <string name="reportes_porcentaje">%1$d %%</string>
+    <string name="reportes_cambio_sube">▲ %1$d %%</string>
+    <string name="reportes_cambio_baja">▼ %1$d %%</string>
+    <string name="reportes_cambio_igual">igual</string>
+    <string name="reportes_cambio_nueva">nueva</string>
+    <plurals name="reportes_ver_movimientos">
+        <item quantity="one">Ver %d movimiento</item>
+        <item quantity="other">Ver %d movimientos</item>
+    </plurals>
+    <string name="reportes_dona_gastos">Gráfico de gastos por categoría de %1$s</string>
+    <string name="reportes_dona_ingresos">Gráfico de ingresos por categoría de %1$s</string>
+
+    <string name="reportes_frase_categoria_subio">%1$s subió %2$s frente a %3$s.</string>
+    <string name="reportes_frase_gasto_bajo">Gastaste %1$s menos que en %2$s. Vas bien.</string>
+    <string name="reportes_frase_gasto_parecido">Tus gastos van parecidos a los de %1$s.</string>
+    <string name="reportes_frase_sin_anterior">Todavía no tengo un mes anterior para comparar. El próximo mes vas a ver qué subió y qué bajó.</string>
+    <string name="reportes_frase_ingreso_extra">En %1$s entró %2$s más por %3$s.</string>
+    <string name="reportes_frase_ingresos_parecidos">Tus ingresos van parecidos a los de %1$s.</string>
+    <string name="reportes_frase_quedan">Quedan %1$s a favor.</string>
+    <string name="reportes_frase_mejor_mes_desde">%1$s es tu mejor mes desde %2$s: quedan %3$s a favor.</string>
+    <string name="reportes_frase_mejor_mes">%1$s es tu mejor mes hasta ahora: quedan %2$s a favor.</string>
+    <string name="reportes_frase_sobra">En %1$s quedan %2$s a favor.</string>
+    <string name="reportes_frase_no_sobra">En %1$s salió %2$s más de lo que entró.</string>
+
+    <string name="reportes_meses_titulo">Ingresos y gastos</string>
+    <string name="reportes_meses_subtitulo">últimos meses</string>
+    <string name="reportes_leyenda_ingresos">Ingresos</string>
+    <string name="reportes_leyenda_gastos">Gastos</string>
+    <string name="reportes_barras_desc">Barras de ingresos y gastos de los últimos meses</string>
+    <string name="reportes_sobro_titulo">Lo que te sobró</string>
+    <string name="reportes_division_titulo">Tus gastos de %1$s</string>
+    <string name="reportes_fijos">Fijos</string>
+    <string name="reportes_variables">Variables</string>
+    <string name="reportes_recortable">Recortable</string>
+
+    <string name="reportes_vacio_gastos_titulo">Todavía no hay gastos este mes</string>
+    <string name="reportes_vacio_gastos_otro_mes">No hay gastos en %1$s</string>
+    <string name="reportes_vacio_gastos_mensaje">Cuando anotes un gasto, aquí vas a ver en qué se va tu plata.</string>
+    <string name="reportes_vacio_ingresos_titulo">Todavía no hay ingresos este mes</string>
+    <string name="reportes_vacio_ingresos_otro_mes">No hay ingresos en %1$s</string>
+    <string name="reportes_vacio_ingresos_mensaje">Cuando anotes un ingreso, aquí vas a ver de dónde viene tu plata.</string>
+    <string name="reportes_vacio_accion">Anotar ahora</string>
+    <string name="reportes_meses_vacio_titulo">Todavía no hay meses para comparar</string>
+    <string name="reportes_meses_vacio_mensaje">Anota tus gastos e ingresos y aquí vas a ver cómo cambia cada mes.</string>
 </resources>

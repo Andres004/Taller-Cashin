@@ -17,6 +17,7 @@ import org.ucb.cashin.model.TipoRegistro
 import org.ucb.cashin.model.comoErrorApp
 import org.ucb.cashin.util.Formato
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -39,6 +40,26 @@ data class DiaHistorial(
             if (anotacion.registro.tipo == TipoRegistro.INGRESO) suma + anotacion.registro.monto
             else suma - anotacion.registro.monto
         }
+}
+
+/**
+ * Resumen arriba de la lista cuando se filtra una categoría en un mes (por ejemplo, al llegar desde
+ * Reportes): "Alimentación en noviembre · Bs 640,00 · 14 movimientos · ▲ 18 % vs. octubre".
+ */
+data class ResumenFiltro(
+    val nombre: String,
+    val mes: YearMonth,
+    val total: BigDecimal,
+    val cantidad: Int,
+    /** Lo de la misma categoría el mes anterior (0 si no hubo). */
+    val anterior: BigDecimal,
+    /** En gastos, subir es malo; en ingresos, es bueno. */
+    val esGasto: Boolean,
+) {
+    /** % entero de cambio frente al mes anterior, sin signo. Null si el mes anterior no hubo nada. */
+    val cambioPorcentaje: Int?
+        get() = if (anterior.signum() == 0) null
+        else (total - anterior).abs().multiply(BigDecimal(100)).divide(anterior, 0, RoundingMode.HALF_UP).toInt()
 }
 
 /** Qué tipo de anotaciones muestra el historial. */
@@ -78,6 +99,8 @@ data class HistorialUiState(
     val categoriaId: String? = null,
     /** Categorías que tienen anotaciones del tipo elegido, ordenadas por nombre. */
     val categoriasDisponibles: List<Categoria> = emptyList(),
+    /** Solo con una categoría y un mes elegidos; si no, null y arriba va Cashi. */
+    val resumenFiltro: ResumenFiltro? = null,
     /** False si el usuario todavía no anotó nada (distinto de "el filtro no encontró nada"). */
     val hayAnotaciones: Boolean = false,
     val cargando: Boolean = true,
@@ -163,6 +186,28 @@ class HistorialViewModel(
         aplicarFiltros()
     }
 
+    /**
+     * Desde Reportes: "Ver movimientos" de una categoría en un mes. Deja puestos el tipo, el mes
+     * y la categoría para que la lista muestre justo eso.
+     */
+    fun filtrarDesdeReporte(tipo: TipoRegistro, mes: YearMonth, categoriaId: String) {
+        _uiState.update {
+            it.copy(
+                filtro = if (tipo == TipoRegistro.GASTO) FiltroTipo.GASTOS else FiltroTipo.INGRESOS,
+                periodo = FiltroPeriodo.MES,
+                mes = mes,
+                categoriaId = categoriaId,
+            )
+        }
+        aplicarFiltros()
+    }
+
+    /** Cuántas anotaciones tiene una categoría en un mes (para "Ver 14 movimientos" en Reportes). */
+    fun cantidadDe(tipo: TipoRegistro, mes: YearMonth, categoriaId: String): Int =
+        todas.count {
+            it.registro.tipo == tipo && it.registro.categoriaId == categoriaId && mesDe(it) == mes
+        }
+
     /** Fechas elegidas en el calendario. Si vienen al revés, se ordenan. */
     fun onRangoCambio(desde: LocalDate, hasta: LocalDate) {
         val rango = if (desde.isAfter(hasta)) RangoFechas(hasta, desde) else RangoFechas(desde, hasta)
@@ -196,8 +241,32 @@ class HistorialViewModel(
                 dias = agruparPorDia(visibles),
                 categoriasDisponibles = categorias,
                 categoriaId = categoriaId,
+                resumenFiltro = resumenDe(estado, categoriaId, delTipo, visibles, categorias),
             )
         }
+    }
+
+    /** El resumen solo tiene sentido con un tipo, una categoría y un mes elegidos. */
+    private fun resumenDe(
+        estado: HistorialUiState,
+        categoriaId: String?,
+        delTipo: List<RegistroConCategoria>,
+        visibles: List<RegistroConCategoria>,
+        categorias: List<Categoria>,
+    ): ResumenFiltro? {
+        val mes = estado.mes
+        if (categoriaId == null || mes == null || estado.periodo != FiltroPeriodo.MES || estado.filtro == FiltroTipo.TODO) return null
+        val anterior = mes.minusMonths(1)
+        return ResumenFiltro(
+            nombre = categorias.firstOrNull { it.id == categoriaId }?.nombre.orEmpty(),
+            mes = mes,
+            total = visibles.fold(BigDecimal.ZERO) { suma, a -> suma + a.registro.monto },
+            cantidad = visibles.size,
+            anterior = delTipo
+                .filter { it.registro.categoriaId == categoriaId && mesDe(it) == anterior }
+                .fold(BigDecimal.ZERO) { suma, a -> suma + a.registro.monto },
+            esGasto = estado.filtro == FiltroTipo.GASTOS,
+        )
     }
 
     private fun cumpleTipo(anotacion: RegistroConCategoria, filtro: FiltroTipo): Boolean = when (filtro) {

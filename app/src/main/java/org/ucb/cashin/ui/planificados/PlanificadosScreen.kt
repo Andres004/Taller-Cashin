@@ -292,7 +292,7 @@ fun Frecuencia.etiqueta(): Int = when (this) {
 @Preview(showBackground = true, backgroundColor = 0xFFFCF7EA)
 @Composable
 private fun PlanificadosPreview() = CashinTheme {
-    val vivienda = Categoria(id = "c1", nombre = "Vivienda", tipo = TipoRegistro.GASTO, icono = "home", color = "#81C784")
+    val vivienda = Categoria(id = "c1", nombre = "Vivienda", tipo = TipoRegistro.GASTO, icono = "home", color = "#2E7D32")
     val sueldo = Categoria(id = "c2", nombre = "Sueldo", tipo = TipoRegistro.INGRESO, icono = "work", color = "#2E7D32")
     PlanificadosContenido(
         estado = PlanificadosUiState(

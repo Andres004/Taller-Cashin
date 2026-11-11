@@ -42,6 +42,10 @@ object Formato {
     fun montoEntero(valor: BigDecimal, moneda: String = "BOB"): String =
         "${simboloMoneda(moneda)} ${DecimalFormat("#,##0", simbolos).format(valor.setScale(0, RoundingMode.DOWN))}"
 
+    /** Redondeado y sin centavos, para reportes y frases: 639.6 → "Bs 640". */
+    fun montoRedondo(valor: BigDecimal, moneda: String = "BOB"): String =
+        "${simboloMoneda(moneda)} ${DecimalFormat("#,##0", simbolos).format(valor.setScale(0, RoundingMode.HALF_UP))}"
+
     /** Monto con signo para el historial: gasto "- Bs 20,00", ingreso "+ Bs 20,00". */
     fun montoConSigno(valor: BigDecimal, esGasto: Boolean, moneda: String = "BOB"): String =
         (if (esGasto) "- " else "+ ") + monto(valor, moneda)

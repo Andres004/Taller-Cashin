@@ -45,4 +45,6 @@ object CashinColores {
 val ColoresCategoria = listOf(
     "#4CAF50", "#2E7D32", "#1F6E8C", "#E08A2C",
     "#C0473A", "#8E5BA8", "#D4829C", "#6B6F68",
+    // Sprint 5 (migración 008): para que cada categoría del sistema tenga un color distinto
+    "#C9A227", "#8D6E63", "#2A9D8F", "#5C6BC0",
 )

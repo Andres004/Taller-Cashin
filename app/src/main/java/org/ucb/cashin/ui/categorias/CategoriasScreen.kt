@@ -432,7 +432,7 @@ private fun CategoriasPreview() = CashinTheme {
         estado = CategoriasUiState(
             cargando = false,
             categorias = listOf(
-                Categoria(id = "1", nombre = "Alimentación", tipo = TipoRegistro.GASTO, icono = "restaurant", color = "#4CAF50"),
+                Categoria(id = "1", nombre = "Alimentación", tipo = TipoRegistro.GASTO, icono = "restaurant", color = "#E08A2C"),
                 Categoria(id = "2", usuarioId = "u", nombre = "Café", tipo = TipoRegistro.GASTO, icono = "store", color = "#E08A2C"),
                 Categoria(id = "3", usuarioId = "u", nombre = "Gimnasio", tipo = TipoRegistro.GASTO, icono = "health", color = "#C0473A", archivada = true),
             ),

@@ -23,6 +23,9 @@ import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -34,13 +37,17 @@ import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,6 +66,8 @@ import org.ucb.cashin.ui.components.FilaRegistro
 import org.ucb.cashin.ui.components.colorCategoria
 import org.ucb.cashin.ui.components.iconoCategoria
 import org.ucb.cashin.ui.components.mensaje
+import org.ucb.cashin.ui.reportes.ReportesScreen
+import org.ucb.cashin.ui.theme.CashinColores
 import org.ucb.cashin.ui.theme.CashinTheme
 import org.ucb.cashin.ui.theme.Espacio
 import org.ucb.cashin.util.Formato
@@ -68,11 +77,20 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneOffset
 
+/** Las dos pestañas de arriba (Sprint 5, HU-14). */
+private enum class PestanaHistorial(val texto: Int) {
+    MOVIMIENTOS(R.string.historial_pestana_movimientos),
+    REPORTES(R.string.historial_pestana_reportes),
+}
+
 /**
  * HU-09: historial de anotaciones agrupado por día, con el total de cada día.
  * HU-10: filtros por tipo, categoría y fechas (hoy, esta semana, mes o rango personalizado).
  * HU-08: al tocar una anotación se abre para editarla o eliminarla.
+ * HU-14: pestaña Reportes; "Ver movimientos" vuelve a Movimientos con el filtro ya puesto.
+ * La pestaña elegida se recuerda al abrir una anotación y volver.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistorialScreen(
     onRegistroClick: (registroId: String) -> Unit,
@@ -80,21 +98,52 @@ fun HistorialScreen(
     viewModel: HistorialViewModel = viewModel(factory = HistorialViewModel.Factory),
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
+    var pestana by rememberSaveable { mutableIntStateOf(PestanaHistorial.MOVIMIENTOS.ordinal) }
 
     // Se recarga cada vez que se entra a la pantalla (después de anotar, editar o eliminar).
     LaunchedEffect(Unit) { viewModel.cargar() }
 
-    HistorialContenido(
-        estado = estado,
-        onReintentar = viewModel::cargar,
-        onFiltroCambio = viewModel::onFiltroCambio,
-        onCategoriaCambio = viewModel::onCategoriaCambio,
-        onPeriodoCambio = viewModel::onPeriodoCambio,
-        onMesCambio = viewModel::onMesCambio,
-        onRangoCambio = viewModel::onRangoCambio,
-        onRegistroClick = onRegistroClick,
-        onAnotar = onAnotar,
-    )
+    Column(modifier = Modifier.fillMaxSize()) {
+        CashinTopBar(titulo = stringResource(R.string.nav_historial))
+        PrimaryTabRow(
+            selectedTabIndex = pestana,
+            containerColor = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.secondary,
+        ) {
+            PestanaHistorial.entries.forEach { opcion ->
+                Tab(
+                    selected = pestana == opcion.ordinal,
+                    onClick = { pestana = opcion.ordinal },
+                    text = { Text(stringResource(opcion.texto), style = MaterialTheme.typography.titleSmall) },
+                    selectedContentColor = MaterialTheme.colorScheme.secondary,
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        when (PestanaHistorial.entries[pestana]) {
+            PestanaHistorial.MOVIMIENTOS -> HistorialContenido(
+                estado = estado,
+                onReintentar = viewModel::cargar,
+                onFiltroCambio = viewModel::onFiltroCambio,
+                onCategoriaCambio = viewModel::onCategoriaCambio,
+                onPeriodoCambio = viewModel::onPeriodoCambio,
+                onMesCambio = viewModel::onMesCambio,
+                onRangoCambio = viewModel::onRangoCambio,
+                onRegistroClick = onRegistroClick,
+                onAnotar = onAnotar,
+            )
+
+            PestanaHistorial.REPORTES -> ReportesScreen(
+                onVerMovimientos = { tipo, mes, categoriaId ->
+                    viewModel.filtrarDesdeReporte(tipo, mes, categoriaId)
+                    pestana = PestanaHistorial.MOVIMIENTOS.ordinal
+                },
+                contarMovimientos = viewModel::cantidadDe,
+                onAnotar = onAnotar,
+            )
+        }
+    }
 }
 
 /**
@@ -114,8 +163,6 @@ fun HistorialContenido(
     onAnotar: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        CashinTopBar(titulo = stringResource(R.string.nav_historial))
-
         when {
             estado.cargando -> EstadoCargando()
 
@@ -154,12 +201,17 @@ fun HistorialContenido(
                         dias = estado.dias,
                         onRegistroClick = onRegistroClick,
                         encabezado = {
-                            val cantidad = estado.dias.sumOf { it.registros.size }
-                            AvatarBurbuja(
-                                mensaje = pluralStringResource(R.plurals.historial_cashi, cantidad, cantidad),
-                                emocion = Emocion.FELIZ,
-                                tamanoAvatar = 120.dp,
-                            )
+                            val resumen = estado.resumenFiltro
+                            if (resumen != null) {
+                                TarjetaResumenFiltro(resumen)
+                            } else {
+                                val cantidad = estado.dias.sumOf { it.registros.size }
+                                AvatarBurbuja(
+                                    mensaje = pluralStringResource(R.plurals.historial_cashi, cantidad, cantidad),
+                                    emocion = Emocion.FELIZ,
+                                    tamanoAvatar = 120.dp,
+                                )
+                            }
                         },
                     )
                 }
@@ -476,6 +528,76 @@ private fun ListaPorDia(
     }
 }
 
+/**
+ * Arriba de la lista filtrada por una categoría: cuánto suma en el mes, cuántas anotaciones son
+ * y cómo cambió frente al mes anterior (siempre con texto y flecha, no solo con color).
+ */
+@Composable
+private fun TarjetaResumenFiltro(resumen: ResumenFiltro) {
+    val mesAnterior = Formato.nombreMes(resumen.mes.minusMonths(1).atDay(1)).lowercase()
+    val cambio = resumen.cambioPorcentaje
+    val sube = resumen.total > resumen.anterior
+    val textoCambio = when {
+        cambio == null -> stringResource(R.string.historial_resumen_nueva)
+        cambio == 0 -> stringResource(R.string.historial_resumen_igual, mesAnterior)
+        sube -> stringResource(R.string.historial_resumen_sube, cambio, mesAnterior)
+        else -> stringResource(R.string.historial_resumen_baja, cambio, mesAnterior)
+    }
+    val colorCambio = when {
+        cambio == null || cambio == 0 -> MaterialTheme.colorScheme.onSurfaceVariant
+        sube == resumen.esGasto -> CashinColores.gasto
+        else -> CashinColores.ingreso
+    }
+    Surface(
+        color = MaterialTheme.colorScheme.secondary,
+        shape = RoundedCornerShape(18.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = Espacio.m, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(
+                        R.string.historial_resumen_categoria,
+                        resumen.nombre,
+                        Formato.nombreMes(resumen.mes.atDay(1)).lowercase(),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondary,
+                )
+                Text(
+                    text = Formato.monto(resumen.total),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSecondary,
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = pluralStringResource(R.plurals.historial_resumen_cantidad, resumen.cantidad, resumen.cantidad),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondary,
+                )
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.padding(top = Espacio.xs),
+                ) {
+                    Text(
+                        text = textoCambio,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = colorCambio,
+                        modifier = Modifier.padding(horizontal = Espacio.s, vertical = 2.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
 /** Nombre del día a la izquierda y, a la derecha, cuánto suma ese día ("- Bs 32,50"). */
 @Composable
 private fun EncabezadoDia(dia: DiaHistorial) {
@@ -512,7 +634,7 @@ private fun FiltroTipo.etiqueta(): Int = when (this) {
 @Preview(showBackground = true, backgroundColor = 0xFFFCF7EA)
 @Composable
 private fun HistorialPreview() = CashinTheme {
-    val comida = Categoria(id = "c1", nombre = "Alimentación", tipo = TipoRegistro.GASTO, icono = "restaurant", color = "#4CAF50")
+    val comida = Categoria(id = "c1", nombre = "Alimentación", tipo = TipoRegistro.GASTO, icono = "restaurant", color = "#E08A2C")
     val sueldo = Categoria(id = "c2", nombre = "Sueldo", tipo = TipoRegistro.INGRESO, icono = "work", color = "#2E7D32")
     val ahora = Instant.now()
     HistorialContenido(

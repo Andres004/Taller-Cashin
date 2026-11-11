@@ -12,15 +12,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.CurrencyExchange
 import androidx.compose.material.icons.outlined.DirectionsBus
+import androidx.compose.material.icons.outlined.FamilyRestroom
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.Laptop
 import androidx.compose.material.icons.outlined.LocalHospital
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.School
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material.icons.outlined.Work
 import androidx.compose.material3.Icon
@@ -57,6 +63,13 @@ fun iconoCategoria(nombre: String?): ImageVector = when (nombre) {
     "work" -> Icons.Outlined.Work
     "store" -> Icons.Outlined.Storefront
     "gift" -> Icons.Outlined.CardGiftcard
+    // Sprint 5 (migración 008): categorías de ingreso nuevas
+    "laptop" -> Icons.Outlined.Laptop
+    "star" -> Icons.Outlined.Star
+    "family" -> Icons.Outlined.FamilyRestroom
+    "key" -> Icons.Outlined.Key
+    "trending" -> Icons.AutoMirrored.Outlined.TrendingUp
+    "refund" -> Icons.Outlined.CurrencyExchange
     "more" -> Icons.Outlined.MoreHoriz
     else -> Icons.Outlined.Category
 }
@@ -163,10 +176,10 @@ private fun BotonCategoria(
 private fun SelectorCategoriaPreview() = CashinTheme {
     SelectorCategoria(
         categorias = listOf(
-            Categoria(id = "1", nombre = "Alimentación", tipo = TipoRegistro.GASTO, icono = "restaurant", color = "#4CAF50"),
-            Categoria(id = "2", nombre = "Transporte", tipo = TipoRegistro.GASTO, icono = "bus", color = "#2E7D32"),
-            Categoria(id = "3", nombre = "Vivienda", tipo = TipoRegistro.GASTO, icono = "home", color = "#81C784"),
-            Categoria(id = "4", nombre = "Salud", tipo = TipoRegistro.GASTO, icono = "health", color = "#FF8C32"),
+            Categoria(id = "1", nombre = "Alimentación", tipo = TipoRegistro.GASTO, icono = "restaurant", color = "#E08A2C"),
+            Categoria(id = "2", nombre = "Transporte", tipo = TipoRegistro.GASTO, icono = "bus", color = "#1F6E8C"),
+            Categoria(id = "3", nombre = "Vivienda", tipo = TipoRegistro.GASTO, icono = "home", color = "#2E7D32"),
+            Categoria(id = "4", nombre = "Salud", tipo = TipoRegistro.GASTO, icono = "health", color = "#D4829C"),
             Categoria(id = "5", nombre = "Educación", tipo = TipoRegistro.GASTO, icono = "school", color = "#1F6E8C"),
         ),
         seleccionadaId = "1",

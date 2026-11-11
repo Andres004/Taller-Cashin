@@ -45,7 +45,10 @@ data class CategoriasUiState(
 )
 
 /** Nombres de ícono que entiende `iconoCategoria()`. */
-val ICONOS = listOf("restaurant", "bus", "home", "health", "school", "movie", "work", "store", "gift", "more")
+val ICONOS = listOf(
+    "restaurant", "bus", "home", "health", "school", "movie", "work", "store", "gift",
+    "laptop", "star", "family", "key", "trending", "refund", "more",
+)
 
 /** Igual que varchar(50) de la columna categoria.nombre. */
 private const val MAX_NOMBRE = 50

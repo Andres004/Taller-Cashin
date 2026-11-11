@@ -104,6 +104,6 @@ private fun FilaRegistroPreview() = CashinTheme {
             fechaHora = Instant.now(),
             nota = "Almuerzo",
         ),
-        categoria = Categoria(id = "c", nombre = "Alimentación", tipo = TipoRegistro.GASTO, icono = "restaurant", color = "#4CAF50"),
+        categoria = Categoria(id = "c", nombre = "Alimentación", tipo = TipoRegistro.GASTO, icono = "restaurant", color = "#E08A2C"),
     )
 }
