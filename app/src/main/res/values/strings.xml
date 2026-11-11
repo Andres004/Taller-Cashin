@@ -348,8 +348,8 @@
     <string name="plan_con_recorte">Puedes llegar si recortas gastos</string>
     <string name="plan_recorte_fecha">Con %1$s %2$s llegas a tu fecha.</string>
     <string name="plan_recorte_sin_fecha">Con %1$s %2$s lo logras en %3$s.</string>
-    <string name="plan_llegarias">Llegarías el %1$s</string>
-    <string name="plan_no_llega">Es después de tu fecha, aun ahorrando lo máximo que permiten tus ingresos: %1$s %2$s.</string>
+    <string name="plan_llegarias">Tu fecha está muy cerca</string>
+    <string name="plan_no_llega">Para llegar al %1$s tendrías que ahorrar %2$s %3$s, más de lo que suelen permitir tus ingresos.</string>
     <string name="plan_sin_margen_titulo">Hoy casi todo se te va en gastos</string>
     <string name="plan_sin_margen">Empieza con poco: %1$s al mes. Cada paso cuenta.</string>
     <string name="plan_sin_datos_titulo">Todavía no puedo armar tu camino</string>

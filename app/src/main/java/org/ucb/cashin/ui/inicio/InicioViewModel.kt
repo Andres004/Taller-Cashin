@@ -177,7 +177,9 @@ class InicioViewModel(
                     cargarDatosPlan(
                         resumenRepository, planificadoRepository, categoriaRepository,
                         historial = historial, gastoPorCategoria = gastoPorCategoria,
-                    ).planPara(meta, aportes)
+                    ).caminoPara(meta, aportes, metaRepository.caminos().getOrNull()?.get(meta.metaId)) {
+                        metaRepository.guardarCamino(meta.metaId, it)
+                    }
                 }
             }
 

@@ -9,7 +9,12 @@ import org.ucb.cashin.model.Categoria
 import org.ucb.cashin.model.GastoCategoriaMes
 import org.ucb.cashin.model.TotalesMes
 import org.ucb.cashin.model.TipoRegistro
+import org.ucb.cashin.prediccion.CaminoGuardado
 import org.ucb.cashin.prediccion.DesgloseGastos
+import org.ucb.cashin.prediccion.reestimar
+import org.ucb.cashin.prediccion.camino
+import org.ucb.cashin.prediccion.crearCamino
+import org.ucb.cashin.prediccion.vigentePara
 import org.ucb.cashin.prediccion.PlanAhorro
 import org.ucb.cashin.prediccion.Pronostico
 import org.ucb.cashin.prediccion.construirSerie
@@ -27,6 +32,27 @@ internal class DatosPlan(
     val categorias: List<Categoria>,
     val hoy: LocalDate,
 ) {
+    /**
+     * El camino fijo de la meta: usa el guardado si sigue sirviendo; si no, arma uno y lo guarda.
+     * Se vuelve a estimar solo cuando la persona anotó algo. Sin datos para armarlo, usa el plan de siempre.
+     */
+    suspend fun caminoPara(
+        avance: AvanceMeta,
+        aportes: List<AporteMeta>,
+        guardado: CaminoGuardado?,
+        guardar: suspend (CaminoGuardado) -> Unit,
+    ): PlanAhorro {
+        var camino = guardado?.takeIf { it.vigentePara(avance) }
+        if (camino == null) {
+            camino = crearCamino(avance, aportes, ingresos, gastos, desglose, hoy) ?: return planPara(avance, aportes)
+            guardar(camino)
+        }
+        // Solo cambia si la persona anotó un ahorro o un retiro desde la última vez.
+        val estimado = camino.reestimar(avance, aportes, ingresos, gastos, desglose, hoy)
+        if (estimado != camino) guardar(estimado)
+        return estimado.camino(avance.totalAhorrado, hoy)
+    }
+
     fun planPara(avance: AvanceMeta, aportes: List<AporteMeta>): PlanAhorro =
         planificarAhorro(avance, aportes, ingresos, gastos, desglose, hoy)
 }

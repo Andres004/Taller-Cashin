@@ -87,9 +87,16 @@ class MetasViewModel(
     private suspend fun planesDe(metas: List<AvanceMeta>): Map<String, PlanAhorro> {
         if (metas.isEmpty()) return emptyMap()
         val datos = cargarDatosPlan(resumenRepository, planificadoRepository, categoriaRepository)
+        val guardados = metaRepository.caminos().getOrNull().orEmpty()
         return coroutineScope {
             metas.map { meta ->
-                async { metaRepository.listarAportes(meta.metaId).getOrNull()?.let { meta.metaId to datos.planPara(meta, it) } }
+                async {
+                    metaRepository.listarAportes(meta.metaId).getOrNull()?.let { aportes ->
+                        meta.metaId to datos.caminoPara(meta, aportes, guardados[meta.metaId]) {
+                            metaRepository.guardarCamino(meta.metaId, it)
+                        }
+                    }
+                }
             }.awaitAll().filterNotNull().toMap()
         }
     }

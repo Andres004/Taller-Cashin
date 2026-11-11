@@ -130,7 +130,9 @@ class DetalleMetaViewModel(
             it.copy(
                 avance = avance,
                 aportes = aportes,
-                plan = datos.planPara(avance, aportes),
+                plan = datos.caminoPara(avance, aportes, metaRepository.caminos().getOrNull()?.get(metaId)) {
+                    metaRepository.guardarCamino(metaId, it)
+                },
                 mesesDeDatos = mesesDeDatos,
                 recorte = recorte,
                 cargando = false,

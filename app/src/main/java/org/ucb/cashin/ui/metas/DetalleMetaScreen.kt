@@ -424,8 +424,8 @@ private fun TarjetaCuandoLoLogro(
             },
         )
         EstadoPlan.NO_LLEGA_A_FECHA -> Pair(
-            stringResource(R.string.plan_llegarias, fecha?.let(Formato::fechaEnFrase).orEmpty()),
-            stringResource(R.string.plan_no_llega, monto, periodo),
+            stringResource(R.string.plan_llegarias),
+            stringResource(R.string.plan_no_llega, fecha?.let(Formato::fechaEnFrase).orEmpty(), monto, periodo),
         )
         EstadoPlan.SIN_MARGEN -> Pair(
             stringResource(R.string.plan_sin_margen_titulo),

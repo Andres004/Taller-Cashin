@@ -237,4 +237,83 @@ class PlanAhorroTest {
         assertTrue(p.pasos.all { it.estado == EstadoPaso.COMPLETADO })
         assertTrue(p.pasos.last().esMeta)
     }
+
+    /** Lo que se pide desde el paso actual suma justo lo que falta, sin pasos de Bs 0. */
+    private fun revisar(p: PlanAhorro, faltante: BigDecimal, caso: String) {
+        val porCumplir = p.pasos.filter { it.estado != EstadoPaso.COMPLETADO }
+        assertEquals(caso, faltante.setScale(2), porCumplir.fold(BigDecimal.ZERO.setScale(2)) { s, paso -> s + paso.monto })
+        assertTrue(caso, p.pasos.none { it.monto.signum() == 0 })
+        assertEquals(caso, 1, p.pasos.count { it.estado == EstadoPaso.ACTUAL })
+        assertTrue(caso, p.pasos.last().esMeta)
+    }
+
+    private fun numeroActual(p: PlanAhorro) = p.pasos.first { it.estado == EstadoPaso.ACTUAL }.numero
+
+    @Test fun `varios ahorros el mismo dia avanzan el camino y nunca lo hacen retroceder`() {
+        var anterior = 0
+        for (acumulado in listOf("1000", "2400", "2480", "4000")) {
+            val aportes = listOf(aporte(d(11, 8), acumulado))
+            val p = plan(meta("10000", acumulado), aportes = aportes)
+            revisar(p, bd("10000") - bd(acumulado), "ahorrado $acumulado")
+            val actual = numeroActual(p)
+            assertTrue("ahorrado $acumulado: $actual < $anterior", actual >= anterior)
+            anterior = actual
+        }
+    }
+
+    @Test fun `pasarse del paso lo deja hecho con todo lo ahorrado y reparte lo que falta`() {
+        val p = plan(meta("2400", "1400"), aportes = octubre + aporte(d(11, 3), "900"))
+
+        val hecho = p.pasos.first { it.fecha == d(11, 15) }
+        assertEquals(EstadoPaso.COMPLETADO, hecho.estado)
+        assertEquals(bd("900.00"), hecho.monto)
+        assertEquals(d(11, 30), p.pasos.first { it.estado == EstadoPaso.ACTUAL }.fecha)
+        revisar(p, bd("1000"), "sin fecha")
+    }
+
+    @Test fun `con fecha limite pasarse del paso baja lo que piden los pasos que quedan`() {
+        val normal = plan(meta("2400", "500", d(12, 31)))
+        val deMas = plan(meta("2400", "1400", d(12, 31)), aportes = octubre + aporte(d(11, 3), "900"))
+
+        val pendienteNormal = normal.pasos.filter { it.estado == EstadoPaso.PENDIENTE }.maxOf { it.monto }
+        val pendienteDeMas = deMas.pasos.filter { it.estado == EstadoPaso.PENDIENTE }.maxOf { it.monto }
+        assertTrue("$pendienteDeMas < $pendienteNormal", pendienteDeMas < pendienteNormal)
+        assertEquals(d(12, 31), deMas.pasos.last().fecha)
+        revisar(deMas, bd("1000"), "con fecha")
+    }
+
+    @Test fun `distintos montos ahorrados en el periodo dejan siempre un camino valido`() {
+        var anterior = 0
+        for (extra in listOf("0", "200", "410", "600", "900", "1500", "1890")) {
+            val aportes = if (extra == "0") octubre else octubre + aporte(d(11, 3), extra)
+            val total = bd("500") + bd(extra)
+            val p = plan(meta("2400", total.toPlainString()), aportes = aportes)
+            revisar(p, bd("2400") - total, "extra $extra")
+            val actual = numeroActual(p)
+            assertTrue("extra $extra: $actual < $anterior", actual >= anterior)
+            anterior = actual
+        }
+    }
+
+    @Test fun `un retiro en el mismo periodo vuelve a abrir el paso`() {
+        val aportes = octubre + aporte(d(11, 3), "600") + aporte(d(11, 4), "400", TipoAporte.RETIRO)
+        val p = plan(meta("2400", "700"), aportes = aportes)
+
+        val actual = p.pasos.first { it.estado == EstadoPaso.ACTUAL }
+        assertEquals(d(11, 15), actual.fecha)
+        assertEquals(bd("210.00"), actual.monto)
+        revisar(p, bd("1700"), "retiro")
+    }
+
+    @Test fun `sin margen cumplir el paso del mes lo deja hecho y sigue el mes siguiente`() {
+        val p = plan(
+            meta("2400", "60"), aportes = listOf(aporte(d(11, 3), "60")),
+            ingresos = pronostico("2000"), gastos = pronostico("2000"), dg = null,
+        )
+
+        assertEquals(EstadoPlan.SIN_MARGEN, p.estado)
+        assertEquals(EstadoPaso.COMPLETADO, p.pasos.first { it.fecha == d(11, 30) }.estado)
+        assertEquals(d(12, 31), p.pasos.first { it.estado == EstadoPaso.ACTUAL }.fecha)
+        assertTrue(p.pasos.none { it.monto.signum() == 0 })
+    }
 }
