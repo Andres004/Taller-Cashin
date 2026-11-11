@@ -18,6 +18,7 @@ import org.ucb.cashin.di.fabricaDe
 import org.ucb.cashin.model.AvanceMeta
 import org.ucb.cashin.model.Desafio
 import org.ucb.cashin.model.ErrorApp
+import org.ucb.cashin.model.Perfil
 import org.ucb.cashin.model.EstadoDesafio
 import org.ucb.cashin.model.EstadoMeta
 import org.ucb.cashin.model.ProgresoDesafio
@@ -28,6 +29,8 @@ import org.ucb.cashin.prediccion.PlanAhorro
 import org.ucb.cashin.prediccion.Pronostico
 import org.ucb.cashin.prediccion.construirSerie
 import org.ucb.cashin.prediccion.consejoDelDia
+import org.ucb.cashin.prediccion.consejosDisponibles
+import org.ucb.cashin.prediccion.elegirConsejo
 import org.ucb.cashin.prediccion.elegirMetaPrincipal
 import org.ucb.cashin.prediccion.pronosticarProximoMes
 import org.ucb.cashin.prediccion.pronosticarSiguienteMes
@@ -192,6 +195,27 @@ class InicioViewModel(
                 metaMasCercana = metaMasCercana,
             )
 
+            // Cashi cambia de mensaje en cada visita y reacciona si acaba de entrar un ingreso.
+            val totalIngresos = totales?.totalIngresos ?: BigDecimal.ZERO
+            val entroIngreso = ingresosVistos?.let { totalIngresos > it } == true
+            ingresosVistos = totalIngresos
+            val mensajeCashi = elegirConsejo(
+                consejosDisponibles(
+                    principal = consejo,
+                    hoy = hoy,
+                    racha = racha,
+                    gastoPorCategoria = gastoPorCategoria,
+                    desafioActivo = desafioMasCercano,
+                    progreso = desafioMasCercano?.let { progreso[it.id] },
+                    metaMasCercana = metaMasCercana,
+                    totalGastos = gastoDelMes,
+                    totalIngresos = totalIngresos,
+                    xpParaNivel = Perfil.XP_POR_NIVEL - perfil.xp % Perfil.XP_POR_NIVEL,
+                ),
+                turno = turnoConsejo++,
+                entroIngreso = entroIngreso,
+            )
+
             // HU-24: la primera carga solo guarda el nivel; las siguientes celebran si subió.
             val nivelAnterior = ultimoNivelVisto[perfil.id]
             val xpAnterior = ultimoXpVisto[perfil.id]
@@ -215,7 +239,7 @@ class InicioViewModel(
                     pronosticoProximo = pronosticoProximo,
                     ingresoEsperado = ingresoEsperado,
                     gastaMasRapido = pronosticoMes.confianza != Confianza.SIN_DATOS && proyeccion > pronosticoMes.maximo,
-                    mensajeIa = consejo,
+                    mensajeIa = mensajeCashi,
                     metaPrincipal = metaPrincipal,
                     planMeta = planMeta,
                     metasDisponibles = metasLeidas != null,
@@ -245,6 +269,10 @@ class InicioViewModel(
         _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) }
 
     companion object {
+        /** Viven mientras la app esté abierta, aunque Inicio se vuelva a crear. */
+        private var turnoConsejo = 0
+        private var ingresosVistos: BigDecimal? = null
+
         val Factory = fabricaDe {
             InicioViewModel(
                 it.perfilRepository, it.resumenRepository, it.planificadoRepository, it.categoriaRepository,

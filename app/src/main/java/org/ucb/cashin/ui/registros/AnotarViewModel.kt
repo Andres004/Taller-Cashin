@@ -11,14 +11,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ucb.cashin.R
 import org.ucb.cashin.data.CategoriaRepository
+import org.ucb.cashin.data.PerfilRepository
 import org.ucb.cashin.data.RegistroRepository
 import org.ucb.cashin.di.fabricaDe
 import org.ucb.cashin.model.Categoria
 import org.ucb.cashin.model.ErrorApp
 import org.ucb.cashin.model.MedioPago
 import org.ucb.cashin.model.NuevoRegistro
+import org.ucb.cashin.model.Perfil
+import org.ucb.cashin.model.RecompensaAnotar
 import org.ucb.cashin.model.Registro
 import org.ucb.cashin.model.TipoRegistro
+import org.ucb.cashin.model.calcularRecompensa
 import org.ucb.cashin.model.comoErrorApp
 import org.ucb.cashin.util.Formato
 import java.math.BigDecimal
@@ -45,7 +49,8 @@ data class AnotarUiState(
     val eliminando: Boolean = false,
     val guardado: Boolean = false,
     val eliminado: Boolean = false,
-    val ganoXp: Boolean = false,
+    /** Lo ganado con una anotación nueva; null al corregir una que ya existía. */
+    val recompensa: RecompensaAnotar? = null,
 )
 
 /**
@@ -55,6 +60,7 @@ data class AnotarUiState(
 class AnotarViewModel(
     private val registroRepository: RegistroRepository,
     private val categoriaRepository: CategoriaRepository,
+    private val perfilRepository: PerfilRepository,
     private val registroId: String? = null,
 ) : ViewModel() {
 
@@ -180,6 +186,8 @@ class AnotarViewModel(
 
         viewModelScope.launch {
             _uiState.update { it.copy(cargando = true, error = null) }
+            // El perfil de antes permite saber cuánto XP y racha dio esta anotación.
+            val perfilAntes = if (anterior == null) perfilRepository.obtener().getOrNull() else null
             val resultado = if (anterior == null) {
                 registroRepository.crear(datos)
             } else {
@@ -191,8 +199,8 @@ class AnotarViewModel(
             }
             resultado
                 .onSuccess { _ ->
-                    val ganoXp = anterior == null && ganoXpConEsteRegistro()
-                    _uiState.update { it.copy(cargando = false, guardado = true, ganoXp = ganoXp) }
+                    val recompensa = if (anterior == null) recompensaDeEstaAnotacion(perfilAntes, estado.tipo) else null
+                    _uiState.update { it.copy(cargando = false, guardado = true, recompensa = recompensa) }
                 }
                 .onFailure { e -> _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) } }
         }
@@ -225,6 +233,15 @@ class AnotarViewModel(
             )
         }
 
+    private suspend fun recompensaDeEstaAnotacion(antes: Perfil?, tipo: TipoRegistro): RecompensaAnotar =
+        calcularRecompensa(
+            antes = antes,
+            despues = perfilRepository.obtener().getOrNull(),
+            hoy = Formato.hoy(),
+            tipo = tipo,
+            ganoXp = ganoXpConEsteRegistro(),
+        )
+
     /** La base de datos solo da XP a las 5 primeras anotaciones del día. */
     private suspend fun ganoXpConEsteRegistro(): Boolean =
         registroRepository.contarCreadosHoy()
@@ -241,6 +258,6 @@ class AnotarViewModel(
 
         /** Sin id: anotar algo nuevo. Con id: editar esa anotación. */
         fun fabrica(registroId: String? = null) =
-            fabricaDe { AnotarViewModel(it.registroRepository, it.categoriaRepository, registroId) }
+            fabricaDe { AnotarViewModel(it.registroRepository, it.categoriaRepository, it.perfilRepository, registroId) }
     }
 }

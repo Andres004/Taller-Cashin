@@ -4,8 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.outlined.DateRange
@@ -39,8 +39,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.ucb.cashin.R
@@ -51,6 +53,7 @@ import org.ucb.cashin.ui.components.CashinTopBar
 import org.ucb.cashin.ui.components.Emocion
 import org.ucb.cashin.ui.components.EstadoCargando
 import org.ucb.cashin.ui.components.EstadoError
+import org.ucb.cashin.ui.components.AvatarBurbuja
 import org.ucb.cashin.ui.components.EstadoVacio
 import org.ucb.cashin.ui.components.FilaRegistro
 import org.ucb.cashin.ui.components.colorCategoria
@@ -147,7 +150,18 @@ fun HistorialContenido(
                         emocion = Emocion.NEUTRAL,
                     )
                 } else {
-                    ListaPorDia(dias = estado.dias, onRegistroClick = onRegistroClick)
+                    ListaPorDia(
+                        dias = estado.dias,
+                        onRegistroClick = onRegistroClick,
+                        encabezado = {
+                            val cantidad = estado.dias.sumOf { it.registros.size }
+                            AvatarBurbuja(
+                                mensaje = pluralStringResource(R.plurals.historial_cashi, cantidad, cantidad),
+                                emocion = Emocion.FELIZ,
+                                tamanoAvatar = 120.dp,
+                            )
+                        },
+                    )
                 }
             }
         }
@@ -155,11 +169,9 @@ fun HistorialContenido(
 }
 
 /**
- * Dos filas de chips que se acomodan si no entran:
- *  1. "Todo | Gastos | Ingresos" y la categoría.
- *  2. "Hoy | Esta semana | Octubre 2026 ▾ | Personalizado".
+ * Una sola fila de chips que se desliza de lado, para que los filtros no tapen la lista:
+ * "Todo | Gastos | Ingresos | Categoría ▾ | Hoy | Esta semana | Noviembre 2026 ▾ | Personalizado".
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FiltrosHistorial(
     estado: HistorialUiState,
@@ -172,60 +184,53 @@ private fun FiltrosHistorial(
 ) {
     var mostrarCalendario by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(Espacio.s),
-            verticalArrangement = Arrangement.spacedBy(Espacio.xs),
-        ) {
-            FiltroTipo.entries.forEach { opcion ->
-                FilterChip(
-                    selected = opcion == estado.filtro,
-                    onClick = { onFiltroCambio(opcion) },
-                    label = { Text(stringResource(opcion.etiqueta())) },
-                    colors = coloresDeChip(),
-                )
-            }
-            SelectorCategoriaFiltro(
-                categorias = estado.categoriasDisponibles,
-                seleccionadaId = estado.categoriaId,
-                onCategoriaCambio = onCategoriaCambio,
-            )
-        }
-
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(Espacio.s),
-            verticalArrangement = Arrangement.spacedBy(Espacio.xs),
-        ) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(Espacio.s),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        FiltroTipo.entries.forEach { opcion ->
             FilterChip(
-                selected = estado.periodo == FiltroPeriodo.HOY,
-                onClick = { onPeriodoCambio(FiltroPeriodo.HOY) },
-                label = { Text(stringResource(R.string.historial_periodo_hoy)) },
-                colors = coloresDeChip(),
-            )
-            FilterChip(
-                selected = estado.periodo == FiltroPeriodo.SEMANA,
-                onClick = { onPeriodoCambio(FiltroPeriodo.SEMANA) },
-                label = { Text(stringResource(R.string.historial_periodo_semana)) },
-                colors = coloresDeChip(),
-            )
-            if (estado.mes != null) {
-                SelectorMes(
-                    mes = estado.mes,
-                    meses = estado.mesesDisponibles,
-                    seleccionado = estado.periodo == FiltroPeriodo.MES,
-                    onMesCambio = onMesCambio,
-                )
-            }
-            FilterChip(
-                selected = estado.periodo == FiltroPeriodo.PERSONALIZADO,
-                onClick = { mostrarCalendario = true },
-                label = { Text(textoRango(estado)) },
-                leadingIcon = { Icon(imageVector = Icons.Outlined.DateRange, contentDescription = null) },
+                selected = opcion == estado.filtro,
+                onClick = { onFiltroCambio(opcion) },
+                label = { Text(stringResource(opcion.etiqueta())) },
                 colors = coloresDeChip(),
             )
         }
+        SelectorCategoriaFiltro(
+            categorias = estado.categoriasDisponibles,
+            seleccionadaId = estado.categoriaId,
+            onCategoriaCambio = onCategoriaCambio,
+        )
+        FilterChip(
+            selected = estado.periodo == FiltroPeriodo.HOY,
+            onClick = { onPeriodoCambio(FiltroPeriodo.HOY) },
+            label = { Text(stringResource(R.string.historial_periodo_hoy)) },
+            colors = coloresDeChip(),
+        )
+        FilterChip(
+            selected = estado.periodo == FiltroPeriodo.SEMANA,
+            onClick = { onPeriodoCambio(FiltroPeriodo.SEMANA) },
+            label = { Text(stringResource(R.string.historial_periodo_semana)) },
+            colors = coloresDeChip(),
+        )
+        if (estado.mes != null) {
+            SelectorMes(
+                mes = estado.mes,
+                meses = estado.mesesDisponibles,
+                seleccionado = estado.periodo == FiltroPeriodo.MES,
+                onMesCambio = onMesCambio,
+            )
+        }
+        FilterChip(
+            selected = estado.periodo == FiltroPeriodo.PERSONALIZADO,
+            onClick = { mostrarCalendario = true },
+            label = { Text(textoRango(estado)) },
+            leadingIcon = { Icon(imageVector = Icons.Outlined.DateRange, contentDescription = null) },
+            colors = coloresDeChip(),
+        )
     }
 
     if (mostrarCalendario) {
@@ -449,11 +454,13 @@ private fun coloresDeChip(): SelectableChipColors = FilterChipDefaults.filterChi
 private fun ListaPorDia(
     dias: List<DiaHistorial>,
     onRegistroClick: (registroId: String) -> Unit,
+    encabezado: @Composable () -> Unit,
 ) {
     LazyColumn(
         contentPadding = PaddingValues(horizontal = Espacio.pantalla, vertical = Espacio.s),
         verticalArrangement = Arrangement.spacedBy(Espacio.s),
     ) {
+        item(key = "encabezado") { encabezado() }
         dias.forEach { dia ->
             item(key = dia.fecha.toString()) {
                 EncabezadoDia(dia = dia)

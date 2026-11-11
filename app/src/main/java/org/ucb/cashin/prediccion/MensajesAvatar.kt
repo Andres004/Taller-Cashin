@@ -30,6 +30,16 @@ enum class TipoMensaje {
     /** El gasto del mes va dentro de lo normal. */
     GASTO_NORMAL,
 
+    // Variedad del mensaje de Inicio
+    /** Ya anotó ingresos este mes. [MensajeAvatar.monto] = el total. */
+    INGRESOS_DEL_MES,
+    /** Este mes entró más de lo que salió. [MensajeAvatar.monto] = la diferencia. */
+    INGRESOS_A_FAVOR,
+    /** Cuánto falta para una meta. [MensajeAvatar.monto] = lo que falta. */
+    META_AVANCE,
+    /** Cuánto falta para subir de nivel. [MensajeAvatar.dias] = los XP que faltan. */
+    XP_PARA_NIVEL,
+
     // Consejo del día (HU-21, Sprint 4)
     /** Hoy todavía no anotó y tiene una racha que puede perder. */
     RACHA_EN_RIESGO,

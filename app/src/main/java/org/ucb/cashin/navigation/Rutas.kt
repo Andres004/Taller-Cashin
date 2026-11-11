@@ -47,4 +47,6 @@ object Rutas {
     @Serializable data object Desafios
     /** HU-25, HU-26 · Sprint 5. */
     @Serializable data object Deudas
+    /** HU-24: la racha con su semana (se abre desde Inicio y Perfil). */
+    @Serializable data object Racha
 }

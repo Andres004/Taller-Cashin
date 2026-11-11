@@ -43,15 +43,21 @@ fun BarraEstadisticas(
     xp: Int,
     modifier: Modifier = Modifier,
     resaltarNivel: Boolean = false,
+    onRachaClick: (() -> Unit)? = null,
 ) {
     val descripcionRiesgo = stringResource(R.string.inicio_racha_en_riesgo)
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = modifier) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier,
+    ) {
         Chip(
             texto = stringResource(R.string.inicio_chip_racha, racha),
             colorTexto = if (rachaEnRiesgo) CashinColores.gasto else NaranjaRelieve,
             fondo = CremaTarjeta,
             borde = if (rachaEnRiesgo) CashinColores.gasto else BordeCampo,
             modifier = if (rachaEnRiesgo) Modifier.semantics { contentDescription = descripcionRiesgo } else Modifier,
+            onClick = onRachaClick,
         )
         Chip(
             texto = stringResource(R.string.inicio_chip_nivel, nivel, xp),
@@ -71,8 +77,9 @@ private fun Chip(
     borde: Color,
     modifier: Modifier = Modifier,
     icono: Boolean = false,
+    onClick: (() -> Unit)? = null,
 ) {
-    Surface(shape = FORMA_CHIP, color = fondo, border = BorderStroke(1.5.dp, borde), modifier = modifier) {
+    val contenido: @Composable () -> Unit = {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(3.dp),
@@ -96,6 +103,12 @@ private fun Chip(
                 maxLines = 1,
             )
         }
+    }
+    val bordeChip = BorderStroke(1.5.dp, borde)
+    if (onClick != null) {
+        Surface(onClick = onClick, shape = FORMA_CHIP, color = fondo, border = bordeChip, modifier = modifier, content = contenido)
+    } else {
+        Surface(shape = FORMA_CHIP, color = fondo, border = bordeChip, modifier = modifier, content = contenido)
     }
 }
 

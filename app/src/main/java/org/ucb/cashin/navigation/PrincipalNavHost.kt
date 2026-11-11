@@ -25,8 +25,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -55,7 +57,11 @@ import org.ucb.cashin.ui.metas.MetasYDesafiosScreen
 import org.ucb.cashin.ui.metas.NuevaMetaScreen
 import org.ucb.cashin.ui.perfil.OpcionPerfil
 import org.ucb.cashin.ui.perfil.PerfilScreen
+import org.ucb.cashin.model.RecompensaAnotar
 import org.ucb.cashin.model.TipoRegistro
+import org.ucb.cashin.ui.components.CelebracionRacha
+import org.ucb.cashin.ui.components.PremioRapido
+import org.ucb.cashin.ui.racha.RachaScreen
 import org.ucb.cashin.ui.planificados.NuevoPlanificadoScreen
 import org.ucb.cashin.ui.planificados.PlanificadosScreen
 import org.ucb.cashin.ui.registros.AnotarScreen
@@ -90,7 +96,6 @@ fun PrincipalNavHost() {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val textoAnotado = stringResource(R.string.anotar_guardado)
-    val textoAnotadoXp = stringResource(R.string.anotar_guardado_xp)
     val textoCambiosGuardados = stringResource(R.string.anotar_cambios_guardados)
     val textoEliminada = stringResource(R.string.anotar_eliminada)
     val textoPagoAnotado = stringResource(R.string.planificados_pago_anotado)
@@ -98,6 +103,9 @@ fun PrincipalNavHost() {
     val textoPlanificadoGuardado = stringResource(R.string.planificados_guardado)
     val textoMetaCreada = stringResource(R.string.metas_creada)
     val textoMetaCancelada = stringResource(R.string.metas_cancelada)
+
+    // Lo que se acaba de ganar al anotar: se muestra encima de Inicio.
+    var recompensa by remember { mutableStateOf<RecompensaAnotar?>(null) }
 
     fun mostrarMensaje(texto: String) {
         scope.launch { snackbar.showSnackbar(texto) }
@@ -148,122 +156,149 @@ fun PrincipalNavHost() {
             }
         },
     ) { padding ->
-        NavHost(
-            navController = nav,
-            startDestination = Rutas.Inicio,
-            modifier = Modifier.padding(padding),
-        ) {
-            composable<Rutas.Inicio> {
-                InicioScreen(
-                    onAbrirDesafios = { nav.navigate(Rutas.Desafios) },
-                    onMetaClick = { metaId -> nav.navigate(Rutas.DetalleMeta(metaId)) },
-                    onNuevaMeta = { nav.navigate(Rutas.NuevaMeta) },
-                )
+        Box(modifier = Modifier.padding(padding)) {
+            NavHost(
+                navController = nav,
+                startDestination = Rutas.Inicio,
+            ) {
+                composable<Rutas.Inicio> {
+                    InicioScreen(
+                        onAbrirDesafios = { nav.navigate(Rutas.Desafios) },
+                        onMetaClick = { metaId -> nav.navigate(Rutas.DetalleMeta(metaId)) },
+                        onNuevaMeta = { nav.navigate(Rutas.NuevaMeta) },
+                        onAbrirRacha = { nav.navigate(Rutas.Racha) },
+                    )
+                }
+
+                composable<Rutas.Historial> {
+                    HistorialScreen(
+                        onRegistroClick = { registroId -> abrirRegistro(registroId) },
+                        onAnotar = { irAPestana(Rutas.Anotar) },
+                    )
+                }
+
+                composable<Rutas.Anotar> {
+                    AnotarScreen(
+                        onGuardado = { ganado ->
+                            irAPestana(Rutas.Inicio)
+                            if (ganado != null) recompensa = ganado else mostrarMensaje(textoAnotado)
+                        },
+                    )
+                }
+
+                composable<Rutas.EditarRegistro> { entradaActual ->
+                    val ruta = entradaActual.toRoute<Rutas.EditarRegistro>()
+                    AnotarScreen(
+                        registroId = ruta.registroId,
+                        onGuardado = {
+                            nav.popBackStack()
+                            mostrarMensaje(textoCambiosGuardados)
+                        },
+                        onEliminado = {
+                            nav.popBackStack()
+                            mostrarMensaje(textoEliminada)
+                        },
+                        onAtras = { nav.popBackStack() },
+                    )
+                }
+
+                composable<Rutas.Metas> {
+                    MetasYDesafiosScreen(
+                        onNueva = { nav.navigate(Rutas.NuevaMeta) },
+                        onMetaClick = { metaId -> nav.navigate(Rutas.DetalleMeta(metaId)) },
+                    )
+                }
+
+                composable<Rutas.NuevaMeta> {
+                    NuevaMetaScreen(
+                        onAtras = { nav.popBackStack() },
+                        onGuardada = { metaId ->
+                            // Se reemplaza el formulario por el detalle: "atrás" vuelve a la lista de metas.
+                            nav.navigate(Rutas.DetalleMeta(metaId)) {
+                                popUpTo<Rutas.NuevaMeta> { inclusive = true }
+                            }
+                            mostrarMensaje(textoMetaCreada)
+                        },
+                    )
+                }
+
+                composable<Rutas.DetalleMeta> { entradaActual ->
+                    val ruta = entradaActual.toRoute<Rutas.DetalleMeta>()
+                    DetalleMetaScreen(
+                        metaId = ruta.metaId,
+                        onAtras = { nav.popBackStack() },
+                        onEditar = { nav.navigate(Rutas.EditarMeta(ruta.metaId)) },
+                        onCancelada = {
+                            nav.popBackStack()
+                            mostrarMensaje(textoMetaCancelada)
+                        },
+                    )
+                }
+
+                composable<Rutas.EditarMeta> { entradaActual ->
+                    val ruta = entradaActual.toRoute<Rutas.EditarMeta>()
+                    NuevaMetaScreen(
+                        metaId = ruta.metaId,
+                        onAtras = { nav.popBackStack() },
+                        onGuardada = {
+                            nav.popBackStack()
+                            mostrarMensaje(textoCambiosGuardados)
+                        },
+                    )
+                }
+
+                composable<Rutas.Perfil> {
+                    PerfilScreen(
+                        onOpcion = { opcion -> nav.navigate(rutaDe(opcion)) },
+                        onAbrirRacha = { nav.navigate(Rutas.Racha) },
+                    )
+                }
+
+                // Pantallas que se abren desde el menú del Perfil.
+                composable<Rutas.MisCategorias> { CategoriasScreen(onAtras = { nav.popBackStack() }) }
+                composable<Rutas.Planificados> {
+                    PlanificadosScreen(
+                        onAtras = { nav.popBackStack() },
+                        onNuevo = { nav.navigate(Rutas.NuevoPlanificado) },
+                        onPagoAnotado = { tipo ->
+                            mostrarMensaje(if (tipo == TipoRegistro.GASTO) textoPagoAnotado else textoCobroAnotado)
+                        },
+                    )
+                }
+                composable<Rutas.NuevoPlanificado> {
+                    NuevoPlanificadoScreen(
+                        onAtras = { nav.popBackStack() },
+                        onGuardado = {
+                            nav.popBackStack()
+                            mostrarMensaje(textoPlanificadoGuardado)
+                        },
+                    )
+                }
+                composable<Rutas.Deudas> { DeudasScreen(onAtras = { nav.popBackStack() }) }
+                composable<Rutas.Desafios> { DesafiosScreen(onAtras = { nav.popBackStack() }) }
+                composable<Rutas.Racha> {
+                    RachaScreen(onAtras = { nav.popBackStack() }, onAnotar = { irAPestana(Rutas.Anotar) })
+                }
             }
 
-            composable<Rutas.Historial> {
-                HistorialScreen(
-                    onRegistroClick = { registroId -> abrirRegistro(registroId) },
-                    onAnotar = { irAPestana(Rutas.Anotar) },
-                )
+            recompensa?.let { ganado ->
+                if (ganado.primeraDelDia) {
+                    CelebracionRacha(
+                        recompensa = ganado,
+                        onCerrar = { recompensa = null },
+                        onVerRacha = {
+                            recompensa = null
+                            nav.navigate(Rutas.Racha)
+                        },
+                    )
+                } else {
+                    PremioRapido(
+                        recompensa = ganado,
+                        onFin = { recompensa = null },
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                    )
+                }
             }
-
-            composable<Rutas.Anotar> {
-                AnotarScreen(
-                    onGuardado = { ganoXp ->
-                        irAPestana(Rutas.Inicio)
-                        mostrarMensaje(if (ganoXp) textoAnotadoXp else textoAnotado)
-                    },
-                )
-            }
-
-            composable<Rutas.EditarRegistro> { entradaActual ->
-                val ruta = entradaActual.toRoute<Rutas.EditarRegistro>()
-                AnotarScreen(
-                    registroId = ruta.registroId,
-                    onGuardado = {
-                        nav.popBackStack()
-                        mostrarMensaje(textoCambiosGuardados)
-                    },
-                    onEliminado = {
-                        nav.popBackStack()
-                        mostrarMensaje(textoEliminada)
-                    },
-                    onAtras = { nav.popBackStack() },
-                )
-            }
-
-            composable<Rutas.Metas> {
-                MetasYDesafiosScreen(
-                    onNueva = { nav.navigate(Rutas.NuevaMeta) },
-                    onMetaClick = { metaId -> nav.navigate(Rutas.DetalleMeta(metaId)) },
-                )
-            }
-
-            composable<Rutas.NuevaMeta> {
-                NuevaMetaScreen(
-                    onAtras = { nav.popBackStack() },
-                    onGuardada = { metaId ->
-                        // Se reemplaza el formulario por el detalle: "atrás" vuelve a la lista de metas.
-                        nav.navigate(Rutas.DetalleMeta(metaId)) {
-                            popUpTo<Rutas.NuevaMeta> { inclusive = true }
-                        }
-                        mostrarMensaje(textoMetaCreada)
-                    },
-                )
-            }
-
-            composable<Rutas.DetalleMeta> { entradaActual ->
-                val ruta = entradaActual.toRoute<Rutas.DetalleMeta>()
-                DetalleMetaScreen(
-                    metaId = ruta.metaId,
-                    onAtras = { nav.popBackStack() },
-                    onEditar = { nav.navigate(Rutas.EditarMeta(ruta.metaId)) },
-                    onCancelada = {
-                        nav.popBackStack()
-                        mostrarMensaje(textoMetaCancelada)
-                    },
-                )
-            }
-
-            composable<Rutas.EditarMeta> { entradaActual ->
-                val ruta = entradaActual.toRoute<Rutas.EditarMeta>()
-                NuevaMetaScreen(
-                    metaId = ruta.metaId,
-                    onAtras = { nav.popBackStack() },
-                    onGuardada = {
-                        nav.popBackStack()
-                        mostrarMensaje(textoCambiosGuardados)
-                    },
-                )
-            }
-
-            composable<Rutas.Perfil> {
-                PerfilScreen(onOpcion = { opcion -> nav.navigate(rutaDe(opcion)) })
-            }
-
-            // Pantallas que se abren desde el menú del Perfil.
-            composable<Rutas.MisCategorias> { CategoriasScreen(onAtras = { nav.popBackStack() }) }
-            composable<Rutas.Planificados> {
-                PlanificadosScreen(
-                    onAtras = { nav.popBackStack() },
-                    onNuevo = { nav.navigate(Rutas.NuevoPlanificado) },
-                    onPagoAnotado = { tipo ->
-                        mostrarMensaje(if (tipo == TipoRegistro.GASTO) textoPagoAnotado else textoCobroAnotado)
-                    },
-                )
-            }
-            composable<Rutas.NuevoPlanificado> {
-                NuevoPlanificadoScreen(
-                    onAtras = { nav.popBackStack() },
-                    onGuardado = {
-                        nav.popBackStack()
-                        mostrarMensaje(textoPlanificadoGuardado)
-                    },
-                )
-            }
-            composable<Rutas.Deudas> { DeudasScreen(onAtras = { nav.popBackStack() }) }
-            composable<Rutas.Desafios> { DesafiosScreen(onAtras = { nav.popBackStack() }) }
         }
     }
 }

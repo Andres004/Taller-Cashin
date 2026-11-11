@@ -1,6 +1,5 @@
 package org.ucb.cashin.ui.auth
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,13 +17,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.ucb.cashin.R
+import org.ucb.cashin.ui.components.ImagenCashi
+import org.ucb.cashin.ui.components.RecursoCashi
 import org.ucb.cashin.ui.components.CashinBoton
 import org.ucb.cashin.ui.components.VarianteBoton
 import org.ucb.cashin.ui.theme.CashinTheme
@@ -65,11 +64,10 @@ fun BienvenidaScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.logo_cashin),
+                    ImagenCashi(
+                        recurso = RecursoCashi.PANTALLA_BIENVENIDA,
                         contentDescription = stringResource(R.string.logo_descripcion),
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.size(width = 240.dp, height = 205.dp),
+                        modifier = Modifier.size(320.dp),
                     )
                     Spacer(Modifier.height(Espacio.l))
                     Text(

@@ -9,7 +9,6 @@ Proyecto del Taller de Sistemas de Información · Equipo: Dabner · Andy · Car
  **Antes de programar, lee [`docs/CASHIN_MAESTRO.md`](docs/CASHIN_MAESTRO.md)** (stack, arquitectura, reglas y base de datos).
 
 ---
-
 ## Stack
 
 | Capa | Tecnología |

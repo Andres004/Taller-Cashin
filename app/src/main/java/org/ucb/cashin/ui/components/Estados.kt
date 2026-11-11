@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.ucb.cashin.R
 import org.ucb.cashin.ui.theme.CashinTheme
@@ -45,11 +46,13 @@ fun EstadoVacio(
     textoAccion: String? = null,
     onAccion: (() -> Unit)? = null,
     recurso: RecursoCashi = emocion.recurso,
+    tamanoAvatar: Dp = 160.dp,
 ) {
     EstadoBase(
         modifier = modifier,
         emocion = emocion,
         recurso = recurso,
+        tamanoAvatar = tamanoAvatar,
         titulo = titulo,
         mensaje = mensaje,
         textoAccion = textoAccion,
@@ -90,6 +93,7 @@ private fun EstadoBase(
     onAccion: (() -> Unit)?,
     varianteAccion: VarianteBoton,
     iconoAccion: ImageVector?,
+    tamanoAvatar: Dp = 160.dp,
 ) {
     Box(modifier = modifier.fillMaxSize().padding(Espacio.pantalla), contentAlignment = Alignment.Center) {
         Column(
@@ -97,7 +101,7 @@ private fun EstadoBase(
             verticalArrangement = Arrangement.spacedBy(Espacio.s),
             modifier = Modifier.widthIn(max = 360.dp),
         ) {
-            AvatarImagen(emocion = emocion, tamano = 160.dp, recurso = recurso)
+            AvatarImagen(emocion = emocion, tamano = tamanoAvatar, recurso = recurso)
             Text(
                 text = titulo,
                 style = MaterialTheme.typography.titleLarge,
