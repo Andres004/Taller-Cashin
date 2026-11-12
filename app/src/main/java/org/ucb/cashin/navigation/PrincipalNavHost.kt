@@ -57,8 +57,11 @@ import org.ucb.cashin.ui.inicio.InicioScreen
 import org.ucb.cashin.ui.metas.DetalleMetaScreen
 import org.ucb.cashin.ui.metas.MetasYDesafiosScreen
 import org.ucb.cashin.ui.metas.NuevaMetaScreen
+import org.ucb.cashin.ui.perfil.CambiarContrasenaScreen
+import org.ucb.cashin.ui.perfil.EditarPerfilScreen
 import org.ucb.cashin.ui.perfil.OpcionPerfil
 import org.ucb.cashin.ui.perfil.PerfilScreen
+import org.ucb.cashin.ui.perfil.RecordatorioScreen
 import org.ucb.cashin.model.RecompensaAnotar
 import org.ucb.cashin.model.TipoDeuda
 import org.ucb.cashin.model.TipoRegistro
@@ -108,6 +111,9 @@ fun PrincipalNavHost() {
     val textoMetaCancelada = stringResource(R.string.metas_cancelada)
     val textoDeudaGuardada = stringResource(R.string.deuda_guardada)
     val textoDeudaEliminada = stringResource(R.string.deuda_eliminada)
+    val textoPerfilGuardado = stringResource(R.string.editar_perfil_guardado)
+    val textoContrasenaGuardada = stringResource(R.string.contrasena_guardada)
+    val textoRecordatorioGuardado = stringResource(R.string.recordatorio_guardado)
 
     // Lo que se acaba de ganar al anotar: se muestra encima de Inicio.
     var recompensa by remember { mutableStateOf<RecompensaAnotar?>(null) }
@@ -255,7 +261,44 @@ fun PrincipalNavHost() {
                 composable<Rutas.Perfil> {
                     PerfilScreen(
                         onOpcion = { opcion -> nav.navigate(rutaDe(opcion)) },
+                        onEditar = { nav.navigate(Rutas.EditarPerfil) },
                         onAbrirRacha = { nav.navigate(Rutas.Racha) },
+                    )
+                }
+                composable<Rutas.EditarPerfil> {
+                    EditarPerfilScreen(
+                        onAtras = { nav.popBackStack() },
+                        onGuardado = {
+                            nav.popBackStack()
+                            mostrarMensaje(textoPerfilGuardado)
+                        },
+                        onCambiarContrasena = { nav.navigate(Rutas.CambiarContrasena) },
+                    )
+                }
+                composable<Rutas.CambiarContrasena> {
+                    CambiarContrasenaScreen(
+                        onAtras = { nav.popBackStack() },
+                        onGuardada = {
+                            nav.popBackStack()
+                            mostrarMensaje(textoContrasenaGuardada)
+                        },
+                    )
+                }
+                composable<Rutas.Recordatorio> {
+                    RecordatorioScreen(
+                        onAtras = { nav.popBackStack() },
+                        onGuardado = {
+                            nav.popBackStack()
+                            mostrarMensaje(textoRecordatorioGuardado)
+                        },
+                    )
+                }
+                composable<Rutas.Reportes> {
+                    HistorialScreen(
+                        onRegistroClick = { registroId -> abrirRegistro(registroId) },
+                        onAnotar = { irAPestana(Rutas.Anotar) },
+                        abrirEnReportes = true,
+                        onAtras = { nav.popBackStack() },
                     )
                 }
 
@@ -358,6 +401,8 @@ private fun rutaDe(opcion: OpcionPerfil): Any = when (opcion) {
     OpcionPerfil.PLANIFICADOS -> Rutas.Planificados
     OpcionPerfil.DEUDAS -> Rutas.Deudas
     OpcionPerfil.DESAFIOS -> Rutas.Desafios
+    OpcionPerfil.REPORTES -> Rutas.Reportes
+    OpcionPerfil.RECORDATORIO -> Rutas.Recordatorio
 }
 
 /**

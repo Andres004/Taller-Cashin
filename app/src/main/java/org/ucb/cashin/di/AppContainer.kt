@@ -1,5 +1,6 @@
 package org.ucb.cashin.di
 
+import android.content.Context
 import android.content.res.Resources
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
@@ -20,13 +21,15 @@ import org.ucb.cashin.data.RegistroRepository
 import org.ucb.cashin.data.RenovadorDesafios
 import org.ucb.cashin.data.ReporteRepository
 import org.ucb.cashin.data.ResumenRepository
+import org.ucb.cashin.notificaciones.RecordatorioLocal
 
 /**
  * Crea una sola vez la conexión con Supabase y los repositorios que usa toda la app.
  * Cada repositorio se crea recién cuando alguien lo necesita por primera vez.
  * [recursos] (de la Application) solo lo usa el renovador de desafíos para escribir sus títulos.
+ * [contexto] (la Application) lo usa el recordatorio diario, que se guarda en el teléfono.
  */
-class AppContainer(private val recursos: Resources) {
+class AppContainer(private val recursos: Resources, contexto: Context) {
 
     val supabase: SupabaseClient = createSupabaseClient(
         supabaseUrl = BuildConfig.SUPABASE_URL,
@@ -62,6 +65,7 @@ class AppContainer(private val recursos: Resources) {
     // Sprint 5
     val reporteRepository: ReporteRepository by lazy { ReporteRepository(supabase) }
     val deudaRepository: DeudaRepository by lazy { DeudaRepository(supabase) }
+    val recordatorio: RecordatorioLocal = RecordatorioLocal(contexto.applicationContext)
 
     /** HU-22: asigna solos los desafíos de la semana y del mes (una vez por periodo). */
     val renovadorDesafios: RenovadorDesafios by lazy {

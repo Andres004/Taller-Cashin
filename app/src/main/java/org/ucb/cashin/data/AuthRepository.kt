@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
 /** Estado de la sesión, simplificado para la UI. */
@@ -88,6 +89,21 @@ class AuthRepository(private val supabase: SupabaseClient) {
             }
             Unit
         }
+
+    /**
+     * Si la cuenta entró con correo y contraseña (true) o con Google (false). Solo las de correo
+     * pueden cambiar su contraseña desde la app. Si no se sabe, se asume correo.
+     */
+    fun esCuentaConCorreo(): Boolean {
+        val proveedor = supabase.auth.currentUserOrNull()?.appMetadata?.get("provider")?.jsonPrimitive?.content
+        return proveedor == null || proveedor == "email"
+    }
+
+    /** Perfil → Cambiar contraseña: con la sesión iniciada no hace falta la contraseña anterior. */
+    suspend fun cambiarContrasena(nueva: String): Result<Unit> = llamada {
+        supabase.auth.updateUser { password = nueva }
+        Unit
+    }
 
     /** HU-04. Cierra la sesión y borra el token guardado en el celular. */
     suspend fun cerrarSesion(): Result<Unit> = llamada {

@@ -95,16 +95,21 @@ private enum class PestanaHistorial(val texto: Int) {
 fun HistorialScreen(
     onRegistroClick: (registroId: String) -> Unit,
     onAnotar: () -> Unit,
+    /** Desde el menú del Perfil: abre directo en Reportes y muestra la flecha para volver. */
+    abrirEnReportes: Boolean = false,
+    onAtras: (() -> Unit)? = null,
     viewModel: HistorialViewModel = viewModel(factory = HistorialViewModel.Factory),
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
-    var pestana by rememberSaveable { mutableIntStateOf(PestanaHistorial.MOVIMIENTOS.ordinal) }
+    var pestana by rememberSaveable {
+        mutableIntStateOf(if (abrirEnReportes) PestanaHistorial.REPORTES.ordinal else PestanaHistorial.MOVIMIENTOS.ordinal)
+    }
 
     // Se recarga cada vez que se entra a la pantalla (después de anotar, editar o eliminar).
     LaunchedEffect(Unit) { viewModel.cargar() }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        CashinTopBar(titulo = stringResource(R.string.nav_historial))
+        CashinTopBar(titulo = stringResource(R.string.nav_historial), onAtras = onAtras)
         PrimaryTabRow(
             selectedTabIndex = pestana,
             containerColor = MaterialTheme.colorScheme.background,

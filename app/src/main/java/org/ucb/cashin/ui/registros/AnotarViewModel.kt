@@ -14,6 +14,7 @@ import org.ucb.cashin.data.CategoriaRepository
 import org.ucb.cashin.data.PerfilRepository
 import org.ucb.cashin.data.RegistroRepository
 import org.ucb.cashin.di.fabricaDe
+import org.ucb.cashin.notificaciones.RecordatorioLocal
 import org.ucb.cashin.model.Categoria
 import org.ucb.cashin.model.ErrorApp
 import org.ucb.cashin.model.MedioPago
@@ -62,6 +63,8 @@ class AnotarViewModel(
     private val categoriaRepository: CategoriaRepository,
     private val perfilRepository: PerfilRepository,
     private val registroId: String? = null,
+    /** Recordatorio diario: se le avisa que hoy ya se anotó (para no recordar de más). */
+    private val recordatorio: RecordatorioLocal? = null,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -200,6 +203,7 @@ class AnotarViewModel(
             resultado
                 .onSuccess { _ ->
                     val recompensa = if (anterior == null) recompensaDeEstaAnotacion(perfilAntes, estado.tipo) else null
+                    if (anterior == null) recordatorio?.let { it.conocer(Formato.hoy(), recompensa?.racha ?: it.racha) }
                     _uiState.update { it.copy(cargando = false, guardado = true, recompensa = recompensa) }
                 }
                 .onFailure { e -> _uiState.update { it.copy(cargando = false, error = e.comoErrorApp()) } }
@@ -258,6 +262,6 @@ class AnotarViewModel(
 
         /** Sin id: anotar algo nuevo. Con id: editar esa anotación. */
         fun fabrica(registroId: String? = null) =
-            fabricaDe { AnotarViewModel(it.registroRepository, it.categoriaRepository, it.perfilRepository, registroId) }
+            fabricaDe { AnotarViewModel(it.registroRepository, it.categoriaRepository, it.perfilRepository, registroId, it.recordatorio) }
     }
 }

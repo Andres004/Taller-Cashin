@@ -81,3 +81,15 @@ data class ResumenDeuda(
  * `v_gasto_categoria_mes`, así que se lee con la misma clase.
  */
 typealias IngresoCategoriaMes = GastoCategoriaMes
+
+/** Función `estadisticas_perfil()` (migración 010): los números del perfil, contados en el servidor. */
+@Serializable
+data class EstadisticasPerfil(
+    @SerialName("dias_usando") val diasUsando: Int = 0,
+    val anotaciones: Int = 0,
+    @SerialName("mejor_racha") val mejorRacha: Int = 0,
+    @SerialName("desafios_cumplidos") val desafiosCumplidos: Int = 0,
+    @SerialName("metas_logradas") val metasLogradas: Int = 0,
+    @SerialName("deudas_saldadas") val deudasSaldadas: Int = 0,
+    @SerialName("total_ahorrado") val totalAhorrado: BigDecimal = BigDecimal.ZERO,
+)

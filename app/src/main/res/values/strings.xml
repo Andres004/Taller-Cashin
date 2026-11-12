@@ -762,4 +762,73 @@
     <string name="deuda_ya_existe_me_deben">Te debe %1$s desde el %2$s. ¿Quieres sumar este préstamo ahí?</string>
     <string name="deuda_ya_existe_sumar">Sumar a la de %1$s</string>
     <string name="deuda_ya_existe_otra">Crear otra</string>
+
+    <!-- Sprint 5 · Perfil (HU-05 ampliada) -->
+    <string name="perfil_editar">Editar perfil</string>
+    <string name="perfil_tus_numeros">Tus números</string>
+    <string name="perfil_stat_dias">días usando Cashin</string>
+    <string name="perfil_stat_anotaciones">anotaciones</string>
+    <string name="perfil_stat_mejor_racha">mejor racha</string>
+    <string name="perfil_stat_desafios">desafíos cumplidos</string>
+    <string name="perfil_stat_metas">metas logradas</string>
+    <string name="perfil_stat_deudas">deudas saldadas</string>
+    <string name="perfil_stat_sin_datos">—</string>
+    <string name="perfil_ahorrado">Ahorraste en tus metas</string>
+    <string name="perfil_chip_racha">🔥 %1$d</string>
+    <string name="perfil_chip_nivel">★ Nivel %1$d</string>
+    <string name="perfil_reportes">Reportes</string>
+    <string name="perfil_recordatorio">Recordatorio diario</string>
+    <string name="perfil_recordatorio_activo">Todos los días a las %1$s</string>
+    <string name="perfil_recordatorio_activo_laborables">De lunes a viernes a las %1$s</string>
+    <string name="perfil_recordatorio_apagado">Apagado</string>
+
+    <string name="editar_perfil_cambiar_avatar">Cambiar avatar</string>
+    <string name="editar_perfil_nombre">Nombre</string>
+    <string name="editar_perfil_moneda">Moneda</string>
+    <string name="editar_perfil_moneda_bob">Bs</string>
+    <string name="editar_perfil_moneda_usd">$us</string>
+    <string name="editar_perfil_dia_cobro">¿Qué día te pagan? (opcional)</string>
+    <string name="editar_perfil_dia_otro">Otro</string>
+    <string name="editar_perfil_dia_elegido">Día %1$d</string>
+    <string name="editar_perfil_dia_ayuda">Toca otra vez el día para quitarlo.</string>
+    <string name="editar_perfil_dia_titulo">¿Qué día del mes te pagan?</string>
+    <string name="editar_perfil_dia_campo">Día (1 a 31)</string>
+    <string name="editar_perfil_dia_error">Escribe un día entre 1 y 31.</string>
+    <string name="editar_perfil_cambiar_contrasena">Cambiar contraseña</string>
+    <string name="editar_perfil_guardar">Guardar cambios</string>
+    <string name="editar_perfil_guardado">Perfil guardado</string>
+    <string name="editar_perfil_elige_cashi">Elige tu Cashi</string>
+    <string name="editar_perfil_usar_este">Usar este</string>
+    <string name="avatar_feliz">Cashi feliz</string>
+    <string name="avatar_cool">Cashi cool</string>
+    <string name="avatar_celebrando">Cashi celebrando</string>
+    <string name="avatar_pensando">Cashi pensando</string>
+    <string name="avatar_estrella">Cashi con estrella</string>
+    <string name="avatar_medalla">Cashi con medalla</string>
+
+    <string name="contrasena_titulo">Cambiar contraseña</string>
+    <string name="contrasena_ayuda">Te pedimos la nueva dos veces para que no haya errores.</string>
+    <string name="contrasena_guardar">Guardar contraseña</string>
+    <string name="contrasena_guardada">Contraseña cambiada</string>
+
+    <string name="recordatorio_titulo">Recordatorio diario</string>
+    <string name="recordatorio_activar">Recordarme anotar</string>
+    <string name="recordatorio_activar_ayuda">Un aviso si ese día todavía no anotaste nada.</string>
+    <string name="recordatorio_hora">¿A qué hora?</string>
+    <string name="recordatorio_cambiar_hora">Cambiar la hora</string>
+    <string name="recordatorio_todos">Todos los días</string>
+    <string name="recordatorio_laborables">Lun–Vie</string>
+    <string name="recordatorio_guardar">Guardar</string>
+    <string name="recordatorio_guardado">Recordatorio guardado</string>
+    <string name="recordatorio_sin_permiso">Sin permiso de notificaciones no te podemos avisar. Actívalo en los ajustes del teléfono.</string>
+    <string name="recordatorio_abrir_ajustes">Abrir ajustes</string>
+    <string name="recordatorio_canal">Recordatorio diario</string>
+    <string name="recordatorio_canal_desc">Un aviso al día si todavía no anotaste nada.</string>
+    <plurals name="recordatorio_racha_titulo">
+        <item quantity="one">Tu racha de %d día te espera 🔥</item>
+        <item quantity="other">Tu racha de %d días te espera 🔥</item>
+    </plurals>
+    <string name="recordatorio_racha_texto">Anota lo que gastaste hoy y no la pierdas.</string>
+    <string name="recordatorio_sin_racha_titulo">¿Ya anotaste lo de hoy?</string>
+    <string name="recordatorio_sin_racha_texto">Anota tus gastos e ingresos del día y suma XP.</string>
 </resources>

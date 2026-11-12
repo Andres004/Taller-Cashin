@@ -54,6 +54,14 @@ object Rutas {
     @Serializable data class DetalleDeuda(val deudaId: String, val prestarMas: Boolean = false, val monto: String? = null)
     /** Nueva deuda ([deudaId] null, del [tipo] de la pestaña) o editar una existente. */
     @Serializable data class FormularioDeuda(val deudaId: String? = null, val tipo: String = "DEBO")
+    /** HU-05 · Sprint 5: avatar, nombre, moneda y día de cobro (desde el lápiz del Perfil). */
+    @Serializable data object EditarPerfil
+    /** Cambiar la contraseña (solo cuentas con correo; se abre desde Editar perfil). */
+    @Serializable data object CambiarContrasena
+    /** Recordatorio diario (Sprint 5; se abre desde el menú del Perfil). */
+    @Serializable data object Recordatorio
+    /** HU-14: Historial abierto directo en la pestaña Reportes (desde el menú del Perfil). */
+    @Serializable data object Reportes
     /** HU-24: la racha con su semana (se abre desde Inicio y Perfil). */
     @Serializable data object Racha
 }

@@ -31,6 +31,8 @@ data class Perfil(
     @SerialName("racha_maxima") val rachaMaxima: Int = 0,
     @SerialName("ultimo_registro") val ultimoRegistro: LocalDate? = null,
     @SerialName("creado_en") val creadoEn: Instant? = null,
+    /** Migración 010: qué día del mes le pagan (1 a 31). Null si no lo dijo. */
+    @SerialName("dia_cobro") val diaCobro: Int? = null,
 ) {
     /** Nivel = xp / 200 + 1 (Maestro §7.3). */
     val nivel: Int get() = xp / XP_POR_NIVEL + 1

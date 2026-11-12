@@ -2,4 +2,6 @@
 <resources>
     <!-- Solo para el tema XML de la ventana. En Compose se usan los colores de ui/theme/Color.kt -->
     <color name="crema">#FFFCF7EA</color>
+    <!-- Color de acento de la notificación del recordatorio (igual a Naranja de Color.kt). -->
+    <color name="naranja">#FFE08A2C</color>
 </resources>

@@ -2,6 +2,8 @@ package org.ucb.cashin
 
 import android.app.Application
 import org.ucb.cashin.di.AppContainer
+import org.ucb.cashin.notificaciones.crearCanalRecordatorio
+import org.ucb.cashin.notificaciones.programar
 
 /** Punto de entrada de la app: crea una sola vez el contenedor de dependencias. */
 class CashinApp : Application() {
@@ -12,7 +14,10 @@ class CashinApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        if (AppContainer.estaConfigurado) container = AppContainer(resources)
+        if (AppContainer.estaConfigurado) container = AppContainer(resources, this)
+        // Recordatorio diario: el canal de notificaciones y la próxima alarma (si está activo).
+        crearCanalRecordatorio(this)
+        programar(this)
     }
 
     /** Para ViewModels: falla con un mensaje claro si se usa sin configurar. */

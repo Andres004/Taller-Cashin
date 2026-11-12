@@ -15,6 +15,7 @@ import org.ucb.cashin.data.PlanificadoRepository
 import org.ucb.cashin.data.RenovadorDesafios
 import org.ucb.cashin.data.ResumenRepository
 import org.ucb.cashin.di.fabricaDe
+import org.ucb.cashin.notificaciones.RecordatorioLocal
 import org.ucb.cashin.model.AvanceMeta
 import org.ucb.cashin.model.Desafio
 import org.ucb.cashin.model.ErrorApp
@@ -112,6 +113,8 @@ class InicioViewModel(
     /** Último nivel y XP mostrados por usuario en esta sesión de la app (viven en AppContainer). */
     private val ultimoNivelVisto: MutableMap<String, Int>,
     private val ultimoXpVisto: MutableMap<String, Int>,
+    /** Recordatorio diario: guarda en el teléfono cuándo fue la última anotación y la racha. */
+    private val recordatorio: RecordatorioLocal? = null,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InicioUiState())
@@ -184,6 +187,7 @@ class InicioViewModel(
             }
 
             val racha = perfil.rachaVigente(hoy)
+            recordatorio?.conocer(perfil.ultimoRegistro, perfil.rachaActual)
             val anotoHoy = perfil.anotoHoy(hoy)
             val consejo = consejoDelDia(
                 hoy = hoy,
@@ -279,6 +283,7 @@ class InicioViewModel(
             InicioViewModel(
                 it.perfilRepository, it.resumenRepository, it.planificadoRepository, it.categoriaRepository,
                 it.desafioRepository, it.renovadorDesafios, it.metaRepository, it.ultimoNivelVisto, it.ultimoXpVisto,
+                it.recordatorio,
             )
         }
     }
