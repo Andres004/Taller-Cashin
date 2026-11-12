@@ -84,6 +84,7 @@ dependencies {
     implementation(libs.supabase.auth)
     implementation(libs.supabase.postgrest)
     implementation(libs.supabase.functions)
+    implementation(libs.supabase.compose.auth) // HU-02: ingresar con Google
     implementation(libs.ktor.client.okhttp)
     implementation(libs.kotlinx.serialization.json)
 

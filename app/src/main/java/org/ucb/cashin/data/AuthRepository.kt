@@ -5,6 +5,8 @@ import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.compose.auth.ComposeAuth
+import io.github.jan.supabase.compose.auth.composeAuth
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -13,6 +15,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import org.ucb.cashin.di.AppContainer
 
 /** Estado de la sesión, simplificado para la UI. */
 enum class EstadoSesion { CARGANDO, CON_SESION, SIN_SESION }
@@ -98,6 +101,18 @@ class AuthRepository(private val supabase: SupabaseClient) {
         val proveedor = supabase.auth.currentUserOrNull()?.appMetadata?.get("provider")?.jsonPrimitive?.content
         return proveedor == null || proveedor == "email"
     }
+
+    /** HU-02: la cuenta entró con Google (para la bienvenida de la primera vez). */
+    fun esCuentaDeGoogle(): Boolean =
+        supabase.auth.currentUserOrNull()?.appMetadata?.get("provider")?.jsonPrimitive?.content == "google"
+
+    /**
+     * HU-02: el plugin que abre la hoja de cuentas de Google. Null si falta GOOGLE_WEB_CLIENT_ID.
+     * La pantalla lo usa con rememberSignInWithGoogle (la API de compose-auth es un Composable);
+     * al volver, Supabase guarda la sesión y CashinRaiz cambia sola a la app.
+     */
+    fun googleNativo(): ComposeAuth? =
+        if (AppContainer.googleConfigurado) supabase.composeAuth else null
 
     /** Perfil → Cambiar contraseña: con la sesión iniciada no hace falta la contraseña anterior. */
     suspend fun cambiarContrasena(nueva: String): Result<Unit> = llamada {

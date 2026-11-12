@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.res.Resources
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.compose.auth.ComposeAuth
+import io.github.jan.supabase.compose.auth.googleNativeLogin
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.postgrest.Postgrest
@@ -14,6 +16,7 @@ import org.ucb.cashin.data.AuthRepository
 import org.ucb.cashin.data.CategoriaRepository
 import org.ucb.cashin.data.DesafioRepository
 import org.ucb.cashin.data.DeudaRepository
+import org.ucb.cashin.data.PreferenciasCuenta
 import org.ucb.cashin.data.MetaRepository
 import org.ucb.cashin.data.PerfilRepository
 import org.ucb.cashin.data.PlanificadoRepository
@@ -44,7 +47,11 @@ class AppContainer(private val recursos: Resources, contexto: Context) {
         install(Auth)
         install(Postgrest)
         install(Functions)
-        // Sprint 3 (HU-02): install(ComposeAuth) { googleNativeLogin(serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID) }
+        // HU-02 (Sprint 5): ingresar con Google con la hoja de cuentas del teléfono (Credential Manager).
+        // Sin client ID no se instala: el botón avisa que falta configurarlo en vez de cerrar la app.
+        if (googleConfigurado) {
+            install(ComposeAuth) { googleNativeLogin(serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID) }
+        }
     }
 
     val authRepository: AuthRepository by lazy { AuthRepository(supabase) }
@@ -66,6 +73,7 @@ class AppContainer(private val recursos: Resources, contexto: Context) {
     val reporteRepository: ReporteRepository by lazy { ReporteRepository(supabase) }
     val deudaRepository: DeudaRepository by lazy { DeudaRepository(supabase) }
     val recordatorio: RecordatorioLocal = RecordatorioLocal(contexto.applicationContext)
+    val preferenciasCuenta: PreferenciasCuenta = PreferenciasCuenta(contexto.applicationContext)
 
     /** HU-22: asigna solos los desafíos de la semana y del mes (una vez por periodo). */
     val renovadorDesafios: RenovadorDesafios by lazy {
@@ -87,5 +95,9 @@ class AppContainer(private val recursos: Resources, contexto: Context) {
         /** Indica si las claves de Supabase están configuradas en local.properties. */
         val estaConfigurado: Boolean
             get() = BuildConfig.SUPABASE_URL.startsWith("https://") && BuildConfig.SUPABASE_KEY.isNotBlank()
+
+        /** HU-02: si GOOGLE_WEB_CLIENT_ID está en local.properties. */
+        val googleConfigurado: Boolean
+            get() = BuildConfig.GOOGLE_WEB_CLIENT_ID.isNotBlank()
     }
 }

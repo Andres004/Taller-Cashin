@@ -75,6 +75,16 @@
     <string name="login_crear_cuenta">Crear cuenta</string>
     <string name="login_google">Continuar con Google</string>
     <string name="login_google_pronto">El ingreso con Google llega en el Sprint 2 (HU-02).</string>
+    <string name="login_google_sin_configurar">El ingreso con Google todavía no está configurado en esta versión. Entra con tu correo.</string>
+    <string name="login_google_sin_conexion">Sin conexión. Revisa tu internet y vuelve a intentarlo.</string>
+    <string name="login_google_sin_cuenta">No encontramos una cuenta de Google en este teléfono. Agrégala en los ajustes o entra con tu correo.</string>
+    <string name="login_google_error">No pudimos entrar con Google. Intenta otra vez o entra con tu correo.</string>
+    <string name="bienvenida_google_titulo">¡Hola, %1$s! 👋</string>
+    <string name="bienvenida_google_subtitulo">Revisa estos dos datos y empezamos.</string>
+    <string name="bienvenida_google_nombre">¿Cómo quieres que te llame?</string>
+    <string name="bienvenida_google_empezar">Empezar</string>
+    <string name="login_google_correo_titulo">Ese correo ya tiene cuenta</string>
+    <string name="login_google_correo_mensaje">Ese correo se registró con contraseña. Entra con tu correo y contraseña; cuando lo hayas confirmado, Google también va a funcionar.</string>
 
     <!-- Crear cuenta (HU-01) -->
     <string name="registro_titulo">Crea tu cuenta</string>

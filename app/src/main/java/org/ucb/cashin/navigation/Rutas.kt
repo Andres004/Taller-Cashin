@@ -54,6 +54,8 @@ object Rutas {
     @Serializable data class DetalleDeuda(val deudaId: String, val prestarMas: Boolean = false, val monto: String? = null)
     /** Nueva deuda ([deudaId] null, del [tipo] de la pestaña) o editar una existente. */
     @Serializable data class FormularioDeuda(val deudaId: String? = null, val tipo: String = "DEBO")
+    /** HU-02 · Sprint 5: la primera vez con Google, confirmar nombre y moneda (se abre sola una vez). */
+    @Serializable data object BienvenidaGoogle
     /** HU-05 · Sprint 5: avatar, nombre, moneda y día de cobro (desde el lápiz del Perfil). */
     @Serializable data object EditarPerfil
     /** Cambiar la contraseña (solo cuentas con correo; se abre desde Editar perfil). */

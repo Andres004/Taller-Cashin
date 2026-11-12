@@ -24,6 +24,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +52,8 @@ import kotlinx.coroutines.launch
 import org.ucb.cashin.R
 import org.ucb.cashin.ui.categorias.CategoriasScreen
 import org.ucb.cashin.ui.desafios.DesafiosScreen
+import org.ucb.cashin.ui.auth.BienvenidaGoogleScreen
+import org.ucb.cashin.ui.auth.BienvenidaGoogleViewModel
 import org.ucb.cashin.ui.deudas.DetalleDeudaScreen
 import org.ucb.cashin.ui.deudas.DeudasScreen
 import org.ucb.cashin.ui.deudas.FormularioDeudaScreen
@@ -129,6 +133,12 @@ fun PrincipalNavHost() {
             launchSingleTop = true
             restoreState = true
         }
+    }
+
+    // HU-02: la primera vez que se entra con Google, una pantalla corta confirma nombre y moneda.
+    val bienvenidaGoogle: BienvenidaGoogleViewModel = viewModel(factory = BienvenidaGoogleViewModel.Factory)
+    LaunchedEffect(Unit) {
+        if (bienvenidaGoogle.debeMostrarse()) nav.navigate(Rutas.BienvenidaGoogle)
     }
 
     /** Abre una anotación para editarla o eliminarla. */
@@ -264,6 +274,9 @@ fun PrincipalNavHost() {
                         onEditar = { nav.navigate(Rutas.EditarPerfil) },
                         onAbrirRacha = { nav.navigate(Rutas.Racha) },
                     )
+                }
+                composable<Rutas.BienvenidaGoogle> {
+                    BienvenidaGoogleScreen(onLista = { nav.popBackStack() }, viewModel = bienvenidaGoogle)
                 }
                 composable<Rutas.EditarPerfil> {
                     EditarPerfilScreen(
