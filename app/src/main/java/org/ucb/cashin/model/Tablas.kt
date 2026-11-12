@@ -224,6 +224,8 @@ data class AbonoDeuda(
     val monto: BigDecimal,
     val fecha: LocalDate,
     val nota: String? = null,
+    /** Migración 009: ordena dos movimientos del mismo día. */
+    @SerialName("creado_en") val creadoEn: Instant? = null,
 )
 
 @Serializable
@@ -232,6 +234,39 @@ data class NuevoAbonoDeuda(
     val monto: BigDecimal,
     val fecha: LocalDate,
     val nota: String? = null,
+)
+
+/** Tabla `aumento_deuda` (migración 009): "le prestaste más" o "te prestó más" en la misma deuda. */
+@Serializable
+data class AumentoDeuda(
+    val id: String,
+    @SerialName("deuda_id") val deudaId: String,
+    val monto: BigDecimal,
+    val fecha: LocalDate,
+    val nota: String? = null,
+    @SerialName("creado_en") val creadoEn: Instant? = null,
+)
+
+@Serializable
+data class NuevoAumentoDeuda(
+    @SerialName("deuda_id") val deudaId: String,
+    val monto: BigDecimal,
+    val fecha: LocalDate,
+    val nota: String? = null,
+)
+
+/**
+ * Lo que se puede editar de una deuda (migración 009: la app ya no escribe el total ni el estado).
+ * [tipo] solo cambia si la deuda todavía no tiene movimientos; la base de datos lo revisa.
+ */
+@Serializable
+data class CambiosDeuda(
+    val tipo: TipoDeuda,
+    val contraparte: String,
+    val descripcion: String? = null,
+    @SerialName("monto_inicial") val montoInicial: BigDecimal,
+    @SerialName("fecha_inicio") val fechaInicio: LocalDate,
+    @SerialName("fecha_limite") val fechaLimite: LocalDate? = null,
 )
 
 /** Tabla `desafio`. La app solo LEE desafíos; se crean con funciones del servidor (Sprint 4). */

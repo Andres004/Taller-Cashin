@@ -47,6 +47,13 @@ object Rutas {
     @Serializable data object Desafios
     /** HU-25, HU-26 · Sprint 5. */
     @Serializable data object Deudas
+    /**
+     * Detalle de una deuda con su línea de tiempo. [prestarMas] y [monto] llegan desde
+     * "Sumar a la de Amy" en el formulario: abre la hoja "Prestar más" con ese monto.
+     */
+    @Serializable data class DetalleDeuda(val deudaId: String, val prestarMas: Boolean = false, val monto: String? = null)
+    /** Nueva deuda ([deudaId] null, del [tipo] de la pestaña) o editar una existente. */
+    @Serializable data class FormularioDeuda(val deudaId: String? = null, val tipo: String = "DEBO")
     /** HU-24: la racha con su semana (se abre desde Inicio y Perfil). */
     @Serializable data object Racha
 }

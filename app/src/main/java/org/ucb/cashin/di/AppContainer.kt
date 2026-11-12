@@ -12,6 +12,7 @@ import org.ucb.cashin.BuildConfig
 import org.ucb.cashin.data.AuthRepository
 import org.ucb.cashin.data.CategoriaRepository
 import org.ucb.cashin.data.DesafioRepository
+import org.ucb.cashin.data.DeudaRepository
 import org.ucb.cashin.data.MetaRepository
 import org.ucb.cashin.data.PerfilRepository
 import org.ucb.cashin.data.PlanificadoRepository
@@ -60,6 +61,7 @@ class AppContainer(private val recursos: Resources) {
 
     // Sprint 5
     val reporteRepository: ReporteRepository by lazy { ReporteRepository(supabase) }
+    val deudaRepository: DeudaRepository by lazy { DeudaRepository(supabase) }
 
     /** HU-22: asigna solos los desafíos de la semana y del mes (una vez por periodo). */
     val renovadorDesafios: RenovadorDesafios by lazy {

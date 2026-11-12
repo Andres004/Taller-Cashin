@@ -65,6 +65,15 @@ data class ResumenDeuda(
     @SerialName("fecha_limite") val fechaLimite: LocalDate? = null,
     val estado: EstadoDeuda,
     val pendiente: BigDecimal,
+    // Migración 009 (columnas agregadas al final de la vista).
+    val abonado: BigDecimal = BigDecimal.ZERO,
+    val descripcion: String? = null,
+    @SerialName("fecha_inicio") val fechaInicio: LocalDate? = null,
+    @SerialName("fecha_cancelacion") val fechaCancelacion: LocalDate? = null,
+    @SerialName("monto_inicial") val montoInicial: BigDecimal? = null,
+    val aumentado: BigDecimal = BigDecimal.ZERO,
+    @SerialName("cantidad_aumentos") val cantidadAumentos: Int = 0,
+    @SerialName("cantidad_abonos") val cantidadAbonos: Int = 0,
 )
 
 /**

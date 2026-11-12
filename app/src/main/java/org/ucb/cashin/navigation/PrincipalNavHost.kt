@@ -50,7 +50,9 @@ import kotlinx.coroutines.launch
 import org.ucb.cashin.R
 import org.ucb.cashin.ui.categorias.CategoriasScreen
 import org.ucb.cashin.ui.desafios.DesafiosScreen
+import org.ucb.cashin.ui.deudas.DetalleDeudaScreen
 import org.ucb.cashin.ui.deudas.DeudasScreen
+import org.ucb.cashin.ui.deudas.FormularioDeudaScreen
 import org.ucb.cashin.ui.inicio.InicioScreen
 import org.ucb.cashin.ui.metas.DetalleMetaScreen
 import org.ucb.cashin.ui.metas.MetasYDesafiosScreen
@@ -58,6 +60,7 @@ import org.ucb.cashin.ui.metas.NuevaMetaScreen
 import org.ucb.cashin.ui.perfil.OpcionPerfil
 import org.ucb.cashin.ui.perfil.PerfilScreen
 import org.ucb.cashin.model.RecompensaAnotar
+import org.ucb.cashin.model.TipoDeuda
 import org.ucb.cashin.model.TipoRegistro
 import org.ucb.cashin.ui.components.CelebracionRacha
 import org.ucb.cashin.ui.components.PremioRapido
@@ -103,6 +106,8 @@ fun PrincipalNavHost() {
     val textoPlanificadoGuardado = stringResource(R.string.planificados_guardado)
     val textoMetaCreada = stringResource(R.string.metas_creada)
     val textoMetaCancelada = stringResource(R.string.metas_cancelada)
+    val textoDeudaGuardada = stringResource(R.string.deuda_guardada)
+    val textoDeudaEliminada = stringResource(R.string.deuda_eliminada)
 
     // Lo que se acaba de ganar al anotar: se muestra encima de Inicio.
     var recompensa by remember { mutableStateOf<RecompensaAnotar?>(null) }
@@ -274,7 +279,51 @@ fun PrincipalNavHost() {
                         },
                     )
                 }
-                composable<Rutas.Deudas> { DeudasScreen(onAtras = { nav.popBackStack() }) }
+                composable<Rutas.Deudas> {
+                    DeudasScreen(
+                        onAtras = { nav.popBackStack() },
+                        onDeudaClick = { deudaId -> nav.navigate(Rutas.DetalleDeuda(deudaId)) },
+                        onNueva = { tipo -> nav.navigate(Rutas.FormularioDeuda(tipo = tipo.name)) },
+                    )
+                }
+                composable<Rutas.DetalleDeuda> { entradaActual ->
+                    val ruta = entradaActual.toRoute<Rutas.DetalleDeuda>()
+                    DetalleDeudaScreen(
+                        deudaId = ruta.deudaId,
+                        abrirPrestarMas = ruta.prestarMas,
+                        montoInicial = ruta.monto,
+                        onAtras = { nav.popBackStack() },
+                        onEditar = { nav.navigate(Rutas.FormularioDeuda(deudaId = ruta.deudaId)) },
+                        onEliminada = {
+                            nav.popBackStack()
+                            mostrarMensaje(textoDeudaEliminada)
+                        },
+                    )
+                }
+                composable<Rutas.FormularioDeuda> { entradaActual ->
+                    val ruta = entradaActual.toRoute<Rutas.FormularioDeuda>()
+                    FormularioDeudaScreen(
+                        deudaId = ruta.deudaId,
+                        tipoInicial = TipoDeuda.valueOf(ruta.tipo),
+                        onAtras = { nav.popBackStack() },
+                        onGuardada = { deudaId ->
+                            if (ruta.deudaId == null) {
+                                // Se reemplaza el formulario por el detalle: "atrás" vuelve a la lista.
+                                nav.navigate(Rutas.DetalleDeuda(deudaId)) {
+                                    popUpTo<Rutas.FormularioDeuda> { inclusive = true }
+                                }
+                            } else {
+                                nav.popBackStack()
+                            }
+                            mostrarMensaje(textoDeudaGuardada)
+                        },
+                        onSumar = { deudaId, monto ->
+                            nav.navigate(Rutas.DetalleDeuda(deudaId, prestarMas = true, monto = monto)) {
+                                popUpTo<Rutas.FormularioDeuda> { inclusive = true }
+                            }
+                        },
+                    )
+                }
                 composable<Rutas.Desafios> { DesafiosScreen(onAtras = { nav.popBackStack() }) }
                 composable<Rutas.Racha> {
                     RachaScreen(onAtras = { nav.popBackStack() }, onAnotar = { irAPestana(Rutas.Anotar) })
